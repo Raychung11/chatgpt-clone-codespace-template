@@ -76,6 +76,24 @@ $adminPage = basename($_SERVER['PHP_SELF'], '.php');
             <i class="bi bi-credit-card"></i> Expenses
         </a>
 
+        <div class="nav-section-label mt-3">HR</div>
+        <a href="/admin/hr.php" class="admin-nav-link <?= $adminPage === 'hr' ? 'active' : '' ?>">
+            <i class="bi bi-people"></i> HR Overview
+        </a>
+        <a href="/admin/employees.php" class="admin-nav-link <?= $adminPage === 'employees' ? 'active' : '' ?>">
+            <i class="bi bi-person-badge"></i> Employees
+        </a>
+        <a href="/admin/leave.php" class="admin-nav-link <?= $adminPage === 'leave' ? 'active' : '' ?>">
+            <i class="bi bi-calendar3"></i> Leave
+            <?php
+            $pendingLeaveCount = DB::fetch('SELECT COUNT(*) as n FROM leave_requests WHERE status="pending"')['n'] ?? 0;
+            if ($pendingLeaveCount > 0) echo "<span class='badge bg-warning text-dark ms-auto'>$pendingLeaveCount</span>";
+            ?>
+        </a>
+        <a href="/admin/payroll.php" class="admin-nav-link <?= $adminPage === 'payroll' ? 'active' : '' ?>">
+            <i class="bi bi-cash-stack"></i> Payroll
+        </a>
+
         <div class="nav-section-label mt-3">Settings</div>
         <a href="/admin/settings.php" class="admin-nav-link <?= $adminPage === 'settings' ? 'active' : '' ?>">
             <i class="bi bi-gear"></i> Settings

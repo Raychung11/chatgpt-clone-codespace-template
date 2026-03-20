@@ -247,3 +247,68 @@ CREATE TABLE IF NOT EXISTS invoice_items (
     amount DECIMAL(10,2) NOT NULL,
     FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
 );
+
+-- ============================================================
+-- HR Module Tables
+-- ============================================================
+
+-- Employees
+CREATE TABLE IF NOT EXISTS employees (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    phone VARCHAR(30),
+    department ENUM('engineering','marketing','sales','support','operations','finance','hr','management') NOT NULL DEFAULT 'operations',
+    job_title VARCHAR(150),
+    employment_type ENUM('full_time','part_time','contractor','intern') DEFAULT 'full_time',
+    status ENUM('active','on_leave','terminated') DEFAULT 'active',
+    start_date DATE NOT NULL,
+    end_date DATE,
+    salary DECIMAL(10,2),
+    salary_currency VARCHAR(3) DEFAULT 'USD',
+    pay_cycle ENUM('monthly','biweekly','weekly') DEFAULT 'monthly',
+    manager_id INT,
+    avatar VARCHAR(255),
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (manager_id) REFERENCES employees(id) ON DELETE SET NULL
+);
+
+-- Leave requests
+CREATE TABLE IF NOT EXISTS leave_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_id INT NOT NULL,
+    leave_type ENUM('annual','sick','unpaid','parental','bereavement','other') NOT NULL DEFAULT 'annual',
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    days_count DECIMAL(4,1) NOT NULL DEFAULT 1,
+    reason TEXT,
+    status ENUM('pending','approved','rejected','cancelled') DEFAULT 'pending',
+    reviewed_by INT,
+    reviewed_at DATETIME,
+    review_note TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+    FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Payroll runs
+CREATE TABLE IF NOT EXISTS payroll (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_id INT NOT NULL,
+    pay_period_start DATE NOT NULL,
+    pay_period_end DATE NOT NULL,
+    gross_amount DECIMAL(10,2) NOT NULL,
+    deductions DECIMAL(10,2) DEFAULT 0.00,
+    net_amount DECIMAL(10,2) NOT NULL,
+    currency VARCHAR(3) DEFAULT 'USD',
+    status ENUM('draft','processed','paid') DEFAULT 'draft',
+    payment_date DATE,
+    reference VARCHAR(100),
+    notes TEXT,
+    created_by INT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
