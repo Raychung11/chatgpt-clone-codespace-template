@@ -192,3 +192,58 @@ INSERT INTO settings (`key`, `value`) VALUES
 ('smtp_port', '587'),
 ('smtp_user', ''),
 ('smtp_pass', '');
+
+-- ============================================================
+-- Accounting Module Tables
+-- ============================================================
+
+-- Expenses (business cost tracking)
+CREATE TABLE IF NOT EXISTS expenses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    category ENUM('software','hosting','marketing','salaries','operations','tax','other') NOT NULL DEFAULT 'other',
+    description VARCHAR(255) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    currency VARCHAR(3) DEFAULT 'USD',
+    expense_date DATE NOT NULL,
+    vendor VARCHAR(150),
+    reference VARCHAR(100),
+    notes TEXT,
+    receipt_url VARCHAR(255),
+    created_by INT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Invoices (customer invoices)
+CREATE TABLE IF NOT EXISTS invoices (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    invoice_number VARCHAR(30) NOT NULL UNIQUE,
+    user_id INT NOT NULL,
+    subscription_id INT,
+    purchase_id INT,
+    status ENUM('draft','sent','paid','overdue','cancelled') DEFAULT 'draft',
+    issue_date DATE NOT NULL,
+    due_date DATE NOT NULL,
+    subtotal DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    tax_rate DECIMAL(5,2) DEFAULT 0.00,
+    tax_amount DECIMAL(10,2) DEFAULT 0.00,
+    total DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    currency VARCHAR(3) DEFAULT 'USD',
+    notes TEXT,
+    paid_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (subscription_id) REFERENCES subscriptions(id) ON DELETE SET NULL,
+    FOREIGN KEY (purchase_id) REFERENCES purchases(id) ON DELETE SET NULL
+);
+
+-- Invoice line items
+CREATE TABLE IF NOT EXISTS invoice_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    invoice_id INT NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    quantity DECIMAL(8,2) DEFAULT 1,
+    unit_price DECIMAL(10,2) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
+);

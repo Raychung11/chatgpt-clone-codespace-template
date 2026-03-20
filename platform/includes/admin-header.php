@@ -61,6 +61,21 @@ $adminPage = basename($_SERVER['PHP_SELF'], '.php');
             <i class="bi bi-graph-up"></i> Revenue
         </a>
 
+        <div class="nav-section-label mt-3">Accounting</div>
+        <a href="/admin/accounting.php" class="admin-nav-link <?= $adminPage === 'accounting' ? 'active' : '' ?>">
+            <i class="bi bi-calculator"></i> P&amp;L Overview
+        </a>
+        <a href="/admin/invoices.php" class="admin-nav-link <?= $adminPage === 'invoices' ? 'active' : '' ?>">
+            <i class="bi bi-receipt"></i> Invoices
+            <?php
+            $overdueInvoices = DB::fetch('SELECT COUNT(*) as n FROM invoices WHERE status="overdue" OR (status="sent" AND due_date < CURDATE())')['n'] ?? 0;
+            if ($overdueInvoices > 0) echo "<span class='badge bg-danger ms-auto'>$overdueInvoices</span>";
+            ?>
+        </a>
+        <a href="/admin/expenses.php" class="admin-nav-link <?= $adminPage === 'expenses' ? 'active' : '' ?>">
+            <i class="bi bi-credit-card"></i> Expenses
+        </a>
+
         <div class="nav-section-label mt-3">Settings</div>
         <a href="/admin/settings.php" class="admin-nav-link <?= $adminPage === 'settings' ? 'active' : '' ?>">
             <i class="bi bi-gear"></i> Settings
