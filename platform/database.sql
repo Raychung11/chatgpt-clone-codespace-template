@@ -1,0 +1,194 @@
+-- ============================================================
+-- AI101 Platform - Database Schema
+-- Compatible with MySQL 5.7+ / MariaDB 10.3+
+-- ============================================================
+
+CREATE DATABASE IF NOT EXISTS ai101_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE ai101_platform;
+
+-- Users (customers + admins)
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('admin','customer') DEFAULT 'customer',
+    company VARCHAR(150),
+    phone VARCHAR(30),
+    avatar VARCHAR(255),
+    stripe_customer_id VARCHAR(100),
+    email_verified TINYINT(1) DEFAULT 0,
+    email_token VARCHAR(64),
+    reset_token VARCHAR(64),
+    reset_expires DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Categories for products
+CREATE TABLE categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(80) NOT NULL,
+    slug VARCHAR(80) NOT NULL UNIQUE,
+    description TEXT,
+    icon VARCHAR(50) DEFAULT 'bi-grid',
+    color VARCHAR(20) DEFAULT '#6366f1',
+    sort_order INT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Products (the 101 AI agent offerings)
+CREATE TABLE products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    category_id INT,
+    name VARCHAR(150) NOT NULL,
+    slug VARCHAR(150) NOT NULL UNIQUE,
+    tagline VARCHAR(255),
+    description TEXT,
+    features JSON,
+    use_cases JSON,
+    thumbnail VARCHAR(255),
+    demo_url VARCHAR(255),
+    demo_type ENUM('iframe','link','built-in') DEFAULT 'link',
+    price_monthly DECIMAL(10,2) DEFAULT 0.00,
+    price_yearly DECIMAL(10,2) DEFAULT 0.00,
+    price_onetime DECIMAL(10,2) DEFAULT 0.00,
+    pricing_model ENUM('monthly','yearly','onetime','free') DEFAULT 'monthly',
+    stripe_price_monthly VARCHAR(100),
+    stripe_price_yearly VARCHAR(100),
+    badge VARCHAR(50),
+    is_featured TINYINT(1) DEFAULT 0,
+    is_active TINYINT(1) DEFAULT 1,
+    rating DECIMAL(3,2) DEFAULT 0.00,
+    review_count INT DEFAULT 0,
+    sales_count INT DEFAULT 0,
+    sort_order INT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+);
+
+-- Subscriptions (recurring)
+CREATE TABLE subscriptions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    stripe_subscription_id VARCHAR(100),
+    stripe_customer_id VARCHAR(100),
+    plan ENUM('monthly','yearly') DEFAULT 'monthly',
+    status ENUM('active','canceled','past_due','trialing','paused') DEFAULT 'active',
+    trial_ends_at DATETIME,
+    current_period_start DATETIME,
+    current_period_end DATETIME,
+    canceled_at DATETIME,
+    amount DECIMAL(10,2),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+-- One-time purchases
+CREATE TABLE purchases (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    stripe_payment_intent_id VARCHAR(100),
+    amount DECIMAL(10,2) NOT NULL,
+    currency VARCHAR(10) DEFAULT 'usd',
+    status ENUM('pending','completed','refunded','failed') DEFAULT 'pending',
+    invoice_number VARCHAR(50),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+-- Demo usage tracking
+CREATE TABLE demo_sessions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    user_id INT,
+    session_token VARCHAR(64),
+    ip_address VARCHAR(45),
+    started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ended_at DATETIME,
+    messages_count INT DEFAULT 0,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+-- Product reviews
+CREATE TABLE reviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    user_id INT NOT NULL,
+    rating TINYINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    title VARCHAR(150),
+    body TEXT,
+    is_approved TINYINT(1) DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Leads / contact inquiries
+CREATE TABLE leads (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    company VARCHAR(150),
+    phone VARCHAR(30),
+    product_interest INT,
+    message TEXT,
+    status ENUM('new','contacted','qualified','converted','lost') DEFAULT 'new',
+    source VARCHAR(80),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_interest) REFERENCES products(id) ON DELETE SET NULL
+);
+
+-- Site settings
+CREATE TABLE settings (
+    `key` VARCHAR(100) PRIMARY KEY,
+    `value` TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- ============================================================
+-- Seed Data
+-- ============================================================
+
+-- Admin user (password: Admin@1234 - change immediately!)
+INSERT INTO users (name, email, password, role, email_verified) VALUES
+('Admin', 'admin@ai101platform.com', '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 1);
+
+-- Categories
+INSERT INTO categories (name, slug, description, icon, color, sort_order) VALUES
+('Customer Service', 'customer-service', 'AI agents that handle customer support and engagement', 'bi-headset', '#6366f1', 1),
+('Sales & Marketing', 'sales-marketing', 'AI tools to boost sales and automate marketing tasks', 'bi-graph-up-arrow', '#f59e0b', 2),
+('HR & Recruitment', 'hr-recruitment', 'Automate hiring, onboarding, and employee management', 'bi-people', '#10b981', 3),
+('Finance & Accounting', 'finance-accounting', 'Smart tools for invoicing, bookkeeping, and reporting', 'bi-calculator', '#3b82f6', 4),
+('Operations', 'operations', 'Streamline workflows and day-to-day business operations', 'bi-gear', '#8b5cf6', 5),
+('Content & Writing', 'content-writing', 'AI-powered content creation and copywriting', 'bi-pencil-square', '#ec4899', 6),
+('E-Commerce', 'ecommerce', 'AI tools for online stores and product management', 'bi-bag', '#f97316', 7),
+('Legal & Compliance', 'legal-compliance', 'Document review, contracts, and compliance automation', 'bi-shield-check', '#14b8a6', 8);
+
+-- Sample products
+INSERT INTO products (category_id, name, slug, tagline, description, features, badge, is_featured, price_monthly, price_yearly, pricing_model, sort_order) VALUES
+(1, 'SmartSupport AI', 'smartsupport-ai', 'Never miss a customer query again', 'An intelligent customer support agent that handles FAQs, escalates complex issues, and learns from every interaction to improve over time.', '["24/7 automated responses","CRM integration","Sentiment analysis","Multi-language support","Human handoff","Analytics dashboard"]', 'Popular', 1, 79.00, 790.00, 'monthly', 1),
+(2, 'LeadHunter AI', 'leadhunter-ai', 'Find and qualify leads on autopilot', 'AI-powered lead generation and qualification engine that researches prospects, scores leads, and drafts personalised outreach emails.', '["Lead scoring","Email drafting","LinkedIn research","CRM sync","Campaign analytics","A/B testing"]', 'Hot', 1, 99.00, 990.00, 'monthly', 2),
+(3, 'HireBot AI', 'hirebot-ai', 'Screen candidates 10x faster', 'Automate resume screening, schedule interviews, and assess candidates with AI-powered scoring aligned to your job requirements.', '["Resume parsing","AI scoring","Interview scheduling","ATS integration","Bias detection","Reporting"]', 'New', 1, 89.00, 890.00, 'monthly', 3),
+(4, 'InvoiceGenius AI', 'invoicegenius-ai', 'Get paid faster with smart invoicing', 'Automatically generate invoices, chase late payments, reconcile accounts, and produce financial summaries with zero manual effort.', '["Auto invoicing","Payment reminders","Expense tracking","Multi-currency","Xero/QuickBooks sync","Tax reports"]', NULL, 0, 59.00, 590.00, 'monthly', 4),
+(6, 'ContentCraft AI', 'contentcraft-ai', 'Create on-brand content in seconds', 'Generate blog posts, social captions, email newsletters, and product descriptions that match your brand voice — ready to publish.', '["Blog generation","Social media posts","Email campaigns","SEO optimisation","Brand voice training","Plagiarism check"]', 'Popular', 1, 49.00, 490.00, 'monthly', 5),
+(7, 'ShopBot AI', 'shopbot-ai', 'Turn browsers into buyers automatically', 'An AI shopping assistant that answers product questions, recommends items, handles returns, and recovers abandoned carts.', '["Product Q&A","Upsell recommendations","Cart recovery","Returns handling","Shopify/WooCommerce","Analytics"]', NULL, 0, 69.00, 690.00, 'monthly', 6);
+
+-- Default settings
+INSERT INTO settings (`key`, `value`) VALUES
+('site_name', 'AI101 Platform'),
+('site_tagline', '101 AI Agents for Modern SMEs'),
+('stripe_mode', 'test'),
+('currency', 'USD'),
+('trial_days', '14'),
+('contact_email', 'hello@ai101platform.com'),
+('smtp_host', ''),
+('smtp_port', '587'),
+('smtp_user', ''),
+('smtp_pass', '');
