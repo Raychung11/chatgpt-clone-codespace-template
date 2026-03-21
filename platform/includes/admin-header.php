@@ -138,6 +138,9 @@ $adminPage = basename($_SERVER['PHP_SELF'], '.php');
             if ($lowStockBadge > 0) echo "<span class='badge bg-warning text-dark ms-auto'>$lowStockBadge</span>";
             ?>
         </a>
+        <a href="/admin/shipments.php" class="admin-nav-link <?= $adminPage === 'shipments' ? 'active' : '' ?>">
+            <i class="bi bi-truck"></i> Shipments
+        </a>
 
         <div class="nav-section-label mt-3">Settings</div>
         <a href="/admin/settings.php" class="admin-nav-link <?= $adminPage === 'settings' ? 'active' : '' ?>">
