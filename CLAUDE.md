@@ -22,7 +22,11 @@ platform/
 ├── admin/
 │   ├── index.php          # Admin overview dashboard
 │   ├── products.php       # CRUD for all 101 products
-│   └── clients.php        # Customer management
+│   ├── clients.php        # Customer management
+│   ├── hr.php             # HR dashboard (headcount, leave, payroll trend)
+│   ├── employees.php      # Employee CRUD (dept, salary, manager, type)
+│   ├── leave.php          # Leave request management + approve/reject
+│   └── payroll.php        # Payroll records + bulk generate
 ├── includes/
 │   ├── config.php         # ← ALL config lives here (DB, Stripe, etc.)
 │   ├── db.php             # DB class (PDO wrapper)
@@ -132,6 +136,27 @@ CURRENCY_SYMBOL    // "$"
 | `leads` | Contact form submissions |
 | `settings` | Key-value site settings |
 | `demo_sessions` | Demo usage tracking |
+| `employees` | Staff — dept, job_title, employment_type, salary, pay_cycle, manager_id, status |
+| `leave_requests` | Leave requests — type, dates, days_count, status (pending/approved/rejected/cancelled) |
+| `payroll` | Payroll records — gross, deductions, net, pay period, status (draft/processed/paid) |
+
+---
+
+## HR Module (added 2026-03-21)
+
+### Pages
+- **`admin/hr.php`** — dashboard: KPI cards, dept breakdown bars, 6-month payroll chart (Chart.js), pending leave widget with inline approve/reject, upcoming leave, recent hires
+- **`admin/employees.php`** — full CRUD, filters (dept/status/search), avatar initials, modal form, manager dropdown
+- **`admin/leave.php`** — create/approve/reject requests; approving a current-dated leave auto-sets employee status to `on_leave`; rejecting resets to `active`
+- **`admin/payroll.php`** — manual records + **Bulk Generate** (drafts from all active employees with salary for any period), mark-paid shortcut, gross/deductions/net summary footer
+
+### Sidebar
+`admin-header.php` has an **HR** section with a pending-leave badge on the Leave link.
+
+### Key patterns used
+- Payroll bulk-generate skips duplicates (checks period + employee_id)
+- `leave_requests.reviewed_by` → FK to `users.id`
+- `employees.manager_id` → self-referencing FK
 
 ---
 
