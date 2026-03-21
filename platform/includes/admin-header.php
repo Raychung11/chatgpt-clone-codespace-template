@@ -75,6 +75,23 @@ $adminPage = basename($_SERVER['PHP_SELF'], '.php');
         <a href="/admin/expenses.php" class="admin-nav-link <?= $adminPage === 'expenses' ? 'active' : '' ?>">
             <i class="bi bi-credit-card"></i> Expenses
         </a>
+        <a href="/admin/cash-flow.php" class="admin-nav-link <?= $adminPage === 'cash-flow' ? 'active' : '' ?>">
+            <i class="bi bi-arrow-left-right"></i> Cash Flow
+        </a>
+        <a href="/admin/debtor-ageing.php" class="admin-nav-link <?= $adminPage === 'debtor-ageing' ? 'active' : '' ?>">
+            <i class="bi bi-person-exclamation"></i> Debtor Ageing
+            <?php
+            $overdueDebtors = DB::fetch("SELECT COUNT(*) as n FROM invoices WHERE status IN ('sent','overdue') AND due_date < CURDATE()")['n'] ?? 0;
+            if ($overdueDebtors > 0) echo "<span class='badge bg-danger ms-auto'>$overdueDebtors</span>";
+            ?>
+        </a>
+        <a href="/admin/creditor-ageing.php" class="admin-nav-link <?= $adminPage === 'creditor-ageing' ? 'active' : '' ?>">
+            <i class="bi bi-building-exclamation"></i> Creditor Ageing
+            <?php
+            $overdueCreditors = DB::fetch("SELECT COUNT(*) as n FROM supplier_invoices WHERE status IN ('unpaid','partial','overdue') AND due_date < CURDATE()")['n'] ?? 0;
+            if ($overdueCreditors > 0) echo "<span class='badge bg-warning text-dark ms-auto'>$overdueCreditors</span>";
+            ?>
+        </a>
 
         <div class="nav-section-label mt-3">HR</div>
         <a href="/admin/hr.php" class="admin-nav-link <?= $adminPage === 'hr' ? 'active' : '' ?>">
@@ -149,6 +166,14 @@ $adminPage = basename($_SERVER['PHP_SELF'], '.php');
         </a>
         <a href="/admin/ai-shop-guide.php" class="admin-nav-link <?= $adminPage === 'ai-shop-guide' ? 'active' : '' ?>">
             <i class="bi bi-robot"></i> AI Shop Guide
+        </a>
+
+        <div class="nav-section-label mt-3">Outlets</div>
+        <a href="/admin/outlets.php" class="admin-nav-link <?= $adminPage === 'outlets' ? 'active' : '' ?>">
+            <i class="bi bi-shop"></i> Manage Outlets
+        </a>
+        <a href="/admin/outlet-reports.php" class="admin-nav-link <?= $adminPage === 'outlet-reports' ? 'active' : '' ?>">
+            <i class="bi bi-bar-chart-line"></i> Outlet Reports
         </a>
 
         <div class="nav-section-label mt-3">Warehouse</div>

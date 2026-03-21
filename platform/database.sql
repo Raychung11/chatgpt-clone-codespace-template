@@ -701,3 +701,122 @@ INSERT IGNORE INTO shoutouts (author_name, author_title, platform, content, rati
 -- Seed: AI Guide Config (if not already present)
 INSERT IGNORE INTO settings (setting_key, setting_value) VALUES
 ('ai_guide_config', '{"name":"Aria","emoji":"\ud83e\udd16","greeting":"Hi! I am Aria, your AI shopping guide. How can I help you today?","personality":"friendly","position":"bottom-right","color":"#6366f1","delay":3,"auto_open":["homepage"],"kb":{"products":"We offer 101 AI agents for SMEs covering HR, CRM, Marketing, Finance, and more.","pricing":"Plans start from $49\/month. Yearly plans save 20%. A 14-day free trial is available.","shipping":"All products are digital \u2014 instant access after purchase.","returns":"14-day money-back guarantee on all plans.","about":"AI101 is a marketplace of AI agents designed to help SMEs automate their business."}}');
+
+-- ============================================================
+-- Multi-Outlet Module (added 2026-03-21)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS outlets (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(200) NOT NULL,
+  code VARCHAR(20) UNIQUE NOT NULL,
+  address TEXT,
+  city VARCHAR(100),
+  state VARCHAR(100),
+  country VARCHAR(100) DEFAULT 'Malaysia',
+  phone VARCHAR(50),
+  email VARCHAR(200),
+  manager_name VARCHAR(200),
+  outlet_type ENUM('retail','kiosk','warehouse','online','franchise') DEFAULT 'retail',
+  status ENUM('active','inactive','temporarily_closed') DEFAULT 'active',
+  opening_date DATE,
+  operating_hours VARCHAR(200),
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS outlet_sales (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  outlet_id INT NOT NULL,
+  order_ref VARCHAR(100),
+  product_name VARCHAR(200),
+  amount DECIMAL(10,2) DEFAULT 0,
+  quantity INT DEFAULT 1,
+  sale_date DATE,
+  payment_method ENUM('cash','card','ewallet','bank_transfer') DEFAULT 'cash',
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (outlet_id) REFERENCES outlets(id) ON DELETE CASCADE
+);
+
+INSERT IGNORE INTO outlets (name, code, city, state, manager_name, outlet_type, status, opening_date, operating_hours) VALUES
+('Flagship Store KL', 'KL-01', 'Kuala Lumpur', 'WP KL', 'Ahmad Razif', 'retail', 'active', '2022-01-15', '10am–10pm Daily'),
+('Mid Valley Kiosk', 'MV-02', 'Kuala Lumpur', 'WP KL', 'Siti Nora', 'kiosk', 'active', '2022-06-01', '10am–10pm Daily'),
+('Penang Branch', 'PG-03', 'George Town', 'Penang', 'Lim Wei Jian', 'retail', 'active', '2023-03-10', '10am–9pm Daily'),
+('Online Store', 'ON-04', '-', '-', 'Raj Kumar', 'online', 'active', '2022-01-01', '24/7'),
+('Johor Bahru Franchise', 'JB-05', 'Johor Bahru', 'Johor', 'Hafiz Ismail', 'franchise', 'active', '2024-01-20', '10am–10pm Daily');
+
+-- ============================================================
+-- Cash Flow Module (added 2026-03-21)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS cash_accounts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(200) NOT NULL,
+  account_type ENUM('bank','cash','ewallet','petty_cash') DEFAULT 'bank',
+  bank_name VARCHAR(200),
+  account_number VARCHAR(100),
+  opening_balance DECIMAL(12,2) DEFAULT 0,
+  current_balance DECIMAL(12,2) DEFAULT 0,
+  currency VARCHAR(10) DEFAULT 'MYR',
+  status ENUM('active','inactive') DEFAULT 'active',
+  outlet_id INT DEFAULT NULL,
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS cash_transactions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  account_id INT NOT NULL,
+  transaction_type ENUM('inflow','outflow','transfer') DEFAULT 'inflow',
+  category VARCHAR(100),
+  description TEXT,
+  amount DECIMAL(12,2) NOT NULL,
+  reference VARCHAR(200),
+  transaction_date DATE NOT NULL,
+  outlet_id INT DEFAULT NULL,
+  reconciled TINYINT(1) DEFAULT 0,
+  created_by INT,
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (account_id) REFERENCES cash_accounts(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+INSERT IGNORE INTO cash_accounts (name, account_type, bank_name, account_number, opening_balance, current_balance) VALUES
+('Maybank Current', 'bank', 'Maybank', '5642-1234-5678', 50000.00, 87350.00),
+('CIMB Savings', 'bank', 'CIMB', '7001-9876-5432', 20000.00, 34200.00),
+('Petty Cash - HQ', 'petty_cash', NULL, NULL, 2000.00, 850.00),
+('Touch n Go eWallet', 'ewallet', NULL, NULL, 500.00, 1200.00);
+
+-- ============================================================
+-- Debtor & Creditor Ageing (added 2026-03-21)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS debtor_notes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  invoice_id INT NOT NULL,
+  note TEXT NOT NULL,
+  follow_up_date DATE,
+  created_by INT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS supplier_invoices (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  supplier_id INT NOT NULL,
+  po_id INT DEFAULT NULL,
+  invoice_number VARCHAR(100) NOT NULL,
+  invoice_date DATE NOT NULL,
+  due_date DATE NOT NULL,
+  amount DECIMAL(12,2) NOT NULL,
+  paid_amount DECIMAL(12,2) DEFAULT 0,
+  status ENUM('unpaid','partial','paid','disputed','overdue') DEFAULT 'unpaid',
+  payment_terms INT DEFAULT 30,
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE CASCADE,
+  FOREIGN KEY (po_id) REFERENCES purchase_orders(id) ON DELETE SET NULL
+);
