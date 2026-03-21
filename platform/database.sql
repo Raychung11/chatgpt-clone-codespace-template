@@ -484,3 +484,103 @@ CREATE TABLE IF NOT EXISTS social_posts (
     FOREIGN KEY (campaign_id) REFERENCES email_campaigns(id) ON DELETE SET NULL,
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
+
+-- ============================================================
+-- Warehouse & Logistics Tables
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS warehouses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    code VARCHAR(20) NOT NULL UNIQUE,
+    address TEXT,
+    city VARCHAR(100),
+    country VARCHAR(100) DEFAULT 'US',
+    manager VARCHAR(100),
+    phone VARCHAR(30),
+    capacity INT COMMENT 'max storage units',
+    status ENUM('active','inactive') DEFAULT 'active',
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS inventory_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sku VARCHAR(80) NOT NULL UNIQUE,
+    name VARCHAR(200) NOT NULL,
+    category VARCHAR(100),
+    description TEXT,
+    warehouse_id INT,
+    bin_location VARCHAR(50) COMMENT 'e.g. A-12-3',
+    qty_on_hand INT DEFAULT 0,
+    qty_reserved INT DEFAULT 0,
+    reorder_level INT DEFAULT 10,
+    reorder_qty INT DEFAULT 50,
+    unit_cost DECIMAL(10,2) DEFAULT 0.00,
+    unit_price DECIMAL(10,2) DEFAULT 0.00,
+    supplier_id INT,
+    status ENUM('active','inactive','discontinued') DEFAULT 'active',
+    image_url VARCHAR(500),
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (warehouse_id) REFERENCES warehouses(id) ON DELETE SET NULL,
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS stock_movements (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    item_id INT NOT NULL,
+    type ENUM('inbound','outbound','adjustment','transfer') NOT NULL,
+    qty INT NOT NULL COMMENT 'positive = in, negative = out',
+    qty_before INT DEFAULT 0,
+    qty_after INT DEFAULT 0,
+    reference VARCHAR(100) COMMENT 'PO number, shipment number, etc.',
+    reason VARCHAR(255),
+    notes TEXT,
+    created_by INT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (item_id) REFERENCES inventory_items(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS shipments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    shipment_number VARCHAR(50) NOT NULL UNIQUE,
+    carrier VARCHAR(100),
+    tracking_number VARCHAR(150),
+    status ENUM('pending','dispatched','in_transit','out_for_delivery','delivered','returned','cancelled') DEFAULT 'pending',
+    direction ENUM('outbound','inbound') DEFAULT 'outbound',
+    origin_name VARCHAR(150),
+    origin_address TEXT,
+    dest_name VARCHAR(150),
+    dest_address TEXT,
+    dest_city VARCHAR(100),
+    dest_country VARCHAR(100),
+    dispatch_date DATE,
+    est_delivery DATE,
+    actual_delivery DATE,
+    weight DECIMAL(8,2) COMMENT 'kg',
+    dimensions VARCHAR(100) COMMENT 'LxWxH cm',
+    shipping_cost DECIMAL(10,2) DEFAULT 0,
+    insurance_value DECIMAL(10,2) DEFAULT 0,
+    notes TEXT,
+    created_by INT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS shipment_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    shipment_id INT NOT NULL,
+    item_id INT,
+    description VARCHAR(255) NOT NULL,
+    sku VARCHAR(80),
+    quantity INT DEFAULT 1,
+    unit_value DECIMAL(10,2) DEFAULT 0,
+    total_value DECIMAL(12,2) DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (shipment_id) REFERENCES shipments(id) ON DELETE CASCADE,
+    FOREIGN KEY (item_id) REFERENCES inventory_items(id) ON DELETE SET NULL
+);
