@@ -127,6 +127,30 @@ $adminPage = basename($_SERVER['PHP_SELF'], '.php');
             <i class="bi bi-share"></i> Social Posts
         </a>
 
+        <div class="nav-section-label mt-3">Digital Marketing</div>
+        <a href="/admin/promotions.php" class="admin-nav-link <?= $adminPage === 'promotions' ? 'active' : '' ?>">
+            <i class="bi bi-tag"></i> Promotions
+        </a>
+        <a href="/admin/vouchers.php" class="admin-nav-link <?= $adminPage === 'vouchers' ? 'active' : '' ?>">
+            <i class="bi bi-ticket-perforated"></i> Vouchers
+        </a>
+        <a href="/admin/sales.php" class="admin-nav-link <?= $adminPage === 'sales' ? 'active' : '' ?>">
+            <i class="bi bi-graph-up-arrow"></i> Sales Analytics
+        </a>
+        <a href="/admin/shoutouts.php" class="admin-nav-link <?= $adminPage === 'shoutouts' ? 'active' : '' ?>">
+            <i class="bi bi-megaphone"></i> Shoutouts
+            <?php
+            $pendingShoutouts = DB::fetch('SELECT COUNT(*) as n FROM shoutouts WHERE status="pending"')['n'] ?? 0;
+            if ($pendingShoutouts > 0) echo "<span class='badge bg-warning text-dark ms-auto'>$pendingShoutouts</span>";
+            ?>
+        </a>
+        <a href="/admin/behavior-tracking.php" class="admin-nav-link <?= $adminPage === 'behavior-tracking' ? 'active' : '' ?>">
+            <i class="bi bi-activity"></i> Behavior Tracking
+        </a>
+        <a href="/admin/ai-shop-guide.php" class="admin-nav-link <?= $adminPage === 'ai-shop-guide' ? 'active' : '' ?>">
+            <i class="bi bi-robot"></i> AI Shop Guide
+        </a>
+
         <div class="nav-section-label mt-3">Warehouse</div>
         <a href="/admin/warehouse.php" class="admin-nav-link <?= $adminPage === 'warehouse' ? 'active' : '' ?>">
             <i class="bi bi-building"></i> Warehouses

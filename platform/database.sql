@@ -594,3 +594,110 @@ INSERT IGNORE INTO settings (`key`, `value`) VALUES
 ('page_sections_order', '["hero","categories","featured","how_it_works","pricing","testimonials","cta","contact"]'),
 ('page_sections_visibility', '{"hero":1,"categories":1,"featured":1,"how_it_works":1,"pricing":1,"testimonials":1,"cta":1,"contact":1}'),
 ('nav_items', '[{"label":"Home","url":"\/"},{"label":"Marketplace","url":"\/marketplace.php"},{"label":"Pricing","url":"\/pricing.php"},{"label":"About","url":"\/about.php"},{"label":"Contact","url":"\/contact.php"}]');
+
+-- ============================================================
+-- Digital Marketing Module (added 2026-03-21)
+-- ============================================================
+
+-- Promotions
+CREATE TABLE IF NOT EXISTS promotions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(200) NOT NULL,
+  description TEXT,
+  type ENUM('percentage','fixed','bogo','free_shipping') DEFAULT 'percentage',
+  discount_value DECIMAL(10,2) DEFAULT 0,
+  min_order_value DECIMAL(10,2) DEFAULT 0,
+  max_uses INT DEFAULT NULL,
+  used_count INT DEFAULT 0,
+  start_date DATE,
+  end_date DATE,
+  status ENUM('active','scheduled','expired','paused') DEFAULT 'active',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Vouchers
+CREATE TABLE IF NOT EXISTS vouchers (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(50) UNIQUE NOT NULL,
+  type ENUM('percentage','fixed','free_shipping') DEFAULT 'percentage',
+  value DECIMAL(10,2) DEFAULT 0,
+  min_order DECIMAL(10,2) DEFAULT 0,
+  usage_limit INT DEFAULT 1,
+  used_count INT DEFAULT 0,
+  customer_id INT DEFAULT NULL,
+  expires_at DATE DEFAULT NULL,
+  status ENUM('active','expired','disabled') DEFAULT 'active',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Shoutouts / Testimonials
+CREATE TABLE IF NOT EXISTS shoutouts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  author_name VARCHAR(200) NOT NULL,
+  author_title VARCHAR(200),
+  author_avatar_url VARCHAR(500),
+  platform ENUM('twitter','linkedin','instagram','facebook','email','other') DEFAULT 'other',
+  content TEXT NOT NULL,
+  rating TINYINT DEFAULT 5,
+  featured TINYINT(1) DEFAULT 0,
+  status ENUM('pending','published','rejected') DEFAULT 'pending',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Behavior Events
+CREATE TABLE IF NOT EXISTS behavior_events (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  session_id VARCHAR(100),
+  user_id INT DEFAULT NULL,
+  event_type VARCHAR(50),
+  page_url VARCHAR(500),
+  referrer VARCHAR(500),
+  duration_seconds INT DEFAULT 0,
+  converted TINYINT(1) DEFAULT 0,
+  user_agent VARCHAR(500),
+  ip_address VARCHAR(45),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- AI Guide Conversations
+CREATE TABLE IF NOT EXISTS ai_guide_conversations (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  session_id VARCHAR(100),
+  user_id INT DEFAULT NULL,
+  question TEXT,
+  answer TEXT,
+  answered TINYINT(1) DEFAULT 1,
+  satisfaction TINYINT DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Seed: Promotions
+INSERT IGNORE INTO promotions (name, description, type, discount_value, min_order_value, max_uses, start_date, end_date, status) VALUES
+('Summer Sale', '20% off all AI agents', 'percentage', 20, 0, 500, '2026-06-01', '2026-08-31', 'scheduled'),
+('New Customer Discount', '$10 off first order', 'fixed', 10, 49, 1000, '2026-01-01', '2026-12-31', 'active'),
+('Buy One Get One', 'BOGO on selected plans', 'bogo', 0, 99, 200, '2026-03-01', '2026-04-30', 'active'),
+('March Madness', '15% off all monthly plans', 'percentage', 15, 0, 300, '2026-03-01', '2026-03-31', 'active'),
+('Enterprise Free Ship', 'Free shipping on enterprise orders', 'free_shipping', 0, 299, NULL, '2026-01-01', '2026-12-31', 'active');
+
+-- Seed: Vouchers
+INSERT IGNORE INTO vouchers (code, type, value, min_order, usage_limit, expires_at, status) VALUES
+('WELCOME20', 'percentage', 20, 0, 1000, '2026-12-31', 'active'),
+('SAVE10NOW', 'fixed', 10, 49, 500, '2026-06-30', 'active'),
+('FREESHIP99', 'free_shipping', 0, 99, 300, '2026-09-30', 'active'),
+('VIP30OFF', 'percentage', 30, 199, 50, '2026-06-30', 'active'),
+('FIRSTBUY15', 'percentage', 15, 0, 999, '2026-12-31', 'active');
+
+-- Seed: Shoutouts
+INSERT IGNORE INTO shoutouts (author_name, author_title, platform, content, rating, featured, status) VALUES
+('Sarah Chen', 'Marketing Director at TechCorp', 'linkedin', 'AI101 transformed our marketing workflow. The AI agents handle 80% of our repetitive tasks now!', 5, 1, 'published'),
+('Marcus Williams', 'SME Owner', 'twitter', 'Honestly the best investment for my small business. The HR AI alone saves me 10 hours a week.', 5, 1, 'published'),
+('Priya Patel', 'Operations Manager', 'email', 'The CRM agent is incredibly smart. It predicted our biggest client was about to churn and we saved the deal.', 4, 0, 'published'),
+('James O''Brien', 'Founder & CEO, StartupLab', 'linkedin', 'We replaced 3 SaaS tools with AI101 agents. Better results, half the cost. Absolutely recommend.', 5, 1, 'published'),
+('Anna Schmidt', 'HR Manager', 'email', 'Leave management used to take me hours every week. The AI HR module does it in minutes. Game changer!', 5, 0, 'pending');
+
+-- Seed: AI Guide Config (if not already present)
+INSERT IGNORE INTO settings (setting_key, setting_value) VALUES
+('ai_guide_config', '{"name":"Aria","emoji":"\ud83e\udd16","greeting":"Hi! I am Aria, your AI shopping guide. How can I help you today?","personality":"friendly","position":"bottom-right","color":"#6366f1","delay":3,"auto_open":["homepage"],"kb":{"products":"We offer 101 AI agents for SMEs covering HR, CRM, Marketing, Finance, and more.","pricing":"Plans start from $49\/month. Yearly plans save 20%. A 14-day free trial is available.","shipping":"All products are digital \u2014 instant access after purchase.","returns":"14-day money-back guarantee on all plans.","about":"AI101 is a marketplace of AI agents designed to help SMEs automate their business."}}');
