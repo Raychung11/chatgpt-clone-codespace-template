@@ -127,6 +127,18 @@ $adminPage = basename($_SERVER['PHP_SELF'], '.php');
             <i class="bi bi-share"></i> Social Posts
         </a>
 
+        <div class="nav-section-label mt-3">Warehouse</div>
+        <a href="/admin/warehouse.php" class="admin-nav-link <?= $adminPage === 'warehouse' ? 'active' : '' ?>">
+            <i class="bi bi-building"></i> Warehouses
+        </a>
+        <a href="/admin/inventory.php" class="admin-nav-link <?= $adminPage === 'inventory' ? 'active' : '' ?>">
+            <i class="bi bi-box-seam"></i> Inventory
+            <?php
+            $lowStockBadge = DB::fetch("SELECT COUNT(*) as n FROM inventory_items WHERE qty_on_hand <= reorder_level AND status='active'")['n'] ?? 0;
+            if ($lowStockBadge > 0) echo "<span class='badge bg-warning text-dark ms-auto'>$lowStockBadge</span>";
+            ?>
+        </a>
+
         <div class="nav-section-label mt-3">Settings</div>
         <a href="/admin/settings.php" class="admin-nav-link <?= $adminPage === 'settings' ? 'active' : '' ?>">
             <i class="bi bi-gear"></i> Settings
