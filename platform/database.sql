@@ -312,3 +312,175 @@ CREATE TABLE IF NOT EXISTS payroll (
     FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
+
+-- ============================================================
+-- CRM Module Tables
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS crm_contacts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    email VARCHAR(150),
+    phone VARCHAR(30),
+    company VARCHAR(150),
+    job_title VARCHAR(150),
+    source ENUM('website','referral','social','cold_outreach','event','other') DEFAULT 'website',
+    status ENUM('lead','prospect','customer','churned','blocked') DEFAULT 'lead',
+    owner_id INT,
+    tags VARCHAR(255),
+    notes TEXT,
+    last_contacted_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS crm_deals (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    contact_id INT,
+    value DECIMAL(12,2) DEFAULT 0,
+    currency VARCHAR(3) DEFAULT 'USD',
+    stage ENUM('lead','qualified','proposal','negotiation','closed_won','closed_lost') DEFAULT 'lead',
+    probability INT DEFAULT 0 COMMENT 'Percent 0-100',
+    expected_close DATE,
+    owner_id INT,
+    notes TEXT,
+    lost_reason VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (contact_id) REFERENCES crm_contacts(id) ON DELETE SET NULL,
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS crm_activities (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    contact_id INT,
+    deal_id INT,
+    type ENUM('call','email','meeting','task','note') NOT NULL DEFAULT 'note',
+    subject VARCHAR(255) NOT NULL,
+    body TEXT,
+    status ENUM('planned','done','cancelled') DEFAULT 'planned',
+    due_at DATETIME,
+    done_at DATETIME,
+    created_by INT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (contact_id) REFERENCES crm_contacts(id) ON DELETE CASCADE,
+    FOREIGN KEY (deal_id) REFERENCES crm_deals(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- ============================================================
+-- Supplier Module Tables
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS suppliers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    contact_name VARCHAR(150),
+    email VARCHAR(150),
+    phone VARCHAR(30),
+    website VARCHAR(255),
+    country VARCHAR(100),
+    category VARCHAR(100),
+    payment_terms VARCHAR(100),
+    status ENUM('active','inactive','blacklisted') DEFAULT 'active',
+    rating TINYINT DEFAULT NULL COMMENT '1-5 stars',
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS purchase_orders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    po_number VARCHAR(50) NOT NULL UNIQUE,
+    supplier_id INT NOT NULL,
+    status ENUM('draft','sent','confirmed','received','cancelled') DEFAULT 'draft',
+    order_date DATE NOT NULL,
+    expected_date DATE,
+    received_date DATE,
+    subtotal DECIMAL(12,2) DEFAULT 0,
+    tax DECIMAL(12,2) DEFAULT 0,
+    total DECIMAL(12,2) DEFAULT 0,
+    currency VARCHAR(3) DEFAULT 'USD',
+    notes TEXT,
+    created_by INT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS purchase_order_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    po_id INT NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    quantity DECIMAL(10,2) DEFAULT 1,
+    unit_price DECIMAL(10,2) DEFAULT 0,
+    total DECIMAL(12,2) DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (po_id) REFERENCES purchase_orders(id) ON DELETE CASCADE
+);
+
+-- ============================================================
+-- Marketing Automation Tables
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS email_lists (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS email_subscribers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    list_id INT NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    status ENUM('subscribed','unsubscribed','bounced','complained') DEFAULT 'subscribed',
+    subscribed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    unsubscribed_at DATETIME,
+    UNIQUE KEY uq_list_email (list_id, email),
+    FOREIGN KEY (list_id) REFERENCES email_lists(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS email_campaigns (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    preview_text VARCHAR(255),
+    from_name VARCHAR(100),
+    from_email VARCHAR(150),
+    list_id INT,
+    body_html TEXT,
+    status ENUM('draft','scheduled','sending','sent','paused') DEFAULT 'draft',
+    scheduled_at DATETIME,
+    sent_at DATETIME,
+    total_sent INT DEFAULT 0,
+    total_opens INT DEFAULT 0,
+    total_clicks INT DEFAULT 0,
+    total_unsubscribes INT DEFAULT 0,
+    created_by INT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (list_id) REFERENCES email_lists(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS social_posts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    platform SET('twitter','linkedin','facebook','instagram') NOT NULL,
+    content TEXT NOT NULL,
+    media_url VARCHAR(500),
+    hashtags VARCHAR(500),
+    status ENUM('draft','scheduled','published','failed') DEFAULT 'draft',
+    scheduled_at DATETIME,
+    published_at DATETIME,
+    campaign_id INT,
+    impressions INT DEFAULT 0,
+    clicks INT DEFAULT 0,
+    engagement INT DEFAULT 0,
+    created_by INT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (campaign_id) REFERENCES email_campaigns(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
