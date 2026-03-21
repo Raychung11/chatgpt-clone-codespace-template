@@ -139,7 +139,11 @@ $adminPage = basename($_SERVER['PHP_SELF'], '.php');
             ?>
         </a>
         <a href="/admin/shipments.php" class="admin-nav-link <?= $adminPage === 'shipments' ? 'active' : '' ?>">
-            <i class="bi bi-truck"></i> Shipments
+            <i class="bi bi-truck-front"></i> Shipments
+            <?php
+            $overdueShipments = DB::fetch("SELECT COUNT(*) as n FROM shipments WHERE est_delivery < CURDATE() AND status NOT IN ('delivered','cancelled','returned')")['n'] ?? 0;
+            if ($overdueShipments > 0) echo "<span class='badge bg-danger ms-auto'>$overdueShipments</span>";
+            ?>
         </a>
 
         <div class="nav-section-label mt-3">Settings</div>
