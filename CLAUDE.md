@@ -26,7 +26,16 @@ platform/
 │   ├── hr.php             # HR dashboard (headcount, leave, payroll trend)
 │   ├── employees.php      # Employee CRUD (dept, salary, manager, type)
 │   ├── leave.php          # Leave request management + approve/reject
-│   └── payroll.php        # Payroll records + bulk generate
+│   ├── payroll.php        # Payroll records + bulk generate
+│   ├── crm.php            # CRM dashboard (pipeline, activities, tasks)
+│   ├── crm-contacts.php   # Contact CRUD (status, source, owner, tags)
+│   ├── crm-deals.php      # Deal pipeline - kanban + table, stage-move
+│   ├── suppliers.php      # Supplier CRUD (rating, category, PO links)
+│   ├── purchase-orders.php# PO management (line items, status advance, auto PO#)
+│   ├── marketing.php      # Marketing dashboard (campaign stats, social calendar)
+│   ├── email-campaigns.php# Email campaign CRUD + duplicate action
+│   ├── email-subscribers.php # List + subscriber management, bulk CSV import
+│   └── social-posts.php   # Social post scheduler - calendar + list view
 ├── includes/
 │   ├── config.php         # ← ALL config lives here (DB, Stripe, etc.)
 │   ├── db.php             # DB class (PDO wrapper)
@@ -139,6 +148,16 @@ CURRENCY_SYMBOL    // "$"
 | `employees` | Staff — dept, job_title, employment_type, salary, pay_cycle, manager_id, status |
 | `leave_requests` | Leave requests — type, dates, days_count, status (pending/approved/rejected/cancelled) |
 | `payroll` | Payroll records — gross, deductions, net, pay period, status (draft/processed/paid) |
+| `crm_contacts` | CRM contacts — source, status (lead/prospect/customer/churned/blocked), owner_id, tags |
+| `crm_deals` | Deals — stage, value, probability, expected_close, contact_id, lost_reason |
+| `crm_activities` | Activities — type (call/email/meeting/task/note), status, due_at, contact_id, deal_id |
+| `suppliers` | Supplier records — rating, payment_terms, category, status |
+| `purchase_orders` | POs — po_number, status (draft/sent/confirmed/received/cancelled), line items via FK |
+| `purchase_order_items` | PO line items — description, qty, unit_price, total |
+| `email_lists` | Subscriber lists |
+| `email_subscribers` | Subscribers — status (subscribed/unsubscribed/bounced/complained), list_id |
+| `email_campaigns` | Email campaigns — subject, body_html, status, scheduled_at, open/click stats |
+| `social_posts` | Social posts — platform SET, content, scheduled_at, impressions/clicks/engagement |
 
 ---
 
@@ -157,6 +176,30 @@ CURRENCY_SYMBOL    // "$"
 - Payroll bulk-generate skips duplicates (checks period + employee_id)
 - `leave_requests.reviewed_by` → FK to `users.id`
 - `employees.manager_id` → self-referencing FK
+
+---
+
+## CRM Module (added 2026-03-21)
+
+- **`admin/crm.php`** — KPIs, pipeline funnel bars, Chart.js monthly won-deals chart, recent activities, upcoming tasks with mark-done
+- **`admin/crm-contacts.php`** — contact CRUD, status/source filter + search, "View Deals" link per contact
+- **`admin/crm-deals.php`** — kanban + table toggle, stage-move select on cards, probability auto-suggest by stage, `lost_reason` field, `?contact=` filter
+
+---
+
+## Supplier Module (added 2026-03-21)
+
+- **`admin/suppliers.php`** — CRUD with star rating, category/status filter, KPI row, "View POs" link
+- **`admin/purchase-orders.php`** — PO header + dynamic line items, auto PO# (`PO-YYYYMM-XXXX`), status advance buttons (Draft→Send→Confirm→Received), overdue date highlight, subtotal/tax/total auto-calc
+
+---
+
+## Marketing Automation Module (added 2026-03-21)
+
+- **`admin/marketing.php`** — subscriber KPIs, campaigns-per-month chart, email performance table, 7-day social calendar, platform breakdown pills
+- **`admin/email-campaigns.php`** — campaign CRUD, duplicate action, open/click rate bars, `scheduled_at` shown only when status=scheduled
+- **`admin/email-subscribers.php`** — list management panel + subscriber table, bulk CSV import (skips duplicates), single-add modal, unsubscribe action
+- **`admin/social-posts.php`** — month calendar grid + list toggle, multi-platform checkboxes, dynamic char counter (most restrictive limit), optional campaign link, `?action=new` auto-opens modal
 
 ---
 

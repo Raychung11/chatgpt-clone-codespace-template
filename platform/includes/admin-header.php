@@ -94,6 +94,39 @@ $adminPage = basename($_SERVER['PHP_SELF'], '.php');
             <i class="bi bi-cash-stack"></i> Payroll
         </a>
 
+        <div class="nav-section-label mt-3">CRM</div>
+        <a href="/admin/crm.php" class="admin-nav-link <?= $adminPage === 'crm' ? 'active' : '' ?>">
+            <i class="bi bi-diagram-3"></i> CRM Overview
+        </a>
+        <a href="/admin/crm-contacts.php" class="admin-nav-link <?= $adminPage === 'crm-contacts' ? 'active' : '' ?>">
+            <i class="bi bi-person-lines-fill"></i> Contacts
+        </a>
+        <a href="/admin/crm-deals.php" class="admin-nav-link <?= $adminPage === 'crm-deals' ? 'active' : '' ?>">
+            <i class="bi bi-kanban"></i> Deals
+        </a>
+
+        <div class="nav-section-label mt-3">Suppliers</div>
+        <a href="/admin/suppliers.php" class="admin-nav-link <?= $adminPage === 'suppliers' ? 'active' : '' ?>">
+            <i class="bi bi-truck"></i> Suppliers
+        </a>
+        <a href="/admin/purchase-orders.php" class="admin-nav-link <?= $adminPage === 'purchase-orders' ? 'active' : '' ?>">
+            <i class="bi bi-file-earmark-text"></i> Purchase Orders
+        </a>
+
+        <div class="nav-section-label mt-3">Marketing</div>
+        <a href="/admin/marketing.php" class="admin-nav-link <?= $adminPage === 'marketing' ? 'active' : '' ?>">
+            <i class="bi bi-megaphone"></i> Overview
+        </a>
+        <a href="/admin/email-campaigns.php" class="admin-nav-link <?= $adminPage === 'email-campaigns' ? 'active' : '' ?>">
+            <i class="bi bi-envelope-paper"></i> Email Campaigns
+        </a>
+        <a href="/admin/email-subscribers.php" class="admin-nav-link <?= $adminPage === 'email-subscribers' ? 'active' : '' ?>">
+            <i class="bi bi-person-check"></i> Subscribers
+        </a>
+        <a href="/admin/social-posts.php" class="admin-nav-link <?= $adminPage === 'social-posts' ? 'active' : '' ?>">
+            <i class="bi bi-share"></i> Social Posts
+        </a>
+
         <div class="nav-section-label mt-3">Settings</div>
         <a href="/admin/settings.php" class="admin-nav-link <?= $adminPage === 'settings' ? 'active' : '' ?>">
             <i class="bi bi-gear"></i> Settings
