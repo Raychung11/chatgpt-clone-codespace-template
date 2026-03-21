@@ -3,6 +3,15 @@ require_once __DIR__ . '/auth.php';
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 $isLoggedIn  = Auth::check();
 $isAdmin     = Auth::isAdmin();
+/* Load active theme from settings */
+$activeTheme = 'dark';
+try {
+    $themeSetting = DB::fetch("SELECT value FROM settings WHERE `key`='active_theme'");
+    if ($themeSetting && $themeSetting['value']) {
+        $allowed = ['dark','bright','modern','zen','punk'];
+        $activeTheme = in_array($themeSetting['value'], $allowed) ? $themeSetting['value'] : 'dark';
+    }
+} catch (Exception $e) { /* fallback to dark */ }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -19,9 +28,11 @@ $isAdmin     = Auth::isAdmin();
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
     <link href="/assets/css/style.css" rel="stylesheet">
+    <!-- Theme System -->
+    <link href="/assets/css/themes.css" rel="stylesheet">
     <?= isset($extraHead) ? $extraHead : '' ?>
 </head>
-<body>
+<body class="theme-<?= htmlspecialchars($activeTheme) ?>">
 
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark sticky-top" id="mainNav">
@@ -41,10 +52,13 @@ $isAdmin     = Auth::isAdmin();
                     <a class="nav-link <?= $currentPage === 'marketplace' ? 'active' : '' ?>" href="/marketplace.php">Marketplace</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#pricing">Pricing</a>
+                    <a class="nav-link <?= $currentPage === 'pricing' ? 'active' : '' ?>" href="/pricing.php">Pricing</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#contact">Contact</a>
+                    <a class="nav-link <?= $currentPage === 'about' ? 'active' : '' ?>" href="/about.php">About</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= $currentPage === 'contact' ? 'active' : '' ?>" href="/contact.php">Contact</a>
                 </li>
             </ul>
             <div class="d-flex gap-2 align-items-center">
@@ -57,10 +71,21 @@ $isAdmin     = Auth::isAdmin();
                     <a href="/dashboard.php" class="btn btn-sm btn-outline-light">
                         <i class="bi bi-grid me-1"></i>Dashboard
                     </a>
+                    <a href="/cart.php" class="btn btn-sm btn-outline-light position-relative" title="Cart">
+                        <i class="bi bi-cart3"></i>
+                        <?php
+                        $cartCount = !empty($_SESSION['cart']) ? array_sum($_SESSION['cart']) : 0;
+                        if ($cartCount > 0): ?>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary" style="font-size:9px;"><?= $cartCount ?></span>
+                        <?php endif; ?>
+                    </a>
                     <a href="/logout.php" class="btn btn-sm btn-danger">
                         <i class="bi bi-box-arrow-right me-1"></i>Logout
                     </a>
                 <?php else: ?>
+                    <a href="/cart.php" class="btn btn-sm btn-outline-light position-relative" title="Cart">
+                        <i class="bi bi-cart3"></i>
+                    </a>
                     <a href="/login.php" class="btn btn-sm btn-outline-light">Login</a>
                     <a href="/register.php" class="btn btn-sm btn-primary">Start Free Trial</a>
                 <?php endif; ?>

@@ -584,3 +584,13 @@ CREATE TABLE IF NOT EXISTS shipment_items (
     FOREIGN KEY (shipment_id) REFERENCES shipments(id) ON DELETE CASCADE,
     FOREIGN KEY (item_id) REFERENCES inventory_items(id) ON DELETE SET NULL
 );
+
+-- ============================================================
+-- Homepage Builder Settings (added 2026-03-21)
+-- ============================================================
+
+INSERT IGNORE INTO settings (`key`, `value`) VALUES
+('active_theme', 'dark'),
+('page_sections_order', '["hero","categories","featured","how_it_works","pricing","testimonials","cta","contact"]'),
+('page_sections_visibility', '{"hero":1,"categories":1,"featured":1,"how_it_works":1,"pricing":1,"testimonials":1,"cta":1,"contact":1}'),
+('nav_items', '[{"label":"Home","url":"\/"},{"label":"Marketplace","url":"\/marketplace.php"},{"label":"Pricing","url":"\/pricing.php"},{"label":"About","url":"\/about.php"},{"label":"Contact","url":"\/contact.php"}]');

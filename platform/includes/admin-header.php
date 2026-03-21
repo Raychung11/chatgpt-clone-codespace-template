@@ -146,6 +146,11 @@ $adminPage = basename($_SERVER['PHP_SELF'], '.php');
             ?>
         </a>
 
+        <div class="nav-section-label mt-3">Website</div>
+        <a href="/admin/homepage-builder.php" class="admin-nav-link <?= $adminPage === 'homepage-builder' ? 'active' : '' ?>">
+            <i class="bi bi-layout-text-window-reverse"></i> Homepage Builder
+        </a>
+
         <div class="nav-section-label mt-3">Settings</div>
         <a href="/admin/settings.php" class="admin-nav-link <?= $adminPage === 'settings' ? 'active' : '' ?>">
             <i class="bi bi-gear"></i> Settings
