@@ -29,6 +29,7 @@ with st.sidebar:
     st.page_link("pages/5_Admin_Dashboard.py",      label="🛡️  Admin Dashboard")
     st.page_link("pages/6_Match_Engine.py",         label="🎯  Match Engine")
     st.page_link("pages/7_Promo_Generator.py",      label="📣  Promo Generator")
+    st.page_link("pages/8_Monthly_Report.py",       label="📊  Monthly Report")
     st.divider()
     st.caption("Generate ready-to-share promotional content for WhatsApp, Facebook, and Instagram.")
 
