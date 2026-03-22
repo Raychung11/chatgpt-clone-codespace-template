@@ -166,6 +166,44 @@ if submitted:
                 )
                 st.switch_page("pages/1_AI_Assistant.py")
 
+# ── AI Price Advisor ──────────────────────────────────────────────────────────
+st.divider()
+st.markdown("#### 💰 AI Price Advisor")
+st.caption("Not sure what to charge? Let AI suggest a fair market rate based on your category, location, and experience.")
+
+with st.expander("✨ Get AI pricing suggestion"):
+    p_category = st.selectbox("Service category", CATEGORIES, key="price_cat")
+    p_area     = st.selectbox("Service area", LOCATIONS, key="price_area")
+    p_exp      = st.selectbox("Years of experience",
+                               ["Less than 1 year","1–2 years","3–5 years","5–10 years","10+ years"],
+                               key="price_exp")
+    p_title    = st.text_input("Service title (optional)", key="price_title",
+                                placeholder="e.g. Home Cleaning, Logo Design")
+
+    if st.button("💰 Suggest Price Range", key="get_price", type="primary"):
+        price_prompt = (
+            f"I am a koperasi member in Malaysia offering a service on Koponix.\n"
+            f"Category: {p_category}\n"
+            f"Service: {p_title if p_title.strip() else 'not specified'}\n"
+            f"Location: {p_area}\n"
+            f"Experience: {p_exp}\n\n"
+            "Suggest a realistic and competitive price range for this service in the Malaysian market. "
+            "Consider typical freelancer/gig rates for koperasi members.\n\n"
+            "Reply in this exact format:\n"
+            "**Suggested Price Range:** [range with unit, e.g. RM 80–120 per session]\n"
+            "**Rationale:** [1–2 sentences explaining why]\n"
+            "**Tip:** [one practical pricing tip for this category]"
+        )
+        with st.spinner("Checking market rates…"):
+            r = get_client().messages.create(
+                model="claude-opus-4-6",
+                max_tokens=250,
+                system=KOPONIX_SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": price_prompt}],
+            )
+        st.success(r.content[0].text)
+        st.caption("Use this as a guide — adjust based on your actual costs and target market.")
+
 # ── AI description helper (below form) ────────────────────────────────────────
 st.divider()
 st.markdown("#### 💡 AI Description Helper")

@@ -1,6 +1,19 @@
 """Koponix — Landing / Home page."""
+from collections import Counter
+
+import anthropic
 import streamlit as st
-from utils import apply_koponix_style, sidebar_logo, load_sellers, CATEGORIES, CATEGORY_ICONS, CATEGORY_COLORS
+
+from utils import (
+    CATEGORIES,
+    CATEGORY_COLORS,
+    CATEGORY_ICONS,
+    KOPONIX_SYSTEM_PROMPT,
+    apply_koponix_style,
+    load_requests,
+    load_sellers,
+    sidebar_logo,
+)
 
 st.set_page_config(
     page_title="Koponix — Koperasi Digital Economy Platform",
@@ -45,7 +58,8 @@ with col3:
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ── Live stats ────────────────────────────────────────────────────────────────
-sellers = load_sellers()
+sellers  = load_sellers()
+requests = load_requests()
 active_sellers = [s for s in sellers if s.get("status") == "active"]
 categories_used = len(set(s["category"] for s in active_sellers))
 
@@ -126,6 +140,75 @@ for i, seller in enumerate(recent):
 st.markdown("<br>")
 if st.button("View All Services →", use_container_width=False):
     st.switch_page("pages/2_Find_Services.py")
+
+# ── AI Platform Pulse ──────────────────────────────────────────────────────────
+st.markdown("<br>", unsafe_allow_html=True)
+st.markdown('<div class="section-head">🤖 AI Platform Pulse</div>', unsafe_allow_html=True)
+
+@st.cache_resource
+def get_client():
+    return anthropic.Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
+
+pulse_col, pulse_btn_col = st.columns([5, 1])
+with pulse_btn_col:
+    run_pulse = st.button("✨ Generate Insight", use_container_width=True, type="primary")
+    if st.button("🔄 Refresh", use_container_width=True):
+        st.session_state.pop("pulse_text", None)
+        st.rerun()
+
+with pulse_col:
+    if "pulse_text" not in st.session_state and not run_pulse:
+        st.markdown("""
+        <div style="background:#f8f9fa; border:1px dashed #ccc; border-radius:10px;
+                    padding:1rem 1.2rem; color:#888; font-size:0.85rem;">
+            Click <strong>Generate Insight</strong> for a live AI analysis of the platform's current state.
+        </div>""", unsafe_allow_html=True)
+
+    if run_pulse or "pulse_text" in st.session_state:
+        if run_pulse or "pulse_text" not in st.session_state:
+            open_reqs  = [r for r in requests if r.get("status","open") == "open"]
+            matched    = [r for r in requests if r.get("status","") == "matched"]
+            top_cat_s  = Counter(s["category"] for s in active_sellers).most_common(1)
+            top_cat_r  = Counter(r["category"] for r in requests).most_common(1)
+            match_rate = f"{len(matched)/len(requests)*100:.0f}%" if requests else "N/A"
+
+            pulse_prompt = (
+                "You are Koponix AI. Give a 3-sentence platform health snapshot for the koperasi management team.\n\n"
+                f"Current data:\n"
+                f"- Active service providers: {len(active_sellers)}\n"
+                f"- Total buyer requests: {len(requests)}, open/unmatched: {len(open_reqs)}\n"
+                f"- Match rate: {match_rate}\n"
+                f"- Most popular seller category: {top_cat_s[0][0] if top_cat_s else 'N/A'}\n"
+                f"- Most requested category: {top_cat_r[0][0] if top_cat_r else 'N/A'}\n\n"
+                "Sentence 1: Overall platform health (positive framing). "
+                "Sentence 2: One specific opportunity or gap (e.g. unmatched demand, underserved location). "
+                "Sentence 3: One concrete action the admin can take today. "
+                "Be direct and specific. No filler phrases."
+            )
+            with st.spinner("Analysing platform…"):
+                resp = get_client().messages.create(
+                    model="claude-opus-4-6",
+                    max_tokens=200,
+                    system=KOPONIX_SYSTEM_PROMPT,
+                    messages=[{"role": "user", "content": pulse_prompt}],
+                )
+            st.session_state["pulse_text"] = resp.content[0].text.strip()
+
+        pulse = st.session_state["pulse_text"]
+        sentences = [s.strip() for s in pulse.replace("\n", " ").split(". ") if s.strip()]
+        icons = ["📊", "💡", "✅"]
+        pulse_html = "".join(
+            f'<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;">'
+            f'<span style="font-size:1.1rem;flex-shrink:0;">{icons[i] if i < len(icons) else "•"}</span>'
+            f'<span style="font-size:0.88rem;color:#2c3e50;line-height:1.5;">{s}{"." if not s.endswith(".") else ""}</span>'
+            f'</div>'
+            for i, s in enumerate(sentences)
+        )
+        st.markdown(f"""
+        <div style="background:linear-gradient(135deg,#eaf4fb,#f8f9fa);
+                    border:1px solid #2e86c155; border-radius:12px; padding:1rem 1.2rem;">
+            {pulse_html}
+        </div>""", unsafe_allow_html=True)
 
 # ── Footer ─────────────────────────────────────────────────────────────────────
 st.divider()
