@@ -309,6 +309,56 @@ def save_request(request_data: dict) -> str:
     return request_data["id"]
 
 
+# ── Matching engine ────────────────────────────────────────────────────────────
+
+EXPERIENCE_SCORE = {
+    "Less than 1 year": 5,
+    "1–2 years": 8,
+    "3–5 years": 12,
+    "5–10 years": 16,
+    "10+ years": 20,
+}
+
+
+def score_match(request: dict, seller: dict) -> int:
+    """Return 0–100 match score for a (request, seller) pair."""
+    score = 0
+
+    # Category match: 40 pts
+    if seller.get("category") == request.get("category"):
+        score += 40
+
+    # Location match
+    req_area = request.get("location", "")
+    sel_area = seller.get("area", "")
+    if sel_area == req_area:
+        score += 30
+    elif sel_area == "Online / Remote":
+        score += 15
+    elif req_area == "Online / Remote":
+        score += 15
+
+    # Experience: up to 20 pts
+    score += EXPERIENCE_SCORE.get(seller.get("experience", ""), 5)
+
+    # Status bonus: active sellers only
+    if seller.get("status") == "active":
+        score += 10
+
+    return min(score, 100)
+
+
+def get_top_matches(request: dict, sellers: list, top_n: int = 5) -> list:
+    """Return sellers sorted by match score (descending), filtered to same category."""
+    scored = [
+        (score_match(request, s), s)
+        for s in sellers
+        if s.get("status") == "active" and s.get("category") == request.get("category")
+    ]
+    scored.sort(key=lambda x: -x[0])
+    return scored[:top_n]
+
+
 # ── Shared CSS ─────────────────────────────────────────────────────────────────
 
 def update_seller_status(seller_id: str, new_status: str) -> bool:

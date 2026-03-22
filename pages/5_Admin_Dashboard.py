@@ -67,6 +67,7 @@ with st.sidebar:
     st.page_link("pages/3_Register_Service.py",     label="💼  Register Service")
     st.page_link("pages/4_Request_Service.py",      label="🛒  Request a Service")
     st.page_link("pages/5_Admin_Dashboard.py",      label="🛡️  Admin Dashboard")
+    st.page_link("pages/6_Match_Engine.py",         label="🎯  Match Engine")
     st.divider()
     if st.button("🔒 Sign Out", use_container_width=True):
         st.session_state.admin_authenticated = False
