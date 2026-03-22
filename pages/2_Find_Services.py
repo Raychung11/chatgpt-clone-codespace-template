@@ -37,6 +37,7 @@ with st.sidebar:
     st.page_link("pages/7_Promo_Generator.py",      label="📣  Promo Generator")
     st.page_link("pages/8_Monthly_Report.py",       label="📊  Monthly Report")
     st.page_link("pages/9_Member_Portal.py",        label="👤  Member Portal")
+    st.page_link("pages/10_Messages.py",            label="💬  Messages")
     st.divider()
 
     st.markdown("**Manual Filters**")
@@ -224,7 +225,7 @@ def render_seller_cards(seller_list):
                 <div class="desc">{seller['description']}</div>
             </div>""", unsafe_allow_html=True)
 
-            exp_col, insight_col = st.columns([2, 1])
+            exp_col, msg_col, insight_col = st.columns([2, 1, 1])
             with exp_col:
                 with st.expander("📩 Contact / Request this service"):
                     st.markdown(
@@ -235,6 +236,21 @@ def render_seller_cards(seller_list):
                     )
                     if st.button("Submit Request →", key=f"req_{seller['id']}"):
                         st.switch_page("pages/4_Request_Service.py")
+            with msg_col:
+                if st.button("💬 Message", key=f"msg_{seller['id']}", use_container_width=True):
+                    if st.session_state.get("member_logged_in"):
+                        member = st.session_state["member"]
+                        seller_kop = seller.get("koperasi_id", seller["id"])
+                        st.session_state["start_conv"] = {
+                            "seller_kop_id": seller_kop,
+                            "seller_name": seller["name"],
+                            "subject": f"Enquiry: {seller['service_title']}",
+                            "seller_id": seller["id"],
+                        }
+                        st.switch_page("pages/10_Messages.py")
+                    else:
+                        st.session_state["login_redirect"] = "pages/10_Messages.py"
+                        st.switch_page("pages/9_Member_Portal.py")
             with insight_col:
                 if not st.session_state.get(insight_key):
                     if st.button("✨ AI insight", key=f"ai_{seller['id']}", use_container_width=True):

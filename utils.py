@@ -2,7 +2,7 @@
 import json
 import os
 import uuid
-from datetime import date
+from datetime import date, datetime
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(__file__)
@@ -444,6 +444,71 @@ def get_member_by_kop_id(koperasi_id: str) -> dict | None:
         if m.get("koperasi_id") == koperasi_id:
             return m
     return None
+
+
+# ── Messaging ──────────────────────────────────────────────────────────────────
+
+MESSAGES_FILE = os.path.join(DATA_DIR, "messages.json")
+
+
+def load_conversations() -> dict:
+    _ensure_data_dir()
+    if not os.path.exists(MESSAGES_FILE):
+        return {}
+    with open(MESSAGES_FILE, "r") as f:
+        return json.load(f)
+
+
+def _save_conversations(convs: dict) -> None:
+    _ensure_data_dir()
+    with open(MESSAGES_FILE, "w") as f:
+        json.dump(convs, f, indent=2)
+
+
+def create_conversation(buyer_kop_id: str, buyer_name: str,
+                        seller_kop_id: str, seller_name: str,
+                        subject: str, seller_id: str = "") -> str:
+    """Create a new conversation and return its ID."""
+    convs = load_conversations()
+    # Return existing conv between same pair about same seller
+    for cid, c in convs.items():
+        if (set(c["participants"]) == {buyer_kop_id, seller_kop_id}
+                and c.get("seller_id") == seller_id):
+            return cid
+    conv_id = str(uuid.uuid4())[:8]
+    convs[conv_id] = {
+        "id": conv_id,
+        "participants": [buyer_kop_id, seller_kop_id],
+        "participant_names": {buyer_kop_id: buyer_name, seller_kop_id: seller_name},
+        "subject": subject,
+        "seller_id": seller_id,
+        "created_date": str(date.today()),
+        "messages": [],
+    }
+    _save_conversations(convs)
+    return conv_id
+
+
+def add_message(conv_id: str, sender_kop_id: str, sender_name: str,
+                text: str, is_ai: bool = False) -> bool:
+    convs = load_conversations()
+    if conv_id not in convs:
+        return False
+    convs[conv_id]["messages"].append({
+        "id": str(uuid.uuid4())[:8],
+        "sender": sender_kop_id,
+        "sender_name": sender_name,
+        "text": text,
+        "timestamp": datetime.now().isoformat(),
+        "is_ai": is_ai,
+    })
+    _save_conversations(convs)
+    return True
+
+
+def get_member_conversations(kop_id: str) -> dict:
+    return {cid: c for cid, c in load_conversations().items()
+            if kop_id in c.get("participants", [])}
 
 
 def sidebar_member_status():
