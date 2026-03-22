@@ -17,7 +17,8 @@ with st.sidebar:
     st.page_link("pages/1_AI_Assistant.py",         label="💬  AI Assistant",      )
     st.page_link("pages/2_Find_Services.py",        label="🔍  Find Services",     )
     st.page_link("pages/3_Register_Service.py",     label="💼  Register Service",  )
-    st.page_link("pages/4_Request_Service.py",      label="🛒  Request a Service", )
+    st.page_link("pages/4_Request_Service.py",      label="🛒  Request a Service")
+    st.page_link("pages/5_Admin_Dashboard.py",      label="🛡️  Admin Dashboard")
 
 # ── Hero ──────────────────────────────────────────────────────────────────────
 st.markdown("""

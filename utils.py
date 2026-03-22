@@ -311,6 +311,45 @@ def save_request(request_data: dict) -> str:
 
 # ── Shared CSS ─────────────────────────────────────────────────────────────────
 
+def update_seller_status(seller_id: str, new_status: str) -> bool:
+    sellers = load_sellers()
+    for s in sellers:
+        if s["id"] == seller_id:
+            s["status"] = new_status
+            break
+    else:
+        return False
+    _ensure_data_dir()
+    with open(SELLERS_FILE, "w") as f:
+        json.dump(sellers, f, indent=2)
+    return True
+
+
+def delete_seller(seller_id: str) -> bool:
+    sellers = load_sellers()
+    new_list = [s for s in sellers if s["id"] != seller_id]
+    if len(new_list) == len(sellers):
+        return False
+    _ensure_data_dir()
+    with open(SELLERS_FILE, "w") as f:
+        json.dump(new_list, f, indent=2)
+    return True
+
+
+def update_request_status(request_id: str, new_status: str) -> bool:
+    requests = load_requests()
+    for r in requests:
+        if r["id"] == request_id:
+            r["status"] = new_status
+            break
+    else:
+        return False
+    _ensure_data_dir()
+    with open(REQUESTS_FILE, "w") as f:
+        json.dump(requests, f, indent=2)
+    return True
+
+
 def apply_koponix_style():
     import streamlit as st
     st.markdown("""
