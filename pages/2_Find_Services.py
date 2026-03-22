@@ -13,6 +13,7 @@ from utils import (
     apply_koponix_style,
     load_sellers,
     sidebar_logo,
+    sidebar_member_status,
 )
 
 st.set_page_config(
@@ -35,6 +36,7 @@ with st.sidebar:
     st.page_link("pages/6_Match_Engine.py",         label="🎯  Match Engine")
     st.page_link("pages/7_Promo_Generator.py",      label="📣  Promo Generator")
     st.page_link("pages/8_Monthly_Report.py",       label="📊  Monthly Report")
+    st.page_link("pages/9_Member_Portal.py",        label="👤  Member Portal")
     st.divider()
 
     st.markdown("**Manual Filters**")
@@ -62,6 +64,7 @@ with st.sidebar:
         st.switch_page("pages/4_Request_Service.py")
     if st.button("💼 List Your Service", use_container_width=True):
         st.switch_page("pages/3_Register_Service.py")
+    sidebar_member_status()
 
 # ── Page header ───────────────────────────────────────────────────────────────
 st.markdown('<div class="section-head">🔍 Find Services</div>', unsafe_allow_html=True)

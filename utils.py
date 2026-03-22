@@ -400,6 +400,77 @@ def update_request_status(request_id: str, new_status: str) -> bool:
     return True
 
 
+# ── Member auth ────────────────────────────────────────────────────────────────
+
+import hashlib
+
+MEMBERS_FILE = os.path.join(DATA_DIR, "members.json")
+
+
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+def load_members() -> list:
+    _ensure_data_dir()
+    if not os.path.exists(MEMBERS_FILE):
+        return []
+    with open(MEMBERS_FILE, "r") as f:
+        return json.load(f)
+
+
+def save_member(member_data: dict) -> str:
+    members = load_members()
+    member_data["id"] = str(uuid.uuid4())
+    member_data["joined_date"] = str(date.today())
+    members.append(member_data)
+    _ensure_data_dir()
+    with open(MEMBERS_FILE, "w") as f:
+        json.dump(members, f, indent=2)
+    return member_data["id"]
+
+
+def authenticate_member(koperasi_id: str, password: str) -> dict | None:
+    members = load_members()
+    ph = hash_password(password)
+    for m in members:
+        if m.get("koperasi_id") == koperasi_id and m.get("password_hash") == ph:
+            return m
+    return None
+
+
+def get_member_by_kop_id(koperasi_id: str) -> dict | None:
+    for m in load_members():
+        if m.get("koperasi_id") == koperasi_id:
+            return m
+    return None
+
+
+def sidebar_member_status():
+    """Render logged-in member status block in the sidebar."""
+    import streamlit as st
+    st.divider()
+    if st.session_state.get("member_logged_in"):
+        member = st.session_state["member"]
+        st.markdown(f"""
+        <div style="background:#eaf4fb;border-radius:8px;padding:0.6rem 0.8rem;font-size:0.82rem;">
+            <div style="font-weight:700;color:#1a5276;">👤 {member['name']}</div>
+            <div style="color:#555;font-size:0.72rem;">{member['koperasi_id']}</div>
+        </div>""", unsafe_allow_html=True)
+        mc1, mc2 = st.columns(2)
+        with mc1:
+            if st.button("My Profile", key="_nav_profile", use_container_width=True):
+                st.switch_page("pages/9_Member_Portal.py")
+        with mc2:
+            if st.button("Logout", key="_nav_logout", use_container_width=True):
+                st.session_state.pop("member_logged_in", None)
+                st.session_state.pop("member", None)
+                st.rerun()
+    else:
+        if st.button("🔑 Member Login", use_container_width=True, key="_nav_login"):
+            st.switch_page("pages/9_Member_Portal.py")
+
+
 def apply_koponix_style():
     import streamlit as st
     st.markdown("""

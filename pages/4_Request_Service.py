@@ -2,8 +2,14 @@
 import anthropic
 import streamlit as st
 from utils import (
-    apply_koponix_style, sidebar_logo, save_request, load_sellers,
-    CATEGORIES, LOCATIONS, KOPONIX_SYSTEM_PROMPT,
+    CATEGORIES,
+    KOPONIX_SYSTEM_PROMPT,
+    LOCATIONS,
+    apply_koponix_style,
+    load_sellers,
+    save_request,
+    sidebar_logo,
+    sidebar_member_status,
 )
 
 st.set_page_config(
@@ -34,6 +40,7 @@ with st.sidebar:
     )
     if st.button("💬 Get AI help", use_container_width=True):
         st.switch_page("pages/1_AI_Assistant.py")
+    sidebar_member_status()
 
 # ── Page header ───────────────────────────────────────────────────────────────
 st.markdown('<div class="section-head">🛒 Request a Service</div>', unsafe_allow_html=True)
@@ -41,6 +48,13 @@ st.caption(
     "Submit your service request and we will match you with the most suitable "
     "koperasi member-provider."
 )
+
+# ── Pre-fill from logged-in member ────────────────────────────────────────────
+_member = st.session_state.get("member", {})
+_prefill_name = _member.get("name", "")
+_prefill_kop  = _member.get("koperasi_id", "")
+if _prefill_name:
+    st.info(f"👤 Signed in as **{_prefill_name}** — your name is pre-filled and this request will be linked to your profile.")
 
 # ── Buyer request form ────────────────────────────────────────────────────────
 with st.form("buyer_request", clear_on_submit=False):
@@ -79,7 +93,7 @@ with st.form("buyer_request", clear_on_submit=False):
     st.markdown("#### 👤 Your Contact Details")
     c5, c6 = st.columns(2)
     with c5:
-        buyer_name = st.text_input("Your Name *", placeholder="Full name")
+        buyer_name = st.text_input("Your Name *", value=_prefill_name, placeholder="Full name")
     with c6:
         buyer_contact = st.text_input("WhatsApp / Contact *", placeholder="e.g. 012-XXXXXXX")
 
@@ -108,6 +122,7 @@ if submitted:
         request_data = {
             "buyer_name": buyer_name.strip(),
             "buyer_contact": buyer_contact.strip(),
+            "member_kop_id": _prefill_kop,   # links to member profile
             "category": category,
             "location": location,
             "service_description": service_description.strip(),

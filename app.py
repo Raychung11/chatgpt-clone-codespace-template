@@ -13,6 +13,7 @@ from utils import (
     load_requests,
     load_sellers,
     sidebar_logo,
+    sidebar_member_status,
 )
 
 st.set_page_config(
@@ -35,6 +36,8 @@ with st.sidebar:
     st.page_link("pages/6_Match_Engine.py",         label="🎯  Match Engine")
     st.page_link("pages/7_Promo_Generator.py",      label="📣  Promo Generator")
     st.page_link("pages/8_Monthly_Report.py",       label="📊  Monthly Report")
+    st.page_link("pages/9_Member_Portal.py",        label="👤  Member Portal")
+    sidebar_member_status()
 
 # ── Hero ──────────────────────────────────────────────────────────────────────
 st.markdown("""

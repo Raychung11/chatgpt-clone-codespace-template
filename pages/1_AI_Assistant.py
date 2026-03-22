@@ -1,7 +1,12 @@
 """Koponix AI Assistant — Chat page."""
 import anthropic
 import streamlit as st
-from utils import apply_koponix_style, sidebar_logo, KOPONIX_SYSTEM_PROMPT
+from utils import (
+    KOPONIX_SYSTEM_PROMPT,
+    apply_koponix_style,
+    sidebar_logo,
+    sidebar_member_status,
+)
 
 st.set_page_config(
     page_title="Koponix AI Assistant",
@@ -23,6 +28,7 @@ with st.sidebar:
     st.page_link("pages/6_Match_Engine.py",         label="🎯  Match Engine")
     st.page_link("pages/7_Promo_Generator.py",      label="📣  Promo Generator")
     st.page_link("pages/8_Monthly_Report.py",       label="📊  Monthly Report")
+    st.page_link("pages/9_Member_Portal.py",        label="👤  Member Portal")
     st.divider()
 
     st.markdown("**Quick Start**")
@@ -42,6 +48,7 @@ with st.sidebar:
     if st.button("🗑️ Clear Chat", use_container_width=True):
         st.session_state.chat_messages = []
         st.rerun()
+    sidebar_member_status()
 
 # ── Page header ───────────────────────────────────────────────────────────────
 st.markdown("""

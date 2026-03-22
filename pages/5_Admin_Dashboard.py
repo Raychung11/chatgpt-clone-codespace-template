@@ -17,6 +17,7 @@ from utils import (
     load_sellers,
     save_seller,
     sidebar_logo,
+    sidebar_member_status,
     update_request_status,
     update_seller_status,
 )
@@ -70,10 +71,12 @@ with st.sidebar:
     st.page_link("pages/6_Match_Engine.py",         label="🎯  Match Engine")
     st.page_link("pages/7_Promo_Generator.py",      label="📣  Promo Generator")
     st.page_link("pages/8_Monthly_Report.py",       label="📊  Monthly Report")
+    st.page_link("pages/9_Member_Portal.py",        label="👤  Member Portal")
     st.divider()
     if st.button("🔒 Sign Out", use_container_width=True):
         st.session_state.admin_authenticated = False
         st.rerun()
+    sidebar_member_status()
 
 # ── Load data ─────────────────────────────────────────────────────────────────
 sellers  = load_sellers()

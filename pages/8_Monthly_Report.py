@@ -14,6 +14,7 @@ from utils import (
     load_requests,
     load_sellers,
     sidebar_logo,
+    sidebar_member_status,
 )
 
 st.set_page_config(
@@ -36,6 +37,7 @@ with st.sidebar:
     st.page_link("pages/6_Match_Engine.py",         label="🎯  Match Engine")
     st.page_link("pages/7_Promo_Generator.py",      label="📣  Promo Generator")
     st.page_link("pages/8_Monthly_Report.py",       label="📊  Monthly Report")
+    st.page_link("pages/9_Member_Portal.py",        label="👤  Member Portal")
     st.divider()
 
     st.markdown("**Report Period**")
@@ -52,6 +54,7 @@ with st.sidebar:
     if "report_cache" in st.session_state:
         st.button("🗑️ Clear Report", on_click=lambda: st.session_state.pop("report_cache", None),
                   use_container_width=True)
+    sidebar_member_status()
 
 # ── Page header ───────────────────────────────────────────────────────────────
 st.markdown('<div class="section-head">📊 Monthly Activity Report</div>', unsafe_allow_html=True)

@@ -2,8 +2,13 @@
 import anthropic
 import streamlit as st
 from utils import (
-    apply_koponix_style, sidebar_logo, save_seller,
-    CATEGORIES, LOCATIONS, KOPONIX_SYSTEM_PROMPT,
+    CATEGORIES,
+    KOPONIX_SYSTEM_PROMPT,
+    LOCATIONS,
+    apply_koponix_style,
+    save_seller,
+    sidebar_logo,
+    sidebar_member_status,
 )
 
 st.set_page_config(
@@ -26,6 +31,7 @@ with st.sidebar:
     st.page_link("pages/6_Match_Engine.py",         label="🎯  Match Engine")
     st.page_link("pages/7_Promo_Generator.py",      label="📣  Promo Generator")
     st.page_link("pages/8_Monthly_Report.py",       label="📊  Monthly Report")
+    st.page_link("pages/9_Member_Portal.py",        label="👤  Member Portal")
     st.divider()
     st.info(
         "**Need help?**\n\n"
@@ -34,6 +40,7 @@ with st.sidebar:
     )
     if st.button("💬 Ask AI for help", use_container_width=True):
         st.switch_page("pages/1_AI_Assistant.py")
+    sidebar_member_status()
 
 # ── Page header ───────────────────────────────────────────────────────────────
 st.markdown('<div class="section-head">💼 Register Your Service</div>', unsafe_allow_html=True)
@@ -47,14 +54,21 @@ st.caption(
 def get_client():
     return anthropic.Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
 
+# ── Pre-fill from logged-in member ────────────────────────────────────────────
+_member = st.session_state.get("member", {})
+_prefill_name = _member.get("name", "")
+_prefill_kop  = _member.get("koperasi_id", "")
+if _prefill_name:
+    st.info(f"👤 Signed in as **{_prefill_name}** ({_prefill_kop}) — name and Member ID pre-filled.")
+
 # ── Registration form ─────────────────────────────────────────────────────────
 with st.form("seller_registration", clear_on_submit=False):
     st.markdown("#### 👤 Personal & Member Details")
     c1, c2 = st.columns(2)
     with c1:
-        name = st.text_input("Full Name *", placeholder="e.g. Ahmad Rizal bin Hassan")
+        name = st.text_input("Full Name *", value=_prefill_name, placeholder="e.g. Ahmad Rizal bin Hassan")
     with c2:
-        koperasi_id = st.text_input("Koperasi Member ID *", placeholder="e.g. KOP-2024-001")
+        koperasi_id = st.text_input("Koperasi Member ID *", value=_prefill_kop, placeholder="e.g. KOP-2024-001")
 
     st.markdown("#### 🛠️ Service Details")
     c3, c4 = st.columns(2)
