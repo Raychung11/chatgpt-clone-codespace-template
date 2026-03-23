@@ -38,6 +38,7 @@ $activePage = $activePage ?? '';
             ['href' => '/market.php',           'icon' => '📈', 'label' => 'Market Data'],
             ['href' => '/recommendations.php',  'icon' => '💰', 'label' => 'Recommendations'],
             ['href' => '/properties.php',       'icon' => '🏢', 'label' => 'Properties'],
+            ['href' => '/scraper.php',          'icon' => '🕷️',  'label' => 'Scraper'],
             ['href' => '/logs.php',             'icon' => '⚙️',  'label' => 'System Logs'],
         ];
         foreach ($nav as $item):

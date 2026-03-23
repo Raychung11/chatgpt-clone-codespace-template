@@ -23,9 +23,26 @@ $ok     = false;
 try {
     switch ($job) {
         case 'fetch_market_data':
-            $results = MarketData::fetchAll(daysAhead: 7, daysBack: 3);
-            $total   = array_sum($results);
-            $output  = "Fetched {$total} records across " . count($results) . " locations.";
+            $locations = MarketData::getAvailableLocations();
+            $okC = 0; $errC = 0;
+            // Historical: simulate
+            for ($d = -3; $d <= -1; $d++) {
+                $dt = (new DateTime())->modify("{$d} days")->format('Y-m-d');
+                foreach ($locations as $loc) {
+                    Database::upsertMarketData(MarketData::simulate($loc, $dt));
+                    $okC++;
+                }
+            }
+            // Present/future: scrape (with fallback)
+            for ($d = 0; $d <= PRICING_DAYS_AHEAD; $d++) {
+                $dt = (new DateTime())->modify("{$d} days")->format('Y-m-d');
+                foreach ($locations as $loc) {
+                    $data = Scraper::scrapeLocation($loc, $dt);
+                    str_contains($data['source'], 'fallback') ? $errC++ : $okC++;
+                }
+            }
+            $total   = $okC + $errC;
+            $output  = "Fetched {$total} records ({$errC} fallbacks) across " . count($locations) . " locations.";
             Database::logCron($job, 'success', $output, (int)((microtime(true)-$start)*1000));
             $ok = true;
             break;

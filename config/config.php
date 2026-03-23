@@ -25,6 +25,23 @@ define('APP_TIMEZONE', 'Asia/Kuala_Lumpur');
 define('PRICING_DAYS_AHEAD',   7);   // how many days forward to generate recs
 define('MARKET_DATA_DAYS_BACK', 30); // days of historical data to keep
 
+// ─── Apify Scraper ────────────────────────────────────────────────────────
+// Get your token at: https://console.apify.com/account/integrations
+define('APIFY_TOKEN',           getenv('APIFY_TOKEN') ?: '');
+
+// Actor IDs — change these if you prefer a different actor
+// Airbnb: https://apify.com/dtrungtin/airbnb-scraper
+define('APIFY_AIRBNB_ACTOR',    getenv('APIFY_AIRBNB_ACTOR')  ?: 'dtrungtin/airbnb-scraper');
+// Booking.com (optional V2 feature)
+define('APIFY_BOOKING_ACTOR',   getenv('APIFY_BOOKING_ACTOR') ?: 'dtrungtin/booking-scraper');
+
+// Max listings to pull per location per run (keep low to save Apify credits)
+define('APIFY_MAX_RESULTS',     50);
+// Timeout waiting for actor run to finish (seconds)
+define('APIFY_TIMEOUT_SEC',     120);
+// How long (seconds) before a cached scrape result is considered stale
+define('SCRAPER_CACHE_TTL',     4 * 3600); // 4 hours
+
 // ─── WhatsApp (AiServe) ───────────────────────────────────────────────────
 define('AISENSY_API_KEY',  getenv('AISENSY_API_KEY')  ?: '');
 define('AISENSY_TEMPLATE', 'strate_daily_update');

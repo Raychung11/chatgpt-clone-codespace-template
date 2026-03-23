@@ -10,6 +10,7 @@ require_once $root . '/src/Database.php';
 require_once $root . '/src/PricingEngine.php';
 require_once $root . '/src/AiExplainer.php';
 require_once $root . '/src/MarketData.php';
+require_once $root . '/src/Scraper.php';
 
 // Simple error handling
 if (APP_ENV === 'development') {

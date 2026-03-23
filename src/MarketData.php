@@ -93,6 +93,15 @@ class MarketData
     }
 
     /**
+     * Return event name for a date, or null if no event.
+     * Public so Scraper can use the same event calendar.
+     */
+    public static function getEventsForDate(string $date): ?string
+    {
+        return self::EVENTS[$date] ?? null;
+    }
+
+    /**
      * Simulate + store data for one location across a date range.
      */
     public static function fetchAndStore(

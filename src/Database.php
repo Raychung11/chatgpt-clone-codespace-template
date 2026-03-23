@@ -205,6 +205,32 @@ class Database
         );
     }
 
+    // ─── Scraper Runs ─────────────────────────────────────────────────────
+
+    public static function getScraperRuns(int $limit = 50): array
+    {
+        return self::query(
+            'SELECT * FROM scraper_runs ORDER BY created_at DESC LIMIT ?',
+            [$limit]
+        );
+    }
+
+    public static function getScraperStats(): array
+    {
+        $row = self::queryOne(
+            "SELECT
+                COUNT(*)                       AS total,
+                SUM(status = 'done')           AS success,
+                SUM(status = 'failed')         AS failed,
+                ROUND(AVG(duration_ms))        AS avg_ms,
+                MAX(created_at)                AS last_run,
+                SUM(status = 'done' AND source != 'simulated_fallback') AS real_data
+             FROM scraper_runs
+             WHERE created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
+        );
+        return $row ?? ['total' => 0, 'success' => 0, 'failed' => 0, 'avg_ms' => 0, 'last_run' => null, 'real_data' => 0];
+    }
+
     // ─── Users ────────────────────────────────────────────────────────────
 
     public static function getDemoUserId(): int

@@ -73,6 +73,29 @@ CREATE TABLE IF NOT EXISTS price_recommendations (
     INDEX idx_property (property_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- ─── Scraper Runs ────────────────────────────────────────────────────────────
+-- Tracks every Apify actor run so we can audit results and avoid re-scraping.
+CREATE TABLE IF NOT EXISTS scraper_runs (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    location        VARCHAR(100) NOT NULL,
+    date_scraped    DATE NOT NULL,              -- the check-in date we queried
+    source          ENUM('airbnb','booking','agoda','manual') DEFAULT 'airbnb',
+    apify_run_id    VARCHAR(100),               -- Apify run ID for debugging
+    status          ENUM('pending','running','done','failed') DEFAULT 'pending',
+    listings_found  SMALLINT UNSIGNED DEFAULT 0,
+    avg_price       DECIMAL(10,2),
+    min_price       DECIMAL(10,2),
+    max_price       DECIMAL(10,2),
+    occupancy_est   DECIMAL(5,4),
+    raw_sample      JSON,                       -- first 3 listings for audit
+    error_message   TEXT,
+    duration_ms     INT UNSIGNED DEFAULT 0,
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_location_date_source (location, date_scraped, source),
+    INDEX idx_status (status),
+    INDEX idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ─── Cron Logs ────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS cron_logs (
     id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
