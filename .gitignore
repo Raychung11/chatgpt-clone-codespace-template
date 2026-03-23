@@ -1,7 +1,20 @@
-__pycache__/
-*.pyc
-*.pyo
-*.db
-*.sqlite3
+# PHP / Composer
+vendor/
+*.log
+
+# Config secrets
+config/config.local.php
 .env
-.streamlit/secrets.toml
+
+# Runtime / cache
+*.cache
+*.tmp
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

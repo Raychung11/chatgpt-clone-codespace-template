@@ -1,0 +1,57 @@
+/* STRate AI — Custom Styles */
+
+/* Metric card */
+.metric-card {
+    @apply bg-white rounded-xl shadow-sm p-6 border border-gray-100;
+}
+
+/* Confidence badge colors */
+.conf-high   { background: #d1fae5; color: #065f46; }
+.conf-medium { background: #fef9c3; color: #713f12; }
+.conf-low    { background: #fee2e2; color: #7f1d1d; }
+
+/* Price change indicator */
+.price-up   { color: #16a34a; }
+.price-down { color: #dc2626; }
+.price-flat { color: #6b7280; }
+
+/* AI reason bubble */
+.reason-bubble {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    font-size: 0.875rem;
+    color: #1e3a5f;
+    margin-top: 8px;
+}
+
+/* WhatsApp bubble */
+.wa-bubble {
+    background: #d9fdd3;
+    border-radius: 12px 12px 0 12px;
+    padding: 12px 16px;
+    font-family: monospace;
+    white-space: pre-wrap;
+    font-size: 0.875rem;
+    max-width: 85%;
+    margin: 8px 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,.1);
+}
+
+/* Status badges */
+.badge-success { background:#d1fae5; color:#065f46; padding:2px 10px; border-radius:9999px; font-size:.75rem; font-weight:600; }
+.badge-error   { background:#fee2e2; color:#7f1d1d; padding:2px 10px; border-radius:9999px; font-size:.75rem; font-weight:600; }
+.badge-warning { background:#fef9c3; color:#713f12; padding:2px 10px; border-radius:9999px; font-size:.75rem; font-weight:600; }
+
+/* Table */
+.data-table th { background:#f8fafc; font-size:.75rem; text-transform:uppercase; color:#6b7280; letter-spacing:.05em; }
+.data-table td, .data-table th { padding:10px 14px; border-bottom:1px solid #e5e7eb; }
+.data-table tbody tr:hover { background:#f9fafb; }
+
+/* Demand pill */
+.demand-very-high { background:#fef3c7; color:#92400e; }
+.demand-high      { background:#fee2e2; color:#7f1d1d; }
+.demand-medium    { background:#fef9c3; color:#713f12; }
+.demand-low       { background:#d1fae5; color:#065f46; }
+.demand-very-low  { background:#f3f4f6; color:#4b5563; }
