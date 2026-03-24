@@ -1,0 +1,126 @@
+<?php
+require_once __DIR__ . '/layout.php';
+
+$success = '';
+$errors  = [];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name          = trim($_POST['name']          ?? '');
+    $kop_id        = trim($_POST['koperasi_id']   ?? '');
+    $category      = trim($_POST['category']      ?? '');
+    $service_title = trim($_POST['service_title'] ?? '');
+    $area          = trim($_POST['area']          ?? '');
+    $price_range   = trim($_POST['price_range']   ?? '');
+    $availability  = trim($_POST['availability']  ?? '');
+    $experience    = trim($_POST['experience']    ?? '');
+    $description   = trim($_POST['description']   ?? '');
+    $contact       = trim($_POST['contact']       ?? 'WhatsApp available upon request');
+
+    if (!$name)          $errors[] = 'Name is required.';
+    if (!$kop_id)        $errors[] = 'Koperasi Member ID is required.';
+    if (!$category)      $errors[] = 'Category is required.';
+    if (!$service_title) $errors[] = 'Service title is required.';
+    if (!$area)          $errors[] = 'Service area is required.';
+    if (!$price_range)   $errors[] = 'Price range is required.';
+    if (!$description)   $errors[] = 'Description is required.';
+
+    if (empty($errors)) {
+        save_seller(compact('name','kop_id','category','service_title','area','price_range','availability','experience','description','contact') + ['koperasi_id' => $kop_id]);
+        flash('Service listing submitted successfully!');
+        redirect('find_services.php');
+    }
+}
+
+// Pre-fill from logged-in member
+$member = current_member();
+html_head('Register Service');
+html_body_open();
+?>
+
+<div class="page-title">💼 Register Your Service</div>
+<p class="text-muted small mb-3">List your skill or service for other koperasi members to find and hire you.</p>
+
+<?php if ($errors): ?>
+    <div class="alert alert-danger">
+        <ul class="mb-0"><?php foreach ($errors as $e): ?><li><?= e($e) ?></li><?php endforeach; ?></ul>
+    </div>
+<?php endif; ?>
+
+<div class="card p-4" style="max-width:700px">
+<form method="post">
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">Full Name *</label>
+            <input type="text" name="name" class="form-control"
+                value="<?= e($_POST['name'] ?? $member['name'] ?? '') ?>" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">Koperasi Member ID *</label>
+            <input type="text" name="koperasi_id" class="form-control"
+                value="<?= e($_POST['koperasi_id'] ?? $member['koperasi_id'] ?? '') ?>"
+                placeholder="e.g. KOP-2024-001" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">Service Category *</label>
+            <select name="category" class="form-select" required>
+                <option value="">Select category…</option>
+                <?php foreach (categories() as $c): ?>
+                    <option value="<?= e($c) ?>" <?= ($_POST['category'] ?? '') === $c ? 'selected' : '' ?>><?= e($c) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">Service Title *</label>
+            <input type="text" name="service_title" class="form-control"
+                value="<?= e($_POST['service_title'] ?? '') ?>"
+                placeholder="e.g. Professional Home Cleaning" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">Service Area *</label>
+            <select name="area" class="form-select" required>
+                <option value="">Select area…</option>
+                <?php foreach (locations() as $l): ?>
+                    <option value="<?= e($l) ?>" <?= ($_POST['area'] ?? '') === $l ? 'selected' : '' ?>><?= e($l) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">Price Range *</label>
+            <input type="text" name="price_range" class="form-control"
+                value="<?= e($_POST['price_range'] ?? '') ?>"
+                placeholder="e.g. RM 80 – RM 120 per session" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">Availability</label>
+            <input type="text" name="availability" class="form-control"
+                value="<?= e($_POST['availability'] ?? '') ?>"
+                placeholder="e.g. Weekends, Mon–Fri evenings">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-semibold">Experience</label>
+            <select name="experience" class="form-select">
+                <option value="">Select…</option>
+                <?php foreach (exp_options() as $opt): ?>
+                    <option value="<?= e($opt) ?>" <?= ($_POST['experience'] ?? '') === $opt ? 'selected' : '' ?>><?= e($opt) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col-12">
+            <label class="form-label fw-semibold">Service Description *</label>
+            <textarea name="description" class="form-control" rows="4"
+                placeholder="Describe what you offer, what's included/excluded, minimum booking, etc." required><?= e($_POST['description'] ?? '') ?></textarea>
+        </div>
+        <div class="col-12">
+            <label class="form-label fw-semibold">Contact Info</label>
+            <input type="text" name="contact" class="form-control"
+                value="<?= e($_POST['contact'] ?? 'WhatsApp available upon request') ?>">
+        </div>
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">✅ Submit Listing</button>
+            <a href="find_services.php" class="btn btn-outline-secondary ms-2">Cancel</a>
+        </div>
+    </div>
+</form>
+</div>
+
+<?php html_footer(); ?>
