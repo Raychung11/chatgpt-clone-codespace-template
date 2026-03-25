@@ -1,8 +1,7 @@
 <?php
 require_once __DIR__ . '/layout.php';
 
-$success = '';
-$errors  = [];
+$errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name          = trim($_POST['name']          ?? '');
@@ -25,13 +24,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$description)   $errors[] = 'Description is required.';
 
     if (empty($errors)) {
-        save_seller(compact('name','kop_id','category','service_title','area','price_range','availability','experience','description','contact') + ['koperasi_id' => $kop_id]);
+        $data = compact('name','category','service_title','area','price_range','availability','experience','description','contact') + ['koperasi_id' => $kop_id];
+        $data['image']   = handle_image_upload('image',   'sellers') ?? '';
+        $data['gallery1']= handle_image_upload('gallery1','sellers') ?? '';
+        $data['gallery2']= handle_image_upload('gallery2','sellers') ?? '';
+        save_seller($data);
         flash('Service listing submitted successfully!');
         redirect('find_services.php');
     }
 }
 
-// Pre-fill from logged-in member
 $member = current_member();
 html_head('Register Service');
 html_body_open();
@@ -46,8 +48,8 @@ html_body_open();
     </div>
 <?php endif; ?>
 
-<div class="card p-4" style="max-width:700px">
-<form method="post">
+<div class="card p-4" style="max-width:740px">
+<form method="post" enctype="multipart/form-data">
     <div class="row g-3">
         <div class="col-md-6">
             <label class="form-label fw-semibold">Full Name *</label>
@@ -115,6 +117,28 @@ html_body_open();
             <input type="text" name="contact" class="form-control"
                 value="<?= e($_POST['contact'] ?? 'WhatsApp available upon request') ?>">
         </div>
+
+        <!-- ── Photos ── -->
+        <div class="col-12"><hr><h6 class="text-muted fw-semibold">📷 Listing Photos <small class="fw-normal">(optional, max 2MB each)</small></h6></div>
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Main Photo</label>
+            <input type="file" name="image" class="form-control form-control-sm" accept="image/*"
+                onchange="previewImg(this,'prev_main')">
+            <img id="prev_main" src="" class="img-thumbnail mt-2 d-none" style="max-height:110px;width:100%;object-fit:cover">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Gallery Photo 1</label>
+            <input type="file" name="gallery1" class="form-control form-control-sm" accept="image/*"
+                onchange="previewImg(this,'prev_g1')">
+            <img id="prev_g1" src="" class="img-thumbnail mt-2 d-none" style="max-height:110px;width:100%;object-fit:cover">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-semibold">Gallery Photo 2</label>
+            <input type="file" name="gallery2" class="form-control form-control-sm" accept="image/*"
+                onchange="previewImg(this,'prev_g2')">
+            <img id="prev_g2" src="" class="img-thumbnail mt-2 d-none" style="max-height:110px;width:100%;object-fit:cover">
+        </div>
+
         <div class="col-12">
             <button type="submit" class="btn btn-primary">✅ Submit Listing</button>
             <a href="find_services.php" class="btn btn-outline-secondary ms-2">Cancel</a>
@@ -123,4 +147,14 @@ html_body_open();
 </form>
 </div>
 
+<script>
+function previewImg(input, previewId) {
+    const preview = document.getElementById(previewId);
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => { preview.src = e.target.result; preview.classList.remove('d-none'); };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
 <?php html_footer(); ?>

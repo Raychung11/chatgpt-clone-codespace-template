@@ -1,11 +1,13 @@
 <?php
 require_once __DIR__ . '/layout.php';
 
-$login_errors  = [];
-$reg_errors    = [];
-$pw_errors     = [];
-$pw_success    = '';
-$tab           = $_GET['tab'] ?? 'login';
+$login_errors   = [];
+$reg_errors     = [];
+$pw_errors      = [];
+$pw_success     = '';
+$prof_success   = '';
+$prof_errors    = [];
+$tab            = $_GET['tab'] ?? 'login';
 
 // ── Handle Login ──────────────────────────────────────────────
 if (isset($_POST['action']) && $_POST['action'] === 'login') {
@@ -48,6 +50,28 @@ if (isset($_POST['action']) && $_POST['action'] === 'register') {
         login_member($m);
         flash('Account created! Welcome, ' . $name . '.');
         redirect('member_portal.php');
+    }
+}
+
+// ── Handle Profile Update ─────────────────────────────────────
+if (isset($_POST['action']) && $_POST['action'] === 'update_profile' && is_logged_in()) {
+    $tab    = 'profile';
+    $member = current_member();
+    $p_name = trim($_POST['profile_name'] ?? '');
+    $p_email= trim($_POST['profile_email'] ?? '');
+    $p_bio  = trim($_POST['profile_bio']  ?? '');
+
+    if (!$p_name) {
+        $prof_errors[] = 'Name cannot be empty.';
+    } else {
+        $updates = ['name' => $p_name, 'email' => $p_email, 'bio' => $p_bio];
+        $avatar  = handle_image_upload('avatar', 'avatars');
+        if ($avatar) $updates['avatar'] = $avatar;
+        update_member_profile($member['koperasi_id'], $updates);
+        $updated = get_member_by_kop_id($member['koperasi_id']);
+        login_member($updated);
+        $prof_success = 'Profile updated successfully.';
+        $member = $updated;
     }
 }
 
@@ -180,22 +204,38 @@ $open_r      = array_filter($my_requests, fn($r) => $r['status'] === 'open');
 <?php if (!$my_listings): ?>
     <div class="alert alert-info">No listings yet. <a href="register_service.php">Add your first service →</a></div>
 <?php else: ?>
+<div class="row g-3">
 <?php foreach ($my_listings as $s): ?>
-    <div class="seller-card">
-        <?= cat_badge($s['category']) ?>
-        <span class="ms-1 <?= $s['status']==='active'?'pill-active':'pill-inactive' ?>"><?= e($s['status']) ?></span>
-        <h5><?= e($s['service_title']) ?></h5>
-        <div class="meta">📍 <?= e($s['area']) ?> &nbsp;|&nbsp; 💰 <?= e($s['price_range']) ?></div>
-        <div class="meta">🕐 <?= e($s['availability']) ?></div>
-        <div class="desc"><?= e($s['description']) ?></div>
-        <div class="d-flex gap-2 mt-2">
-            <a href="find_services.php?category=<?= urlencode($s['category']) ?>" class="btn btn-sm btn-outline-secondary">View in Listings</a>
-            <a href="ai_assistant.php?prompt=<?= urlencode('Give me tips to improve my listing: '.$s['service_title'].' in '.$s['area']) ?>" class="btn btn-sm btn-outline-info">Ask AI for Tips</a>
+    <div class="col-md-6">
+    <div class="seller-card h-100">
+        <div class="d-flex gap-2 align-items-start">
+            <?php if ($s['image']): ?>
+                <img src="<?= e(img_url($s['image'])) ?>"
+                    style="width:72px;height:72px;object-fit:cover;border-radius:8px;flex-shrink:0">
+            <?php else: ?>
+                <div style="width:72px;height:72px;border-radius:8px;flex-shrink:0;background:linear-gradient(135deg,<?= e(cat_colors()[$s['category']] ?? '#607d8b') ?>,#ddd);display:flex;align-items:center;justify-content:center;font-size:1.6rem">
+                    <?= cat_icons()[$s['category']] ?? '⭐' ?>
+                </div>
+            <?php endif; ?>
+            <div class="flex-grow-1">
+                <?= cat_badge($s['category']) ?>
+                <span class="ms-1 <?= $s['status']==='active'?'pill-active':'pill-inactive' ?>"><?= e($s['status']) ?></span>
+                <h5 class="mt-1"><?= e($s['service_title']) ?></h5>
+                <div class="meta">📍 <?= e($s['area']) ?> &nbsp;|&nbsp; 💰 <?= e($s['price_range']) ?></div>
+            </div>
+        </div>
+        <div class="desc mt-2"><?= e(substr($s['description'],0,120)) ?>…</div>
+        <div class="d-flex gap-2 mt-2 flex-wrap">
+            <a href="edit_listing.php?id=<?= urlencode($s['id']) ?>" class="btn btn-sm btn-primary">✏️ Edit</a>
+            <a href="find_services.php?category=<?= urlencode($s['category']) ?>" class="btn btn-sm btn-outline-secondary">View Public</a>
+            <a href="ai_assistant.php?prompt=<?= urlencode('Give me tips to improve my listing: '.$s['service_title'].' in '.$s['area']) ?>" class="btn btn-sm btn-outline-info">🤖 AI Tips</a>
         </div>
     </div>
+    </div>
 <?php endforeach; ?>
+</div>
 <?php endif; ?>
-<a href="register_service.php" class="btn btn-primary mt-2">+ Add New Listing</a>
+<a href="register_service.php" class="btn btn-primary mt-3">+ Add New Listing</a>
 
 <!-- My Requests -->
 <?php elseif ($tab === 'requests'): ?>
@@ -237,22 +277,71 @@ document.getElementById('getCoachingBtn').addEventListener('click', async () => 
 
 <!-- Profile -->
 <?php else: ?>
-<div class="row g-4" style="max-width:700px">
-    <div class="col-md-6">
-        <div class="card p-3">
-            <h6>Account Info</h6>
-            <table class="table table-sm small mb-0">
-                <tr><td class="text-muted">Name</td><td><?= e($member['name']) ?></td></tr>
-                <tr><td class="text-muted">Member ID</td><td><?= e($member['koperasi_id']) ?></td></tr>
-                <tr><td class="text-muted">Email</td><td><?= e($member['email'] ?: '—') ?></td></tr>
-                <tr><td class="text-muted">Joined</td><td><?= e($member['joined_date']) ?></td></tr>
-                <tr><td class="text-muted">Account ID</td><td class="text-muted" style="font-size:.7rem"><?= e(substr($member['id'],0,12)) ?>…</td></tr>
-            </table>
+<div class="row g-4" style="max-width:780px">
+
+    <!-- Avatar + info card -->
+    <div class="col-md-4">
+        <div class="card p-3 text-center">
+            <?php if (!empty($member['avatar'])): ?>
+                <img src="<?= e(img_url($member['avatar'])) ?>"
+                    class="rounded-circle mx-auto mb-2"
+                    style="width:90px;height:90px;object-fit:cover;border:3px solid #1a5276">
+            <?php else: ?>
+                <div class="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center"
+                    style="width:90px;height:90px;background:#1a5276;font-size:2rem;color:#fff">
+                    <?= mb_strtoupper(mb_substr($member['name'],0,1)) ?>
+                </div>
+            <?php endif; ?>
+            <div class="fw-bold"><?= e($member['name']) ?></div>
+            <div class="text-muted small"><?= e($member['koperasi_id']) ?></div>
+            <div class="text-muted small mt-1">Joined <?= e($member['joined_date']) ?></div>
+            <?php if (!empty($member['bio'])): ?>
+                <div class="mt-2 small text-muted fst-italic"><?= e($member['bio']) ?></div>
+            <?php endif; ?>
         </div>
     </div>
-    <div class="col-md-6">
+
+    <!-- Edit profile form -->
+    <div class="col-md-8">
+        <div class="card p-3 mb-3">
+            <h6>✏️ Edit Profile</h6>
+            <?php if ($prof_errors): ?>
+                <div class="alert alert-danger py-2 small"><?= e($prof_errors[0]) ?></div>
+            <?php endif; ?>
+            <?php if ($prof_success): ?>
+                <div class="alert alert-success py-2 small"><?= e($prof_success) ?></div>
+            <?php endif; ?>
+            <form method="post" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="update_profile">
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold">Full Name</label>
+                    <input type="text" name="profile_name" class="form-control form-control-sm"
+                        value="<?= e($member['name']) ?>" required>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold">Email</label>
+                    <input type="email" name="profile_email" class="form-control form-control-sm"
+                        value="<?= e($member['email'] ?? '') ?>">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold">Short Bio</label>
+                    <textarea name="profile_bio" class="form-control form-control-sm" rows="2"
+                        placeholder="Tell others a bit about yourself…"><?= e($member['bio'] ?? '') ?></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Profile Photo</label>
+                    <input type="file" name="avatar" class="form-control form-control-sm" accept="image/*"
+                        onchange="previewAvatar(this)">
+                    <img id="avatarPreview" src="" class="rounded-circle mt-2 d-none"
+                        style="width:60px;height:60px;object-fit:cover">
+                    <div class="small text-muted mt-1">JPG/PNG/WebP, max 2MB</div>
+                </div>
+                <button type="submit" class="btn btn-sm btn-primary">💾 Save Profile</button>
+            </form>
+        </div>
+
         <div class="card p-3">
-            <h6>Change Password</h6>
+            <h6>🔒 Change Password</h6>
             <?php if ($pw_errors): ?>
                 <div class="alert alert-danger py-2 small"><?= e($pw_errors[0]) ?></div>
             <?php endif; ?>
@@ -276,11 +365,22 @@ document.getElementById('getCoachingBtn').addEventListener('click', async () => 
                 <button type="submit" class="btn btn-sm btn-primary">Update Password</button>
             </form>
         </div>
-    </div>
-    <div class="col-12">
-        <a href="logout.php" class="btn btn-outline-danger">Sign Out</a>
+
+        <div class="mt-3">
+            <a href="logout.php" class="btn btn-outline-danger btn-sm">Sign Out</a>
+        </div>
     </div>
 </div>
+<script>
+function previewAvatar(input) {
+    const preview = document.getElementById('avatarPreview');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => { preview.src = e.target.result; preview.classList.remove('d-none'); };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
 <?php endif; ?>
 
 <?php endif; ?>

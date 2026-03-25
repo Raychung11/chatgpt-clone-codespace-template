@@ -14,33 +14,69 @@ try {
 
     // Members table
     $pdo->exec("CREATE TABLE IF NOT EXISTS members (
-        id           VARCHAR(36)  PRIMARY KEY,
-        name         VARCHAR(255) NOT NULL,
-        koperasi_id  VARCHAR(100) NOT NULL UNIQUE,
-        email        VARCHAR(255) DEFAULT '',
-        password_hash VARCHAR(64) NOT NULL,
-        role         VARCHAR(50)  DEFAULT 'member',
-        joined_date  DATE         NOT NULL
+        id            VARCHAR(36)  PRIMARY KEY,
+        name          VARCHAR(255) NOT NULL,
+        koperasi_id   VARCHAR(100) NOT NULL UNIQUE,
+        email         VARCHAR(255) DEFAULT '',
+        password_hash VARCHAR(64)  NOT NULL,
+        role          VARCHAR(50)  DEFAULT 'member',
+        joined_date   DATE         NOT NULL,
+        avatar        VARCHAR(255) DEFAULT '',
+        bio           TEXT
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     $done[] = 'Table <b>members</b> created.';
 
     // Sellers table
     $pdo->exec("CREATE TABLE IF NOT EXISTS sellers (
-        id             VARCHAR(36)  PRIMARY KEY,
-        name           VARCHAR(255) NOT NULL,
-        koperasi_id    VARCHAR(100) NOT NULL,
-        category       VARCHAR(100) NOT NULL,
-        service_title  VARCHAR(255) NOT NULL,
-        area           VARCHAR(100) NOT NULL,
-        price_range    VARCHAR(100) NOT NULL,
-        availability   VARCHAR(255) DEFAULT '',
-        description    TEXT,
-        contact        VARCHAR(255) DEFAULT 'WhatsApp available upon request',
-        experience     VARCHAR(50)  DEFAULT '',
-        registered_date DATE        NOT NULL,
-        status         VARCHAR(20)  DEFAULT 'active'
+        id              VARCHAR(36)  PRIMARY KEY,
+        name            VARCHAR(255) NOT NULL,
+        koperasi_id     VARCHAR(100) NOT NULL,
+        category        VARCHAR(100) NOT NULL,
+        service_title   VARCHAR(255) NOT NULL,
+        area            VARCHAR(100) NOT NULL,
+        price_range     VARCHAR(100) NOT NULL,
+        availability    VARCHAR(255) DEFAULT '',
+        description     TEXT,
+        contact         VARCHAR(255) DEFAULT 'WhatsApp available upon request',
+        experience      VARCHAR(50)  DEFAULT '',
+        registered_date DATE         NOT NULL,
+        status          VARCHAR(20)  DEFAULT 'active',
+        image           VARCHAR(255) DEFAULT '',
+        gallery1        VARCHAR(255) DEFAULT '',
+        gallery2        VARCHAR(255) DEFAULT ''
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     $done[] = 'Table <b>sellers</b> created.';
+
+    // Add new columns to existing tables (safe to run multiple times)
+    foreach ([
+        "ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar VARCHAR(255) DEFAULT ''",
+        "ALTER TABLE members ADD COLUMN IF NOT EXISTS bio TEXT",
+        "ALTER TABLE sellers ADD COLUMN IF NOT EXISTS image VARCHAR(255) DEFAULT ''",
+        "ALTER TABLE sellers ADD COLUMN IF NOT EXISTS gallery1 VARCHAR(255) DEFAULT ''",
+        "ALTER TABLE sellers ADD COLUMN IF NOT EXISTS gallery2 VARCHAR(255) DEFAULT ''",
+    ] as $sql) {
+        try { $pdo->exec($sql); } catch (PDOException $e) { /* already exists */ }
+    }
+    $done[] = 'Columns updated (image, avatar, bio).';
+
+    // Create uploads directories
+    $dirs = [
+        __DIR__ . '/uploads',
+        __DIR__ . '/uploads/sellers',
+        __DIR__ . '/uploads/avatars',
+    ];
+    foreach ($dirs as $dir) {
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+            $done[] = "Created directory: <code>{$dir}</code>";
+        }
+    }
+    // Security: block PHP in uploads
+    $htaccess = __DIR__ . '/uploads/.htaccess';
+    if (!file_exists($htaccess)) {
+        file_put_contents($htaccess, "<FilesMatch \"\.(php|php5|phtml|cgi|pl|py)$\">\n    Order Allow,Deny\n    Deny from all\n</FilesMatch>");
+        $done[] = 'Created <code>uploads/.htaccess</code> (blocks PHP execution).';
+    }
 
     // Requests table
     $pdo->exec("CREATE TABLE IF NOT EXISTS requests (

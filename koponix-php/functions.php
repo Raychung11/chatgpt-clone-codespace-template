@@ -117,15 +117,35 @@ function get_sellers(array $filters = []): array {
 
 function save_seller(array $data): string {
     $id = gen_uuid();
-    db()->prepare('INSERT INTO sellers (id,name,koperasi_id,category,service_title,area,price_range,availability,description,contact,experience,registered_date,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
+    db()->prepare('INSERT INTO sellers (id,name,koperasi_id,category,service_title,area,price_range,availability,description,contact,experience,registered_date,status,image,gallery1,gallery2) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
         ->execute([
             $id, $data['name'], $data['koperasi_id'], $data['category'],
             $data['service_title'], $data['area'], $data['price_range'],
             $data['availability'] ?? '', $data['description'] ?? '',
             $data['contact'] ?? 'WhatsApp available upon request',
             $data['experience'] ?? '', date('Y-m-d'), $data['status'] ?? 'active',
+            $data['image'] ?? '', $data['gallery1'] ?? '', $data['gallery2'] ?? '',
         ]);
     return $id;
+}
+
+function update_seller(string $id, array $data): void {
+    db()->prepare('UPDATE sellers SET name=?,category=?,service_title=?,area=?,price_range=?,availability=?,description=?,contact=?,experience=?,status=? WHERE id=?')
+        ->execute([
+            $data['name'], $data['category'], $data['service_title'],
+            $data['area'], $data['price_range'], $data['availability'] ?? '',
+            $data['description'] ?? '', $data['contact'] ?? 'WhatsApp available upon request',
+            $data['experience'] ?? '', $data['status'] ?? 'active', $id,
+        ]);
+    if (!empty($data['image']))    db()->prepare('UPDATE sellers SET image=?    WHERE id=?')->execute([$data['image'],    $id]);
+    if (!empty($data['gallery1'])) db()->prepare('UPDATE sellers SET gallery1=? WHERE id=?')->execute([$data['gallery1'], $id]);
+    if (!empty($data['gallery2'])) db()->prepare('UPDATE sellers SET gallery2=? WHERE id=?')->execute([$data['gallery2'], $id]);
+}
+
+function get_seller_by_id(string $id): ?array {
+    $stmt = db()->prepare('SELECT * FROM sellers WHERE id=?');
+    $stmt->execute([$id]);
+    return $stmt->fetch() ?: null;
 }
 
 function update_seller_status(string $id, string $status): void {
@@ -199,6 +219,56 @@ function save_member(array $data): string {
 
 function update_member_password(string $kop_id, string $new_hash): void {
     db()->prepare('UPDATE members SET password_hash=? WHERE koperasi_id=?')->execute([$new_hash, $kop_id]);
+}
+
+function update_member_profile(string $kop_id, array $data): void {
+    $fields = [];
+    $params = [];
+    foreach (['name', 'email', 'bio', 'avatar'] as $col) {
+        if (array_key_exists($col, $data)) {
+            $fields[] = "{$col}=?";
+            $params[]  = $data[$col];
+        }
+    }
+    if (!$fields) return;
+    $params[] = $kop_id;
+    db()->prepare('UPDATE members SET ' . implode(',', $fields) . ' WHERE koperasi_id=?')->execute($params);
+}
+
+// ── Image upload helper ───────────────────────────────────────
+function handle_image_upload(string $field, string $dest_subdir): ?string {
+    if (empty($_FILES[$field]['tmp_name']) || $_FILES[$field]['error'] !== UPLOAD_ERR_OK) {
+        return null;
+    }
+    $tmp  = $_FILES[$field]['tmp_name'];
+    $info = @getimagesize($tmp);
+    if (!$info) return null; // not an image
+
+    $allowed_mime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!in_array($info['mime'], $allowed_mime, true)) return null;
+
+    if (filesize($tmp) > 2 * 1024 * 1024) return null; // max 2 MB
+
+    $ext  = match($info['mime']) {
+        'image/jpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/gif'  => 'gif',
+        'image/webp' => 'webp',
+        default      => 'jpg',
+    };
+    $filename = gen_short_id() . '.' . $ext;
+    $dest_dir = __DIR__ . '/uploads/' . $dest_subdir;
+    if (!is_dir($dest_dir)) mkdir($dest_dir, 0755, true);
+    $dest = $dest_dir . '/' . $filename;
+    if (move_uploaded_file($tmp, $dest)) {
+        return $dest_subdir . '/' . $filename; // relative path for DB
+    }
+    return null;
+}
+
+function img_url(string $path): string {
+    if (!$path) return '';
+    return 'uploads/' . ltrim($path, '/');
 }
 
 function get_all_members(): array {
