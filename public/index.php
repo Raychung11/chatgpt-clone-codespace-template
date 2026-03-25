@@ -1,0 +1,47 @@
+<?php
+/**
+ * Customer PWA Router
+ * /public/index.php
+ */
+
+define('BASE_PATH', dirname(__DIR__));
+require_once BASE_PATH . '/inc/bootstrap.php';
+
+// Parse route
+$uri   = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$uri   = preg_replace('#^/app/?#', '', $uri);
+$route = trim($uri, '/') ?: 'home';
+
+// Guest-accessible routes
+$guestRoutes = ['login', 'register', 'otp', ''];
+
+// Check auth for protected routes
+if (!in_array($route, $guestRoutes) && !Auth::check()) {
+    header('Location: /app/login');
+    exit;
+}
+
+// Route to pages
+$pages = [
+    ''             => 'pages/home.php',
+    'home'         => 'pages/home.php',
+    'login'        => 'pages/login.php',
+    'register'     => 'pages/register.php',
+    'dashboard'    => 'pages/dashboard.php',
+    'rewards'      => 'pages/rewards.php',
+    'outlets'      => 'pages/outlets.php',
+    'reservations' => 'pages/reservations.php',
+    'orders'       => 'pages/orders.php',
+    'profile'      => 'pages/profile.php',
+    'notifications'=> 'pages/notifications.php',
+    'referrals'    => 'pages/referrals.php',
+];
+
+$file = isset($pages[$route]) ? __DIR__ . '/' . $pages[$route] : null;
+
+if ($file && file_exists($file)) {
+    require $file;
+} else {
+    http_response_code(404);
+    require __DIR__ . '/pages/404.php';
+}
