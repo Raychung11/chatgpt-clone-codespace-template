@@ -12,14 +12,9 @@ $uri   = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $uri   = preg_replace('#^/app/?#', '', $uri);
 $route = trim($uri, '/') ?: 'home';
 
-// Guest-accessible routes
-$guestRoutes = ['login', 'register', 'otp', ''];
-
-// Check auth for protected routes
-if (!in_array($route, $guestRoutes) && !Auth::check()) {
-    header('Location: /app/login');
-    exit;
-}
+// Customer PWA uses Bearer token auth handled entirely in JavaScript.
+// PHP session auth is NOT used for customer routes – removing server-side
+// redirect prevents the JS-token ↔ PHP-session redirect loop.
 
 // Route to pages
 $pages = [

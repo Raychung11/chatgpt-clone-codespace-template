@@ -144,7 +144,7 @@ document.getElementById('btn-verify-otp').onclick = async () => {
             localStorage.setItem('fnb_token', res.data.token);
             localStorage.setItem('fnb_user', JSON.stringify(res.data.user));
             showToast('Welcome back!', 'success');
-            setTimeout(() => window.location.href = '/app/', 800);
+            setTimeout(() => window.location.href = '/app/dashboard', 800);
         } else {
             showToast(res.message, 'error');
         }

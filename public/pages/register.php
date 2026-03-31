@@ -121,7 +121,7 @@ document.getElementById('btn-reg-verify').onclick = async () => {
         localStorage.setItem('fnb_token', res.data.token);
         localStorage.setItem('fnb_user', JSON.stringify(res.data.user));
         showToast('Welcome! 🎉 Account created.', 'success');
-        setTimeout(() => window.location.href = '/app/', 1000);
+        setTimeout(() => window.location.href = '/app/dashboard', 1000);
     } else {
         showToast(res.message, 'error');
     }

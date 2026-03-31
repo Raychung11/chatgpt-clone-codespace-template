@@ -9,16 +9,21 @@
 define('BASE_PATH', dirname(__DIR__));
 require_once BASE_PATH . '/inc/bootstrap.php';
 
-Auth::requireAdmin();
-
-// Parse requested page from URL
+// Parse requested page FIRST, before auth check
 $uri  = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $uri  = preg_replace('#^/admin/?#', '', $uri);
 $uri  = trim($uri, '/');
 $page = empty($uri) ? 'dashboard' : $uri;
 
+// Allow login page without auth; everything else requires admin session
+$publicPages = ['login', 'logout'];
+if (!in_array($page, $publicPages)) {
+    Auth::requireAdmin();
+}
+
 // Map routes to files
 $routes = [
+    'login'               => 'pages/login.php',
     'dashboard'           => 'pages/dashboard.php',
     'customers'           => 'pages/customers.php',
     'customers/view'      => 'pages/customers_view.php',
