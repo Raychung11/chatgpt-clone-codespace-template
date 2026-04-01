@@ -113,6 +113,12 @@ async function sendOtp(phone) {
             document.getElementById('step-phone').style.display = 'none';
             document.getElementById('step-otp').style.display   = 'block';
             startCountdown();
+            // Debug mode: auto-fill OTP inputs
+            if (res.data && res.data.otp_debug) {
+                const digits = res.data.otp_debug.toString().split('');
+                document.querySelectorAll('.otp-digit').forEach((el, i) => { el.value = digits[i] || ''; });
+                showToast('Debug OTP auto-filled: ' + res.data.otp_debug, 'info');
+            }
         } else {
             showToast(res.message, 'error');
         }

@@ -100,6 +100,12 @@ document.getElementById('btn-reg-send').onclick = async () => {
         document.getElementById('display-phone').textContent = '60'+regPhone;
         document.getElementById('step-info').style.display = 'none';
         document.getElementById('step-otp').style.display  = 'block';
+        // Debug mode: auto-fill OTP inputs
+        if (res.data && res.data.otp_debug) {
+            const digits = res.data.otp_debug.toString().split('');
+            document.querySelectorAll('.otp-digit').forEach((el, i) => { el.value = digits[i] || ''; });
+            showToast('Debug OTP auto-filled: ' + res.data.otp_debug, 'info');
+        }
     } else {
         showToast(res.message, 'error');
     }

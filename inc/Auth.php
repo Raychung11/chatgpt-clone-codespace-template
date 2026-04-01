@@ -115,7 +115,10 @@ class Auth
             [$phone, $purpose]
         );
 
-        $otp     = str_pad((string) random_int(0, (10 ** $cfg['otp_length']) - 1), $cfg['otp_length'], '0', STR_PAD_LEFT);
+        // In debug/local mode always use 123456 so testing needs no WhatsApp
+        $otp     = ($cfg['app_debug'] || $cfg['app_env'] === 'local')
+                   ? '123456'
+                   : str_pad((string) random_int(0, (10 ** $cfg['otp_length']) - 1), $cfg['otp_length'], '0', STR_PAD_LEFT);
         $expires = date('Y-m-d H:i:s', strtotime('+' . $cfg['otp_expiry_min'] . ' minutes'));
 
         Database::insert(
