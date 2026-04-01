@@ -1,68 +1,49 @@
 Options -Indexes
-Options +FollowSymLinks
 
 RewriteEngine On
 RewriteBase /
 
 # -------------------------------------------------------
-# Security headers (mod_headers must be enabled)
-# -------------------------------------------------------
-<IfModule mod_headers.c>
-    Header always set X-Frame-Options "SAMEORIGIN"
-    Header always set X-XSS-Protection "1; mode=block"
-    Header always set X-Content-Type-Options "nosniff"
-    Header always set Referrer-Policy "strict-origin-when-cross-origin"
-</IfModule>
-
-# -------------------------------------------------------
 # Block direct access to sensitive directories
 # -------------------------------------------------------
-RewriteRule ^config(/|$) - [F,L]
-RewriteRule ^inc(/|$) - [F,L]
-RewriteRule ^modules(/|$) - [F,L]
-RewriteRule ^database(/|$) - [F,L]
-RewriteRule ^\.env$ - [F,L]
-RewriteRule ^\.env\. - [F,L]
+RewriteRule ^config/ - [F,L]
+RewriteRule ^inc/ - [F,L]
+RewriteRule ^modules/ - [F,L]
+RewriteRule ^database/ - [F,L]
+RewriteRule ^\.env - [F,L]
 
 # -------------------------------------------------------
-# Do NOT rewrite real files or directories
-# (prevents looping when Apache finds the actual .php file)
-# -------------------------------------------------------
-
-# Admin login is a standalone PHP file – serve it directly
-RewriteRule ^admin/login\.php$ - [L]
-
-# -------------------------------------------------------
-# API: route /api/* → api/index.php
+# API: /api/* → api/index.php
 # -------------------------------------------------------
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^api/(.*)$ api/index.php [QSA,L]
 
 # -------------------------------------------------------
-# Admin panel: route /admin/* → admin/index.php
-# (skips if the physical file already exists)
+# Admin panel: /admin/* → admin/index.php
 # -------------------------------------------------------
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^admin(/(.*))?$ admin/index.php [QSA,L]
+RewriteRule ^admin/(.+)$ admin/index.php [QSA,L]
+
+RewriteRule ^admin/?$ admin/index.php [QSA,L]
 
 # -------------------------------------------------------
-# Customer PWA: route /app/* → public/index.php
+# Customer PWA: /app/* → public/index.php
 # -------------------------------------------------------
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^app(/(.*))?$ public/index.php [QSA,L]
+RewriteRule ^app/(.+)$ public/index.php [QSA,L]
+
+RewriteRule ^app/?$ public/index.php [QSA,L]
 
 # -------------------------------------------------------
-# Root → redirect bare domain to /app/
+# Root → /app/
 # -------------------------------------------------------
-RewriteCond %{REQUEST_URI} ^/$
 RewriteRule ^$ /app/ [R=302,L]
 
 # -------------------------------------------------------
-# Force HTTPS – uncomment ONLY after SSL is active on Hostinger
+# Force HTTPS – uncomment ONLY after SSL is active
 # -------------------------------------------------------
 # RewriteCond %{HTTPS} off
-# RewriteCond %{HTTP_HOST} !^localhost
 # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
