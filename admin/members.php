@@ -349,6 +349,8 @@ if (isset($_GET['view'])) {
 <!-- ─── List view ─────────────────────────────────────────────────────────── -->
 <?php
 $filter  = in_array($_GET['status'] ?? '', ['all','active','pending','suspended','banned']) ? $_GET['status'] : 'all';
+$page_title = 'Members';
+$active_nav = 'members';
 $search  = trim($_GET['q'] ?? '');
 $per_page = 25;
 $page_num = max(1, (int)($_GET['page'] ?? 1));
@@ -400,6 +402,8 @@ try {
 } catch (PDOException $e) { error_log('[Admin Members list] ' . $e->getMessage()); }
 
 $total_pages = (int)ceil($total / $per_page);
+
+include __DIR__ . '/../inc/admin_layout.php';
 ?>
 
 <!-- Filters -->
