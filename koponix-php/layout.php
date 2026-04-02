@@ -59,7 +59,21 @@ body{font-family:'Inter',sans-serif;background:var(--light-bg);min-height:100vh;
 .chat-msg.theirs .bubble{background:#fff;color:#333;border:1px solid #e0e0e0;border-radius:14px 14px 14px 0;}
 .chat-msg.ai-msg .bubble{background:#eaf4fb;color:#1a5276;border:1px solid #b8d9f0;border-radius:14px 14px 14px 0;}
 .chat-ts{font-size:.68rem;color:#aaa;margin-top:2px;}
-@media(max-width:768px){#sidebar{display:none;}}
+@media(max-width:768px){
+    #sidebar{display:none;}
+    #content{padding:1rem .8rem 80px;}
+    .page-title{font-size:1.2rem;}
+    #mobile-nav{display:flex!important;}
+}
+@media(min-width:769px){#mobile-nav{display:none!important;}}
+#mobile-nav{position:fixed;bottom:0;left:0;right:0;height:62px;background:#fff;
+    border-top:1px solid #dde;z-index:1000;align-items:stretch;
+    box-shadow:0 -2px 10px rgba(0,0,0,.08);}
+#mobile-nav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-decoration:none;color:#888;font-size:.6rem;font-weight:600;gap:2px;transition:color .15s;}
+#mobile-nav a .mn-icon{font-size:1.3rem;line-height:1;}
+#mobile-nav a.active,#mobile-nav a:hover{color:#1a5276;}
+#mobile-nav a.active .mn-icon{filter:drop-shadow(0 0 3px rgba(26,82,118,.4));}
 </style>
 <?php } ?>
 
@@ -127,8 +141,40 @@ body{font-family:'Inter',sans-serif;background:var(--light-bg);min-height:100vh;
 <?php endif; ?>
 <?php } ?>
 
-<?php function html_footer(): void { ?>
+<?php function html_footer(): void {
+    global $member, $page;
+    $mn = [
+        'index.php'           => ['🏠','Home'],
+        'find_services.php'   => ['🔍','Services'],
+        'request_service.php' => ['🛒','Request'],
+        'messages.php'        => ['💬','Messages'],
+        'member_mobile.php'   => ['👤','My Account'],
+    ];
+    // If logged in, replace last tab with mobile dashboard
+    $account_href = $member ? 'member_mobile.php' : 'member_portal.php';
+    $account_label= $member ? 'My Account' : 'Login';
+?>
 </main></div>
+
+<!-- Mobile bottom nav (visible on small screens only) -->
+<nav id="mobile-nav">
+    <a href="index.php" class="<?= $page==='index.php'?'active':'' ?>">
+        <span class="mn-icon">🏠</span>Home
+    </a>
+    <a href="find_services.php" class="<?= $page==='find_services.php'?'active':'' ?>">
+        <span class="mn-icon">🔍</span>Services
+    </a>
+    <a href="request_service.php" class="<?= $page==='request_service.php'?'active':'' ?>">
+        <span class="mn-icon">🛒</span>Request
+    </a>
+    <a href="messages.php" class="<?= $page==='messages.php'?'active':'' ?>">
+        <span class="mn-icon">💬</span>Messages
+    </a>
+    <a href="<?= $account_href ?>" class="<?= in_array($page,['member_mobile.php','member_portal.php'])?'active':'' ?>">
+        <span class="mn-icon">👤</span><?= $account_label ?>
+    </a>
+</nav>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
