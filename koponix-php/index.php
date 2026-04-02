@@ -56,7 +56,118 @@ $colors     = cat_colors();
     </div>
 </div>
 
-<!-- ── Stats ──────────────────────────────────────────────────── -->
+<!-- ── About Koponix ──────────────────────────────────────────── -->
+<div class="row g-4 mb-4 align-items-center">
+    <div class="col-lg-7">
+        <div class="section-head">About Koponix</div>
+        <p style="font-size:.95rem;line-height:1.8;color:#333">
+            <strong>Koponix</strong> is an AI-powered <em>Koperasi Digital Economy Activation System</em> built to
+            help koperasi members earn income, discover trusted services, and transact in a structured,
+            traceable way — all within their own community.
+        </p>
+        <p style="font-size:.93rem;line-height:1.8;color:#555">
+            Whether you are a skilled member looking to offer your expertise, or a member in need of
+            a reliable service provider, Koponix connects you directly — with AI-assisted matching,
+            in-app messaging, and smart search built in. No middlemen. No hidden fees. Just member-to-member
+            transactions you can trust.
+        </p>
+        <div class="d-flex flex-wrap gap-3 mt-3">
+            <div style="display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:#1a5276;font-weight:600">
+                <span style="background:#eaf4fb;border-radius:8px;padding:6px 10px;font-size:1.1rem">🤖</span>
+                AI-Powered Matching
+            </div>
+            <div style="display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:#1a5276;font-weight:600">
+                <span style="background:#eaf4fb;border-radius:8px;padding:6px 10px;font-size:1.1rem">💬</span>
+                In-App Messaging
+            </div>
+            <div style="display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:#1a5276;font-weight:600">
+                <span style="background:#eaf4fb;border-radius:8px;padding:6px 10px;font-size:1.1rem">🔒</span>
+                Member-Verified Listings
+            </div>
+            <div style="display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:#1a5276;font-weight:600">
+                <span style="background:#eaf4fb;border-radius:8px;padding:6px 10px;font-size:1.1rem">🇲🇾</span>
+                Malaysian Koperasi Focus
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div style="background:linear-gradient(135deg,#eaf4fb,#d6eaf8);border-radius:14px;padding:1.5rem;border-left:5px solid #1a5276">
+            <div style="font-size:.75rem;font-weight:700;letter-spacing:1px;color:#1a5276;text-transform:uppercase;margin-bottom:.8rem">
+                🏢 Official Platform Partner
+            </div>
+            <div style="font-size:1.25rem;font-weight:800;color:#0d3b5e;margin-bottom:.3rem">
+                Koperasi Sekata Rakyat
+            </div>
+            <div style="font-size:.85rem;color:#444;line-height:1.7;margin-bottom:.8rem">
+                Koponix is proudly developed in collaboration with
+                <strong>Koperasi Sekata Rakyat</strong> to empower its members through
+                a structured digital marketplace — enabling sustainable income generation
+                and community-driven economic growth.
+            </div>
+            <div style="font-size:.78rem;color:#1a5276;font-weight:600">
+                🤝 Member-to-member economy &nbsp;|&nbsp; 📋 Traceable transactions &nbsp;|&nbsp; 🌱 Community growth
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Koperasi Sekata Rakyat Section ─────────────────────────── -->
+<div style="background:#fff;border-radius:16px;padding:2rem;margin-bottom:2rem;box-shadow:0 2px 10px rgba(0,0,0,.07);border-top:5px solid #1a5276">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-4 text-center">
+            <div style="width:100px;height:100px;background:linear-gradient(135deg,#1a5276,#2e86c1);
+                        border-radius:50%;display:flex;align-items:center;justify-content:center;
+                        font-size:2.8rem;margin:0 auto .8rem">🤝</div>
+            <div style="font-size:1.1rem;font-weight:800;color:#0d3b5e">Koperasi Sekata Rakyat</div>
+            <div style="font-size:.8rem;color:#777;margin-top:.2rem">Registered Cooperative · Malaysia</div>
+        </div>
+        <div class="col-lg-8">
+            <div class="section-head mb-2">Our Koperasi Partner</div>
+            <p style="font-size:.9rem;line-height:1.8;color:#444;margin-bottom:.8rem">
+                <strong>Koperasi Sekata Rakyat</strong> is a registered Malaysian cooperative committed to
+                improving the economic well-being of its members through collective participation, mutual support,
+                and structured business activities. The cooperative covers a diverse range of member skills and
+                services across Klang Valley and beyond.
+            </p>
+            <p style="font-size:.88rem;line-height:1.75;color:#555;margin-bottom:1rem">
+                Through Koponix, Koperasi Sekata Rakyat members can now list their professional services,
+                respond to buyer requests, and grow their income — all within a trusted, AI-supported
+                digital platform built specifically for the koperasi ecosystem.
+            </p>
+            <div class="row g-2">
+                <div class="col-6 col-md-3">
+                    <div style="background:#f0f9ff;border-radius:10px;padding:.7rem;text-align:center">
+                        <div style="font-size:1.3rem;font-weight:800;color:#1a5276"><?= $total_members ?></div>
+                        <div style="font-size:.72rem;color:#777">Members</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div style="background:#f0fdf4;border-radius:10px;padding:.7rem;text-align:center">
+                        <div style="font-size:1.3rem;font-weight:800;color:#27ae60"><?= $total_sellers ?></div>
+                        <div style="font-size:.72rem;color:#777">Services Listed</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div style="background:#fff9f0;border-radius:10px;padding:.7rem;text-align:center">
+                        <div style="font-size:1.3rem;font-weight:800;color:#e67e22"><?= $total_requests ?></div>
+                        <div style="font-size:.72rem;color:#777">Requests Posted</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div style="background:#fdf0f0;border-radius:10px;padding:.7rem;text-align:center">
+                        <div style="font-size:1.3rem;font-weight:800;color:#e74c3c">9</div>
+                        <div style="font-size:.72rem;color:#777">Service Categories</div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3 d-flex gap-2 flex-wrap">
+                <a href="find_services.php" class="btn btn-primary btn-sm">🔍 Browse Member Services</a>
+                <a href="member_portal.php" class="btn btn-outline-primary btn-sm">👤 Member Login</a>
+                <a href="register_service.php" class="btn btn-outline-secondary btn-sm">💼 List Your Service</a>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="row g-3 mb-4">
     <div class="col-4">
         <div class="stat-box">

@@ -85,6 +85,9 @@ body{font-family:'Inter',sans-serif;background:var(--light-bg);min-height:100vh;
 ?>
 <nav id="sidebar" class="d-flex flex-column">
     <div class="logo">🤝 Kopo<span>nix</span></div>
+    <div style="font-size:.65rem;color:rgba(255,255,255,.55);padding:.1rem 1rem .8rem;line-height:1.3">
+        Koperasi Sekata Rakyat<br>Digital Marketplace
+    </div>
     <div class="px-2 py-2 flex-grow-1">
         <nav class="nav flex-column gap-1">
         <?php foreach ($links as $file => [$icon, $label]): ?>
