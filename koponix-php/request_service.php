@@ -55,7 +55,8 @@ foreach ($req_by_cat as $cat => $demand) {
         $gap[$cat] = ['demand' => $demand, 'supply' => $supply, 'gap' => max(0, $demand - $supply)];
     }
 }
-usort($gap_sorted = array_keys($gap), fn($a, $b) => $gap[$b]['gap'] - $gap[$a]['gap']);
+$gap_sorted = array_keys($gap);
+usort($gap_sorted, fn($a, $b) => $gap[$b]['gap'] - $gap[$a]['gap']);
 
 // Top requested locations
 $req_by_loc = [];
