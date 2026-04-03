@@ -1,0 +1,7 @@
+# Prevent PHP execution in uploads directory — CRITICAL security measure
+<FilesMatch "\.(php|php3|php4|php5|php7|phtml|phar)$">
+    Require all denied
+</FilesMatch>
+
+# Only allow serving of known safe file types
+Options -Indexes

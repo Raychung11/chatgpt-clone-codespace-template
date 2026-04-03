@@ -1,0 +1,2 @@
+# Block all web access to cron directory
+Require all denied

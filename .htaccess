@@ -1,0 +1,19 @@
+# Root .htaccess — redirect public traffic to /public/
+# Place this at your document root or configure Apache VirtualHost to point to /public/
+
+Options -Indexes
+
+# Security headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# If document root is the project root, redirect to /public/
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^$ /public/ [L,R=302]
+</IfModule>

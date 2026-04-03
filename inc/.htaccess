@@ -1,0 +1,2 @@
+# Block all web access to inc directory
+Require all denied
