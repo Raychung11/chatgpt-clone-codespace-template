@@ -47,6 +47,7 @@ require BASE_PATH . '/public/layout/app_shell.php';
             ['icon'=>'calendar-check','label'=>'My Reservations',  'href'=>'/app/reservations',  'color'=>'#6f42c1', 'bg'=>'rgba(111,66,193,.1)'],
             ['icon'=>'star',         'label'=>'Loyalty History',   'href'=>'#loyalty',           'color'=>'#ffc107', 'bg'=>'rgba(255,193,7,.1)'],
             ['icon'=>'pencil-square','label'=>'Edit Profile',      'href'=>'#edit',              'color'=>'#20c997', 'bg'=>'rgba(32,201,151,.1)'],
+            ['icon'=>'shield-lock',  'label'=>'Change Password',   'href'=>'#password',          'color'=>'#6f42c1', 'bg'=>'rgba(111,66,193,.1)'],
             ['icon'=>'box-arrow-right','label'=>'Sign Out',        'href'=>'#logout',            'color'=>'#dc3545', 'bg'=>'rgba(220,53,69,.1)'],
         ];
         foreach ($links as $l):
@@ -94,6 +95,36 @@ require BASE_PATH . '/public/layout/app_shell.php';
     </div>
 </div>
 
+<!-- Change Password Offcanvas -->
+<div class="offcanvas offcanvas-bottom" tabindex="-1" id="passwordCanvas" style="height:auto;max-height:85vh;border-radius:24px 24px 0 0;">
+    <div class="offcanvas-header border-0">
+        <h6 class="offcanvas-title fw-bold">Change Password</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <p class="text-muted small mb-3">
+            Set a password to sign in without OTP.<br>
+            If you've never set a password, leave "Current password" blank.
+        </p>
+        <div class="mb-3" id="current-pw-row">
+            <label class="form-label fw-semibold small">Current Password</label>
+            <input type="password" id="pw-current" class="form-control form-control-app"
+                   placeholder="Leave blank if setting for the first time" autocomplete="current-password">
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-semibold small">New Password *</label>
+            <input type="password" id="pw-new" class="form-control form-control-app"
+                   placeholder="Min. 8 characters" autocomplete="new-password">
+        </div>
+        <div class="mb-4">
+            <label class="form-label fw-semibold small">Confirm New Password *</label>
+            <input type="password" id="pw-confirm" class="form-control form-control-app"
+                   placeholder="Repeat new password" autocomplete="new-password">
+        </div>
+        <button class="btn-brand" id="btn-save-password">Save Password</button>
+    </div>
+</div>
+
 <!-- Loyalty History Offcanvas -->
 <div class="offcanvas offcanvas-bottom" tabindex="-1" id="loyaltyCanvas" style="height:85vh;border-radius:24px 24px 0 0;">
     <div class="offcanvas-header border-0">
@@ -106,8 +137,9 @@ require BASE_PATH . '/public/layout/app_shell.php';
 </div>
 
 <script>
-const editCanvas    = new bootstrap.Offcanvas(document.getElementById('editCanvas'));
-const loyaltyCanvas = new bootstrap.Offcanvas(document.getElementById('loyaltyCanvas'));
+const editCanvas     = new bootstrap.Offcanvas(document.getElementById('editCanvas'));
+const passwordCanvas = new bootstrap.Offcanvas(document.getElementById('passwordCanvas'));
+const loyaltyCanvas  = new bootstrap.Offcanvas(document.getElementById('loyaltyCanvas'));
 
 const tierIcons  = { bronze:'🥉', silver:'🥈', gold:'🥇', platinum:'💎' };
 const tierColors = { bronze:'bronze', silver:'silver', gold:'gold', platinum:'platinum' };
@@ -147,6 +179,13 @@ async function loadProfile() {
 document.getElementById('link-Edit_Profile').onclick = e => {
     e.preventDefault(); editCanvas.show();
 };
+document.getElementById('link-Change_Password').onclick = e => {
+    e.preventDefault();
+    document.getElementById('pw-current').value = '';
+    document.getElementById('pw-new').value     = '';
+    document.getElementById('pw-confirm').value = '';
+    passwordCanvas.show();
+};
 document.getElementById('link-Loyalty_History').onclick = e => {
     e.preventDefault();
     loyaltyCanvas.show();
@@ -179,6 +218,33 @@ document.getElementById('btn-save-profile').onclick = async () => {
         showToast(res.message, 'error');
     }
     btn.disabled = false; btn.textContent = 'Save Changes';
+};
+
+document.getElementById('btn-save-password').onclick = async () => {
+    const current = document.getElementById('pw-current').value;
+    const nw      = document.getElementById('pw-new').value;
+    const confirm = document.getElementById('pw-confirm').value;
+
+    if (!nw) { showToast('Enter a new password.', 'error'); return; }
+    if (nw.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
+    if (nw !== confirm) { showToast('Passwords do not match.', 'error'); return; }
+
+    const btn = document.getElementById('btn-save-password');
+    btn.disabled = true; btn.textContent = 'Saving…';
+
+    const res = await apiCall('auth/set-password', 'POST', {
+        current_password: current || undefined,
+        new_password:     nw,
+        confirm_password: confirm,
+    });
+
+    if (res.status === 'success') {
+        showToast('Password saved! You can now sign in with password.', 'success');
+        passwordCanvas.hide();
+    } else {
+        showToast(res.message || 'Failed to save password.', 'error');
+    }
+    btn.disabled = false; btn.textContent = 'Save Password';
 };
 
 async function loadLoyaltyHistory() {

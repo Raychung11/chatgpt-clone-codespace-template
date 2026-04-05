@@ -190,6 +190,82 @@ switch ($action) {
         break;
 
     // ---------------------------------------------------
+    // POST /api/auth/login-password
+    // Phone + password login (alternative to OTP)
+    // ---------------------------------------------------
+    case 'login-password':
+        if ($method !== 'POST') json_error('Method not allowed.', null, 405);
+
+        api_rate_limit('password_login', 10, 300); // 10 attempts per 5 min
+
+        $phone    = sanitize_string($body['phone']    ?? '');
+        $password = $body['password'] ?? '';
+
+        if (!$phone || !$password) json_error('Phone and password are required.');
+        if (!validate_phone($phone)) json_error('Invalid phone number format.');
+
+        $user = Database::fetchOne(
+            'SELECT * FROM users WHERE phone = ? AND role = "customer" AND status = "active"',
+            [$phone]
+        );
+
+        if (!$user) json_error('Phone number not found or account inactive.');
+        if (empty($user['password_hash'])) json_error('No password set for this account. Please sign in with OTP.');
+        if (!password_verify($password, $user['password_hash'])) json_error('Incorrect password.');
+
+        $token = Auth::generateApiToken($user['id']);
+        Database::execute('UPDATE users SET last_login_at = NOW() WHERE id = ?', [$user['id']]);
+
+        $profile = Database::fetchOne('SELECT * FROM customer_profiles WHERE user_id = ?', [$user['id']]);
+
+        json_success('Login successful.', [
+            'token'   => $token,
+            'user'    => [
+                'id'    => $user['id'],
+                'name'  => $user['name'],
+                'phone' => $user['phone'],
+                'email' => $user['email'],
+            ],
+            'profile' => [
+                'tier'          => $profile['tier']         ?? 'bronze',
+                'total_points'  => (int)($profile['total_points'] ?? 0),
+                'referral_code' => $profile['referral_code'] ?? '',
+            ],
+        ]);
+        break;
+
+    // ---------------------------------------------------
+    // POST /api/auth/set-password
+    // Authenticated: set or change own password
+    // ---------------------------------------------------
+    case 'set-password':
+        if ($method !== 'POST') json_error('Method not allowed.', null, 405);
+        $user = api_require_auth();
+
+        $currentPassword = $body['current_password'] ?? '';
+        $newPassword     = $body['new_password']     ?? '';
+        $confirmPassword = $body['confirm_password'] ?? '';
+
+        if (!$newPassword) json_error('New password is required.');
+        if (strlen($newPassword) < 8) json_error('Password must be at least 8 characters.');
+        if ($newPassword !== $confirmPassword) json_error('Passwords do not match.');
+
+        // If user already has a password, they must provide the current one
+        $existing = Database::fetchOne('SELECT password_hash FROM users WHERE id = ?', [$user['id']]);
+        if (!empty($existing['password_hash'])) {
+            if (!$currentPassword) json_error('Current password is required.');
+            if (!password_verify($currentPassword, $existing['password_hash'])) {
+                json_error('Current password is incorrect.');
+            }
+        }
+
+        $hash = password_hash($newPassword, PASSWORD_BCRYPT, ['cost' => 12]);
+        Database::execute('UPDATE users SET password_hash = ? WHERE id = ?', [$hash, $user['id']]);
+
+        json_success('Password updated successfully.');
+        break;
+
+    // ---------------------------------------------------
     // PUT /api/auth/profile
     // ---------------------------------------------------
     case 'profile':
