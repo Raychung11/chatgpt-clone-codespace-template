@@ -48,6 +48,7 @@ $pages = [
     'cart'         => 'pages/cart.php',
     'profile'      => 'pages/profile.php',
     'notifications'=> 'pages/notifications.php',
+    'debug'        => 'debug.php',
     'referrals'    => 'pages/referrals.php',
 ];
 
