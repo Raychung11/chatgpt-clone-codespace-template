@@ -166,8 +166,8 @@ class Auth
      */
     public static function generateApiToken(int $userId): string
     {
-        // Ensure table exists (safe migration for installs missing schema update)
-        Database::execute(
+        // Ensure table exists – use exec() not prepare() for DDL statements
+        Database::getInstance()->exec(
             'CREATE TABLE IF NOT EXISTS `api_tokens` (
                 `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
                 `user_id`    INT UNSIGNED NOT NULL UNIQUE,

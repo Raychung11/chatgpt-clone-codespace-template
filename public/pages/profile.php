@@ -191,13 +191,7 @@ document.getElementById('link-Loyalty_History').onclick = e => {
     loyaltyCanvas.show();
     loadLoyaltyHistory();
 };
-document.getElementById('link-Sign_Out').onclick = async e => {
-    e.preventDefault();
-    await apiCall('auth/logout', 'POST');
-    localStorage.removeItem('fnb_token');
-    localStorage.removeItem('fnb_user');
-    window.location.href = '/app/login';
-};
+// Sign Out navigates directly to /app/logout (no JS handler needed)
 
 document.getElementById('btn-save-profile').onclick = async () => {
     const btn = document.getElementById('btn-save-profile');
