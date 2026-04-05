@@ -121,6 +121,9 @@
         <a href="/admin/orders" class="nav-link <?= (($activePage ?? '') === 'orders') ? 'active' : '' ?>">
             <i class="bi bi-receipt"></i> Orders
         </a>
+        <a href="/admin/menu" class="nav-link <?= (($activePage ?? '') === 'menu') ? 'active' : '' ?>">
+            <i class="bi bi-menu-button-wide"></i> Menu
+        </a>
         <a href="/admin/outlets" class="nav-link <?= (($activePage ?? '') === 'outlets') ? 'active' : '' ?>">
             <i class="bi bi-shop"></i> Outlets
         </a>

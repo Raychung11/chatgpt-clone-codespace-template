@@ -42,10 +42,10 @@ require BASE_PATH . '/public/layout/app_shell.php';
     <div class="row g-2">
         <?php
         $quickActions = [
-            ['icon'=>'gift-fill',       'label'=>'Redeem',      'href'=>'/app/rewards',      'bg'=>'rgba(233,69,96,.1)',    'color'=>'#e94560'],
-            ['icon'=>'calendar-check',  'label'=>'Book Table',  'href'=>'/app/reservations', 'bg'=>'rgba(13,202,240,.1)',   'color'=>'#0dcaf0'],
-            ['icon'=>'shop',            'label'=>'Outlets',     'href'=>'/app/outlets',      'bg'=>'rgba(25,135,84,.1)',    'color'=>'#198754'],
-            ['icon'=>'share',           'label'=>'Refer',       'href'=>'/app/referrals',    'bg'=>'rgba(255,193,7,.1)',    'color'=>'#ffc107'],
+            ['icon'=>'menu-button-wide-fill','label'=>'Order Now',  'href'=>'/app/menu',         'bg'=>'rgba(233,69,96,.1)',    'color'=>'#e94560'],
+            ['icon'=>'gift-fill',            'label'=>'Redeem',     'href'=>'/app/rewards',      'bg'=>'rgba(255,193,7,.1)',    'color'=>'#ffc107'],
+            ['icon'=>'calendar-check',       'label'=>'Book Table', 'href'=>'/app/reservations', 'bg'=>'rgba(13,202,240,.1)',   'color'=>'#0dcaf0'],
+            ['icon'=>'share',                'label'=>'Refer',      'href'=>'/app/referrals',    'bg'=>'rgba(25,135,84,.1)',    'color'=>'#198754'],
         ];
         foreach ($quickActions as $qa):
         ?>

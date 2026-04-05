@@ -49,6 +49,7 @@ $routes = [
     'outlets'       => BASE_PATH . '/api/routes/outlets.php',
     'reservations'  => BASE_PATH . '/api/routes/reservations.php',
     'orders'        => BASE_PATH . '/api/routes/orders.php',
+    'menu'          => BASE_PATH . '/api/routes/menu.php',
     'referrals'     => BASE_PATH . '/api/routes/referrals.php',
     'notifications' => BASE_PATH . '/api/routes/notifications.php',
 ];

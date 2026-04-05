@@ -6,11 +6,11 @@
 $unreadCount = Auth::check() ? Notification::getUnreadCount(Auth::currentUserId()) : 0;
 $currentRoute = trim(preg_replace('#^/app/?#', '', parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH)), '/') ?: 'home';
 $navItems = [
-    'home'         => ['icon' => 'house-fill',       'label' => 'Home'],
-    'rewards'      => ['icon' => 'gift-fill',         'label' => 'Rewards'],
-    'outlets'      => ['icon' => 'shop',              'label' => 'Outlets'],
-    'reservations' => ['icon' => 'calendar-check',    'label' => 'Book'],
-    'profile'      => ['icon' => 'person-circle',     'label' => 'Profile'],
+    'home'         => ['icon' => 'house-fill',          'label' => 'Home'],
+    'menu'         => ['icon' => 'menu-button-wide-fill','label' => 'Menu'],
+    'rewards'      => ['icon' => 'gift-fill',            'label' => 'Rewards'],
+    'reservations' => ['icon' => 'calendar-check',       'label' => 'Book'],
+    'profile'      => ['icon' => 'person-circle',        'label' => 'Profile'],
 ];
 ?>
 <nav class="bottom-nav">
@@ -22,6 +22,9 @@ $navItems = [
         <span><?= $item['label'] ?></span>
         <?php if ($route === 'profile' && $unreadCount > 0): ?>
         <span class="notif-badge"><?= min(9, $unreadCount) ?></span>
+        <?php endif; ?>
+        <?php if ($route === 'menu'): ?>
+        <span class="notif-badge" id="nav-cart-badge" style="display:none;background:#e94560;"></span>
         <?php endif; ?>
     </a>
     <?php endforeach; ?>
@@ -37,6 +40,19 @@ $navItems = [
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/public/sw.js').catch(console.error);
 }
+
+// Cart badge in bottom nav
+(function updateNavCartBadge() {
+    try {
+        const cart  = JSON.parse(localStorage.getItem('fnb_cart') || '[]');
+        const total = cart.reduce((s, i) => s + (i.qty || 0), 0);
+        const badge = document.getElementById('nav-cart-badge');
+        if (badge && total > 0) {
+            badge.textContent    = total > 9 ? '9+' : total;
+            badge.style.display  = '';
+        }
+    } catch {}
+})();
 
 // Toast helper
 function showToast(msg, type = 'info') {
