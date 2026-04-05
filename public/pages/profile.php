@@ -48,7 +48,7 @@ require BASE_PATH . '/public/layout/app_shell.php';
             ['icon'=>'star',         'label'=>'Loyalty History',   'href'=>'#loyalty',           'color'=>'#ffc107', 'bg'=>'rgba(255,193,7,.1)'],
             ['icon'=>'pencil-square','label'=>'Edit Profile',      'href'=>'#edit',              'color'=>'#20c997', 'bg'=>'rgba(32,201,151,.1)'],
             ['icon'=>'shield-lock',  'label'=>'Change Password',   'href'=>'#password',          'color'=>'#6f42c1', 'bg'=>'rgba(111,66,193,.1)'],
-            ['icon'=>'box-arrow-right','label'=>'Sign Out',        'href'=>'#logout',            'color'=>'#dc3545', 'bg'=>'rgba(220,53,69,.1)'],
+            ['icon'=>'box-arrow-right','label'=>'Sign Out',        'href'=>'/app/logout',        'color'=>'#dc3545', 'bg'=>'rgba(220,53,69,.1)'],
         ];
         foreach ($links as $l):
         ?>

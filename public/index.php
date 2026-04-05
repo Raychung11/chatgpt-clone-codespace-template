@@ -37,6 +37,7 @@ $pages = [
     ''             => 'pages/home.php',
     'home'         => 'pages/home.php',
     'login'        => 'pages/login.php',
+    'logout'       => 'pages/logout.php',
     'register'     => 'pages/register.php',
     'dashboard'    => 'pages/dashboard.php',
     'rewards'      => 'pages/rewards.php',
