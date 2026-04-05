@@ -123,7 +123,7 @@ class Auth
 
         Database::insert(
             'INSERT INTO otp_tokens (phone, otp, purpose, expires_at) VALUES (?, ?, ?, ?)',
-            [$phone, password_hash($otp, PASSWORD_BCRYPT), $purpose, $expires]
+            [$phone, $otp, $purpose, $expires]
         );
 
         return $otp;
@@ -148,7 +148,7 @@ class Auth
 
         if ((int) $row['attempts'] >= 5) return false;  // too many attempts
 
-        if (!password_verify($otp, $row['otp'])) return false;
+        if (!hash_equals($row['otp'], $otp)) return false;
 
         // Mark as used
         Database::execute('UPDATE otp_tokens SET is_used = 1 WHERE id = ?', [$row['id']]);
