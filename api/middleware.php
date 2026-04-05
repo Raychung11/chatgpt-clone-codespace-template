@@ -11,7 +11,27 @@
  */
 function api_require_auth(): array
 {
-    $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    // Try all places Apache/PHP-FPM might put the Authorization header
+    $header = $_SERVER['HTTP_AUTHORIZATION']
+           ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+           ?? '';
+
+    // Fallback: apache_request_headers() (works on some Hostinger configs)
+    if (empty($header) && function_exists('apache_request_headers')) {
+        $allHeaders = apache_request_headers();
+        foreach ($allHeaders as $k => $v) {
+            if (strtolower($k) === 'authorization') { $header = $v; break; }
+        }
+    }
+
+    // Last resort: check getallheaders() (PHP 7+)
+    if (empty($header) && function_exists('getallheaders')) {
+        $allHeaders = getallheaders();
+        foreach ($allHeaders as $k => $v) {
+            if (strtolower($k) === 'authorization') { $header = $v; break; }
+        }
+    }
+
     if (!preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
         json_error('Unauthenticated. Provide a Bearer token.', null, 401);
     }
