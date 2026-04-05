@@ -137,9 +137,7 @@ require BASE_PATH . '/public/layout/app_shell.php';
 </div>
 
 <script>
-const editCanvas     = new bootstrap.Offcanvas(document.getElementById('editCanvas'));
-const passwordCanvas = new bootstrap.Offcanvas(document.getElementById('passwordCanvas'));
-const loyaltyCanvas  = new bootstrap.Offcanvas(document.getElementById('loyaltyCanvas'));
+let editCanvas = null, passwordCanvas = null, loyaltyCanvas = null;
 
 const tierIcons  = { bronze:'🥉', silver:'🥈', gold:'🥇', platinum:'💎' };
 const tierColors = { bronze:'bronze', silver:'silver', gold:'gold', platinum:'platinum' };
@@ -177,9 +175,11 @@ async function loadProfile() {
 }
 
 document.getElementById('link-Edit_Profile').onclick = e => {
+    if (!editCanvas) editCanvas = new bootstrap.Offcanvas(document.getElementById('editCanvas'));
     e.preventDefault(); editCanvas.show();
 };
 document.getElementById('link-Change_Password').onclick = e => {
+    if (!passwordCanvas) passwordCanvas = new bootstrap.Offcanvas(document.getElementById('passwordCanvas'));
     e.preventDefault();
     document.getElementById('pw-current').value = '';
     document.getElementById('pw-new').value     = '';
@@ -187,6 +187,7 @@ document.getElementById('link-Change_Password').onclick = e => {
     passwordCanvas.show();
 };
 document.getElementById('link-Loyalty_History').onclick = e => {
+    if (!loyaltyCanvas) loyaltyCanvas = new bootstrap.Offcanvas(document.getElementById('loyaltyCanvas'));
     e.preventDefault();
     loyaltyCanvas.show();
     loadLoyaltyHistory();

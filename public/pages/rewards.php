@@ -62,7 +62,7 @@ require BASE_PATH . '/public/layout/app_shell.php';
 
 <script>
 let selectedRewardId = null;
-const redeemModal = new bootstrap.Modal(document.getElementById('redeemModal'));
+let redeemModal = null; // lazy-init in openRedeem()
 
 function showTab(tab) {
     document.getElementById('tab-available').style.display = tab === 'available' ? '' : 'none';
@@ -134,6 +134,7 @@ async function loadVouchers() {
 }
 
 function openRedeem(id, name, points) {
+    if (!redeemModal) redeemModal = new bootstrap.Modal(document.getElementById('redeemModal'));
     selectedRewardId = id;
     document.getElementById('redeem-modal-body').innerHTML = `
         <div class="text-center py-2">

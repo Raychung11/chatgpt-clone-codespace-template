@@ -52,7 +52,7 @@ require BASE_PATH . '/public/layout/app_shell.php';
 
 <script>
 let allOutlets = [];
-const outletModal = new bootstrap.Modal(document.getElementById('outletModal'));
+let outletModal = null;
 
 function renderOutlets(outlets) {
     const list = document.getElementById('outlets-list');
@@ -73,6 +73,7 @@ function renderOutlets(outlets) {
 }
 
 function openOutlet(id) {
+    if (!outletModal) outletModal = new bootstrap.Modal(document.getElementById('outletModal'));
     const o = allOutlets.find(x => x.id === id);
     if (!o) return;
     document.getElementById('outlet-modal-name').textContent = o.name;

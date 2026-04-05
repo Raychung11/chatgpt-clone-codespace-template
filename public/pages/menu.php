@@ -267,9 +267,10 @@ function quickAdd(itemJson) {
 }
 
 // ─── Item Detail Offcanvas ─────────────────────────────────────────────────
-const itemCanvas = new bootstrap.Offcanvas(document.getElementById('itemCanvas'));
+let itemCanvas = null;
 
 function showItemDetail(itemId) {
+    if (!itemCanvas) itemCanvas = new bootstrap.Offcanvas(document.getElementById('itemCanvas'));
     const item = fullMenu.flatMap(c => c.items).find(i => i.id === itemId);
     if (!item) return;
 

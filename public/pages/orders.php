@@ -27,7 +27,7 @@ require BASE_PATH . '/public/layout/app_shell.php';
 </div>
 
 <script>
-const orderCanvas = new bootstrap.Offcanvas(document.getElementById('orderCanvas'));
+let orderCanvas = null;
 const statusColors = {pending:'warning',confirmed:'primary',preparing:'info',ready:'success',completed:'success',cancelled:'danger'};
 
 async function loadOrders() {
@@ -61,6 +61,7 @@ async function loadOrders() {
 }
 
 async function viewOrder(id) {
+    if (!orderCanvas) orderCanvas = new bootstrap.Offcanvas(document.getElementById('orderCanvas'));
     document.getElementById('order-canvas-body').innerHTML = '<div class="text-center py-4 text-muted small">Loading…</div>';
     orderCanvas.show();
 
