@@ -17,7 +17,7 @@ return [
     'app_name'        => getenv('APP_NAME')    ?: 'F&B Loyalty Platform',
     'app_url'         => getenv('APP_URL')     ?: 'http://localhost',
     'app_env'         => getenv('APP_ENV')     ?: 'production',  // local | production
-    'app_debug'       => getenv('APP_DEBUG')   ?: false,
+    'app_debug'       => filter_var(getenv('APP_DEBUG') ?: 'false', FILTER_VALIDATE_BOOLEAN),
     'app_timezone'    => 'Asia/Kuala_Lumpur',
     'app_locale'      => 'en',
 
