@@ -79,8 +79,23 @@ async function apiCall(endpoint, method = 'GET', body = null) {
         },
     };
     if (body) opts.body = JSON.stringify(body);
-    const res = await fetch('/api/' + endpoint, opts);
-    return res.json();
+    try {
+        const res  = await fetch('/api/' + endpoint, opts);
+        const data = await res.json();
+        // Auto-logout on invalid/expired token
+        if (res.status === 401 ||
+            (data.status === 'error' &&
+             /invalid|expired|unauthenticated/i.test(data.message || ''))) {
+            localStorage.removeItem('fnb_token');
+            localStorage.removeItem('fnb_user');
+            localStorage.removeItem('fnb_profile');
+            window.location.href = '/app/login';
+            return data;
+        }
+        return data;
+    } catch (e) {
+        return { status: 'error', message: 'Network error.', data: null };
+    }
 }
 </script>
 <?php if (isset($extraScript)) echo $extraScript; ?>
