@@ -193,6 +193,10 @@ async function runDebug() {
         const text = await raw.text();
         dbg.innerHTML += `<b>HTTP Status:</b> ${raw.status}<br>`;
         dbg.innerHTML += `<b>Response:</b><pre style="white-space:pre-wrap;word-break:break-all;font-size:.75rem;background:#111;padding:.5rem;border-radius:6px;max-height:200px;overflow:auto;">${text.substring(0, 800)}</pre>`;
+
+        if (raw.status === 401) {
+            dbg.innerHTML += `<br>⚠️ Token expired/invalid. <button onclick="localStorage.clear();window.location.href='/app/login';" style="background:#e94560;color:#fff;border:none;padding:.3rem .9rem;border-radius:6px;cursor:pointer;font-weight:600;">Tap here to fix &amp; re-login</button>`;
+        }
     } catch(e) {
         dbg.innerHTML += `<b>Fetch error:</b> ${e.message}`;
     }
