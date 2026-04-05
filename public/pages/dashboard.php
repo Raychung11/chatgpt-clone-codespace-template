@@ -135,14 +135,25 @@ async function loadDashboard() {
             actList.innerHTML = '<div class="text-center text-muted py-4 small">No activity yet. Start earning points!</div>';
         }
     } catch(e) {
-        console.error(e);
+        console.error('Dashboard load error:', e);
+        // Show fallback so skeleton doesn't stay forever
+        const heroName = document.getElementById('hero-name');
+        if (heroName && heroName.querySelector('.skeleton')) heroName.textContent = 'Welcome!';
+        document.getElementById('hero-points').textContent = '0 pts';
+        document.getElementById('hero-tier').innerHTML = '<span class="tier-badge tier-bronze">🥉 Bronze</span>';
+        document.getElementById('activity-list').innerHTML =
+            '<div class="text-center text-muted py-4 small">Could not load activity.</div>';
     }
 }
 
 async function loadRewards() {
     try {
         const res = await apiCall('rewards/list');
-        if (res.status !== 'success') return;
+        if (res.status !== 'success') {
+            document.getElementById('rewards-row').innerHTML =
+                '<div class="text-muted small py-2">No rewards available yet.</div>';
+            return;
+        }
         const row = document.getElementById('rewards-row');
         if (!res.data.rewards.length) {
             row.innerHTML = '<div class="text-muted small py-2">No rewards available yet.</div>';
