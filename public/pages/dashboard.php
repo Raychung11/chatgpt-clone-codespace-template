@@ -10,6 +10,9 @@ $showHeader = false;
 require BASE_PATH . '/public/layout/app_shell.php';
 ?>
 
+<!-- DEBUG PANEL (temporary) -->
+<div id="debug-panel" style="display:none;background:#1a1a2e;color:#e0e0e0;font-family:monospace;font-size:.8rem;padding:.75rem 1rem;margin-bottom:1rem;border-radius:10px;border:1px solid #e94560;"></div>
+
 <!-- Hero greeting section (populated by JS) -->
 <div class="points-hero mb-3" id="hero-card">
     <div class="d-flex justify-content-between align-items-start mb-2">
@@ -170,10 +173,36 @@ async function loadRewards() {
     } catch(e) {}
 }
 
+// ── DEBUG PANEL (remove after fix) ──────────────────────────────────────
+async function runDebug() {
+    const dbg = document.getElementById('debug-panel');
+    const token = localStorage.getItem('fnb_token');
+    dbg.style.display = '';
+    dbg.innerHTML = `<b>Token:</b> ${token ? token.substring(0,16)+'...' : '❌ NONE'}<br>`;
+
+    if (!token) { dbg.innerHTML += '⛔ No token → redirecting to login'; return; }
+
+    try {
+        const raw = await fetch('/api/customers/dashboard', {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token,
+                'X-Auth-Token': token,
+            }
+        });
+        const text = await raw.text();
+        dbg.innerHTML += `<b>HTTP Status:</b> ${raw.status}<br>`;
+        dbg.innerHTML += `<b>Response:</b><pre style="white-space:pre-wrap;word-break:break-all;font-size:.75rem;background:#111;padding:.5rem;border-radius:6px;max-height:200px;overflow:auto;">${text.substring(0, 800)}</pre>`;
+    } catch(e) {
+        dbg.innerHTML += `<b>Fetch error:</b> ${e.message}`;
+    }
+}
+
 // Check token
 if (!localStorage.getItem('fnb_token')) {
     window.location.href = '/app/login';
 } else {
+    runDebug();
     loadDashboard();
     loadRewards();
 }
