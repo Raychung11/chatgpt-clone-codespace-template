@@ -215,7 +215,7 @@ async function sendOtp(phone) {
 }
 
 document.getElementById('btn-send-otp').onclick = () => {
-    const phone = document.getElementById('phone-input').value.trim().replace(/\D/g,'');
+    const phone = document.getElementById('phone-input').value.trim().replace(/\D/g,'').replace(/^0+/, '');
     if (!phone || phone.length < 9) { showToast('Enter a valid phone number.', 'error'); return; }
     phoneNumber = phone;
     sendOtp(phone);
@@ -253,7 +253,7 @@ document.getElementById('btn-back').onclick   = () => {
 
 // ─── Password login ────────────────────────────────────────────────────────
 document.getElementById('btn-pw-login').onclick = async () => {
-    const phone    = document.getElementById('pw-phone-input').value.trim().replace(/\D/g,'');
+    const phone    = document.getElementById('pw-phone-input').value.trim().replace(/\D/g,'').replace(/^0+/, '');
     const password = document.getElementById('pw-password-input').value;
 
     if (!phone || phone.length < 9) { showToast('Enter a valid phone number.', 'error'); return; }

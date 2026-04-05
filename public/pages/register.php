@@ -118,7 +118,7 @@ function getOtp() {
 
 document.getElementById('btn-reg-send').onclick = async () => {
     regName  = document.getElementById('reg-name').value.trim();
-    const ph = document.getElementById('reg-phone').value.trim().replace(/\D/g,'');
+    const ph = document.getElementById('reg-phone').value.trim().replace(/\D/g,'').replace(/^0+/, '');
     regRef   = document.getElementById('reg-ref')?.value.trim() || '';
     const pw = document.getElementById('reg-password').value;
     const cf = document.getElementById('reg-confirm').value;

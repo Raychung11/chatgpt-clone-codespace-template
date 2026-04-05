@@ -166,6 +166,19 @@ class Auth
      */
     public static function generateApiToken(int $userId): string
     {
+        // Ensure table exists (safe migration for installs missing schema update)
+        Database::execute(
+            'CREATE TABLE IF NOT EXISTS `api_tokens` (
+                `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                `user_id`    INT UNSIGNED NOT NULL UNIQUE,
+                `token_hash` VARCHAR(64)  NOT NULL,
+                `expires_at` DATETIME     NOT NULL,
+                `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`id`),
+                INDEX `idx_at_token` (`token_hash`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+        );
+
         $token = bin2hex(random_bytes(32));
         $hash  = hash('sha256', $token);
 

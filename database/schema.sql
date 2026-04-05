@@ -381,6 +381,21 @@ CREATE TABLE IF NOT EXISTS `settings` (
     PRIMARY KEY (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ------------------------------------------------
+-- 19. API TOKENS (Bearer token auth for customer API)
+-- ------------------------------------------------
+CREATE TABLE IF NOT EXISTS `api_tokens` (
+    `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `user_id`     INT UNSIGNED NOT NULL UNIQUE,
+    `token_hash`  VARCHAR(64)  NOT NULL,
+    `expires_at`  DATETIME     NOT NULL,
+    `created_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_at_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    INDEX `idx_at_token` (`token_hash`),
+    INDEX `idx_at_user`  (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ------------------------------------------------
