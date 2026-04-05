@@ -82,8 +82,9 @@ function render_admin_sidebar(string $active = ''): void
             'payments' => ['Payments',  BASE_URL . '/admin/payments.php'],
         ],
         'Video' => [
-            'jobs'     => ['Video Jobs', BASE_URL . '/admin/jobs.php'],
-            'pricing'  => ['Pricing',    BASE_URL . '/admin/pricing.php'],
+            'jobs'      => ['Video Jobs', BASE_URL . '/admin/jobs.php'],
+            'pricing'   => ['Pricing',    BASE_URL . '/admin/pricing.php'],
+            'templates' => ['Templates',  BASE_URL . '/admin/templates.php'],
         ],
         'Growth' => [
             'referrals'=> ['Referrals', BASE_URL . '/admin/referrals.php'],
