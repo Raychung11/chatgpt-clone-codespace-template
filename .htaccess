@@ -4,13 +4,6 @@ RewriteEngine On
 RewriteBase /
 
 # -------------------------------------------------------
-# Pass Authorization header to PHP (required on Hostinger
-# shared hosting where Apache strips it by default)
-# -------------------------------------------------------
-RewriteCond %{HTTP:Authorization} ^(.+)$
-RewriteRule ^ - [E=HTTP_AUTHORIZATION:%1]
-
-# -------------------------------------------------------
 # Block direct access to sensitive directories
 # -------------------------------------------------------
 RewriteRule ^config/ - [F,L]
