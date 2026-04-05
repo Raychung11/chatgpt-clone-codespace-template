@@ -71,25 +71,27 @@ function showTab(tab) {
     if (tab === 'redeemed') loadVouchers();
 }
 
-async function loadBalance() {
-    const res = await apiCall('loyalty/balance');
-    if (res.status === 'success') {
-        document.getElementById('my-points-display').textContent = res.data.total_points.toLocaleString() + ' pts';
-    }
-}
-
 async function loadRewards() {
-    const [balRes, rwRes] = await Promise.all([apiCall('loyalty/balance'), apiCall('rewards/list')]);
-    const myPoints = balRes.status === 'success' ? balRes.data.total_points : 0;
-
-    if (rwRes.status !== 'success') return;
-    const rewards = rwRes.data.rewards;
     const grid = document.getElementById('rewards-grid');
+    try {
+        const [balRes, rwRes] = await Promise.all([apiCall('loyalty/balance'), apiCall('rewards/list')]);
+        const myPoints = balRes.status === 'success' ? balRes.data.total_points : 0;
 
-    if (!rewards.length) {
-        grid.innerHTML = '<div class="col-12 text-center text-muted py-5">No rewards available yet.</div>';
-        return;
-    }
+        if (balRes.status === 'success') {
+            document.getElementById('my-points-display').textContent =
+                balRes.data.total_points.toLocaleString() + ' pts';
+        }
+
+        if (rwRes.status !== 'success') {
+            grid.innerHTML = '<div class="col-12 text-center text-muted py-5">No rewards available yet.</div>';
+            return;
+        }
+        const rewards = rwRes.data.rewards;
+
+        if (!rewards.length) {
+            grid.innerHTML = '<div class="col-12 text-center text-muted py-5">No rewards available yet.</div>';
+            return;
+        }
 
     grid.innerHTML = rewards.map(r => {
         const canRedeem = myPoints >= r.points_required;
@@ -106,6 +108,9 @@ async function loadRewards() {
             </div>
         </div>`;
     }).join('');
+    } catch(e) {
+        grid.innerHTML = '<div class="col-12 text-center text-muted py-5">Could not load rewards.</div>';
+    }
 }
 
 async function loadVouchers() {
@@ -149,7 +154,6 @@ document.getElementById('btn-confirm-redeem').onclick = async () => {
 
     if (res.status === 'success') {
         showToast('Redeemed! Voucher: ' + res.data.voucher_code, 'success');
-        loadBalance();
         loadRewards();
     } else {
         showToast(res.message, 'error');
@@ -158,7 +162,7 @@ document.getElementById('btn-confirm-redeem').onclick = async () => {
 };
 
 if (!localStorage.getItem('fnb_token')) { window.location.href = '/app/login'; }
-else { loadBalance(); loadRewards(); }
+else { loadRewards(); }
 </script>
 
 <?php require BASE_PATH . '/public/layout/app_footer.php'; ?>
