@@ -17,7 +17,7 @@ function app_init(): array
 
     date_default_timezone_set($cfg['app_timezone']);
 
-    ini_set('display_errors', '1'); // TEMP: always show errors for debugging
+    ini_set('display_errors', ($cfg['app_debug'] ? '1' : '0'));
     error_reporting(E_ALL);
 
     Auth::startSession();
