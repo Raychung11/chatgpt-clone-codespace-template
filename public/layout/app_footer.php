@@ -70,7 +70,12 @@ async function apiCall(endpoint, method = 'GET', body = null) {
         method,
         headers: {
             'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            // Send token two ways: Authorization (standard) + X-Auth-Token
+            // (fallback for Hostinger/LiteSpeed which strips Authorization)
+            ...(token ? {
+                'Authorization': `Bearer ${token}`,
+                'X-Auth-Token': token,
+            } : {}),
         },
     };
     if (body) opts.body = JSON.stringify(body);

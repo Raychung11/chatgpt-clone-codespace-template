@@ -11,32 +11,36 @@
  */
 function api_require_auth(): array
 {
-    // Try all places Apache/PHP-FPM might put the Authorization header
+    // 1. Standard Authorization header (works on most servers)
     $header = $_SERVER['HTTP_AUTHORIZATION']
            ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
            ?? '';
 
-    // Fallback: apache_request_headers() (works on some Hostinger configs)
-    if (empty($header) && function_exists('apache_request_headers')) {
-        $allHeaders = apache_request_headers();
-        foreach ($allHeaders as $k => $v) {
-            if (strtolower($k) === 'authorization') { $header = $v; break; }
+    // 2. apache_request_headers() / getallheaders() fallback
+    if (empty($header)) {
+        $fn = function_exists('apache_request_headers') ? 'apache_request_headers'
+            : (function_exists('getallheaders') ? 'getallheaders' : null);
+        if ($fn) {
+            foreach ($fn() as $k => $v) {
+                if (strtolower($k) === 'authorization') { $header = $v; break; }
+            }
         }
     }
 
-    // Last resort: check getallheaders() (PHP 7+)
-    if (empty($header) && function_exists('getallheaders')) {
-        $allHeaders = getallheaders();
-        foreach ($allHeaders as $k => $v) {
-            if (strtolower($k) === 'authorization') { $header = $v; break; }
-        }
+    // 3. X-Auth-Token custom header (always visible; used as fallback on
+    //    Hostinger/LiteSpeed which strip the Authorization header entirely)
+    $rawToken = null;
+    if (!empty($header) && preg_match('/^Bearer\s+(.+)$/i', $header, $m)) {
+        $rawToken = trim($m[1]);
+    } elseif (!empty($_SERVER['HTTP_X_AUTH_TOKEN'])) {
+        $rawToken = trim($_SERVER['HTTP_X_AUTH_TOKEN']);
     }
 
-    if (!preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
+    if (!$rawToken) {
         json_error('Unauthenticated. Provide a Bearer token.', null, 401);
     }
 
-    $userId = Auth::validateApiToken(trim($matches[1]));
+    $userId = Auth::validateApiToken($rawToken);
     if (!$userId) {
         json_error('Invalid or expired token.', null, 401);
     }
