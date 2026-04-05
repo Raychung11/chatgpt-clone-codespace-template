@@ -37,6 +37,25 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f3460); padding-bottom: 0;
                                placeholder="12 3456789" style="border-radius:0 10px 10px 0;" maxlength="10" inputmode="numeric">
                     </div>
                 </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">
+                        Password <span class="text-muted fw-normal">(optional – set now or later)</span>
+                    </label>
+                    <div class="position-relative">
+                        <input type="password" id="reg-password" class="form-control form-control-app"
+                               placeholder="Min. 8 characters" autocomplete="new-password">
+                        <button type="button" tabindex="-1"
+                                style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#999;cursor:pointer;padding:0;"
+                                onclick="toggleRegPw()">
+                            <i class="bi bi-eye" id="reg-pw-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="mb-3" id="reg-confirm-row" style="display:none;">
+                    <label class="form-label fw-semibold small">Confirm Password *</label>
+                    <input type="password" id="reg-confirm" class="form-control form-control-app"
+                           placeholder="Repeat password" autocomplete="new-password">
+                </div>
                 <?php if ($refCode): ?>
                 <div class="mb-3">
                     <label class="form-label fw-semibold small">Referral Code</label>
@@ -68,7 +87,21 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f3460); padding-bottom: 0;
 </div>
 
 <script>
-let regPhone = '', regName = '', regRef = '';
+let regPhone = '', regName = '', regRef = '', regPassword = '';
+
+function toggleRegPw() {
+    const inp  = document.getElementById('reg-password');
+    const icon = document.getElementById('reg-pw-eye');
+    inp.type   = inp.type === 'password' ? 'text' : 'password';
+    icon.className = inp.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+}
+
+// Show confirm field only when password has content
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('reg-password').addEventListener('input', function() {
+        document.getElementById('reg-confirm-row').style.display = this.value ? '' : 'none';
+    });
+});
 
 document.querySelectorAll('.otp-digit').forEach((input, i, inputs) => {
     input.addEventListener('input', () => {
@@ -87,9 +120,14 @@ document.getElementById('btn-reg-send').onclick = async () => {
     regName  = document.getElementById('reg-name').value.trim();
     const ph = document.getElementById('reg-phone').value.trim().replace(/\D/g,'');
     regRef   = document.getElementById('reg-ref')?.value.trim() || '';
+    const pw = document.getElementById('reg-password').value;
+    const cf = document.getElementById('reg-confirm').value;
 
     if (!regName) { showToast('Please enter your name.', 'error'); return; }
     if (!ph || ph.length < 9) { showToast('Enter a valid phone number.', 'error'); return; }
+    if (pw && pw.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
+    if (pw && pw !== cf) { showToast('Passwords do not match.', 'error'); return; }
+    regPassword = pw;
     regPhone = ph;
 
     const btn = document.getElementById('btn-reg-send');
@@ -120,7 +158,8 @@ document.getElementById('btn-reg-verify').onclick = async () => {
     btn.disabled = true; btn.textContent = 'Creating account…';
 
     const body = { phone: '60'+regPhone, otp, purpose: 'register', name: regName };
-    if (regRef) body.referral_code = regRef;
+    if (regRef)      body.referral_code = regRef;
+    if (regPassword) body.password      = regPassword;
 
     const res = await apiCall('auth/verify-otp', 'POST', body);
     if (res.status === 'success') {

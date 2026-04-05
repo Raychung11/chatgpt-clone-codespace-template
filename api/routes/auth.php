@@ -78,11 +78,19 @@ switch ($action) {
         if ($purpose === 'register') {
             if (!$name) json_error('Name is required for registration.');
 
+            // Optional password at registration
+            $regPassword     = $body['password'] ?? '';
+            $regPasswordHash = null;
+            if ($regPassword) {
+                if (strlen($regPassword) < 8) json_error('Password must be at least 8 characters.');
+                $regPasswordHash = password_hash($regPassword, PASSWORD_BCRYPT, ['cost' => 12]);
+            }
+
             Database::beginTransaction();
             try {
                 $userId = Database::insert(
-                    'INSERT INTO users (name, phone, role, status, phone_verified) VALUES (?, ?, "customer", "active", 1)',
-                    [$name, $phone]
+                    'INSERT INTO users (name, phone, role, status, phone_verified, password_hash) VALUES (?, ?, "customer", "active", 1, ?)',
+                    [$name, $phone, $regPasswordHash]
                 );
 
                 $refCode = generate_referral_code($name);
