@@ -136,6 +136,8 @@ require BASE_PATH . '/public/layout/app_shell.php';
     </div>
 </div>
 
+<?php require BASE_PATH . '/public/layout/app_footer.php'; ?>
+
 <script>
 let editCanvas = null, passwordCanvas = null, loyaltyCanvas = null;
 
@@ -265,5 +267,3 @@ async function loadLoyaltyHistory() {
 if (!localStorage.getItem('fnb_token')) { window.location.href = '/app/login'; }
 else { loadProfile(); }
 </script>
-
-<?php require BASE_PATH . '/public/layout/app_footer.php'; ?>

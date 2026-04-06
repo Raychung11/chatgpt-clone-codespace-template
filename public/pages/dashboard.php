@@ -88,6 +88,8 @@ require BASE_PATH . '/public/layout/app_shell.php';
     </div>
 </div>
 
+<?php require BASE_PATH . '/public/layout/app_footer.php'; ?>
+
 <script>
 const tierColors = { bronze:'#cd7f32', silver:'#a8a9ad', gold:'#ffd700', platinum:'#b5c4d4' };
 const tierIcons  = { bronze:'🥉', silver:'🥈', gold:'🥇', platinum:'💎' };
@@ -178,5 +180,3 @@ if (!localStorage.getItem('fnb_token')) {
     loadRewards();
 }
 </script>
-
-<?php require BASE_PATH . '/public/layout/app_footer.php'; ?>

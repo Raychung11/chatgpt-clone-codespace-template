@@ -60,61 +60,73 @@ require BASE_PATH . '/public/layout/app_shell.php';
     </div>
 </div>
 
+<?php require BASE_PATH . '/public/layout/app_footer.php'; ?>
+
 <script>
+// NOTE: this script is AFTER app_footer.php so apiCall() is already defined
 let selectedRewardId = null;
-let redeemModal = null; // lazy-init in openRedeem()
+let redeemModal      = null;
 
 function showTab(tab) {
     document.getElementById('tab-available').style.display = tab === 'available' ? '' : 'none';
     document.getElementById('tab-redeemed').style.display  = tab === 'redeemed'  ? '' : 'none';
-    document.querySelectorAll('#rewardTabs .nav-link').forEach((b,i) => b.classList.toggle('active', (tab==='available'&&i===0)||(tab==='redeemed'&&i===1)));
+    document.querySelectorAll('#rewardTabs .nav-link')
+        .forEach((b, i) => b.classList.toggle('active',
+            (tab === 'available' && i === 0) || (tab === 'redeemed' && i === 1)));
     if (tab === 'redeemed') loadVouchers();
 }
 
 async function loadRewards() {
     const grid = document.getElementById('rewards-grid');
     try {
-        const [balRes, rwRes] = await Promise.all([apiCall('loyalty/balance'), apiCall('rewards/list')]);
-        const myPoints = balRes.status === 'success' ? balRes.data.total_points : 0;
+        const [balRes, rwRes] = await Promise.all([
+            apiCall('loyalty/balance'),
+            apiCall('rewards/list'),
+        ]);
 
+        const myPoints = balRes.status === 'success' ? balRes.data.total_points : 0;
         if (balRes.status === 'success') {
             document.getElementById('my-points-display').textContent =
-                balRes.data.total_points.toLocaleString() + ' pts';
+                myPoints.toLocaleString() + ' pts';
         }
 
-        if (rwRes.status !== 'success') {
-            grid.innerHTML = '<div class="col-12 text-center text-muted py-5">No rewards available yet.</div>';
-            return;
-        }
-        const rewards = rwRes.data.rewards;
-
-        if (!rewards.length) {
+        if (rwRes.status !== 'success' || !rwRes.data.rewards.length) {
             grid.innerHTML = '<div class="col-12 text-center text-muted py-5">No rewards available yet.</div>';
             return;
         }
 
-    grid.innerHTML = rewards.map(r => {
-        const canRedeem = myPoints >= r.points_required;
-        return `
-        <div class="col-6">
-            <div class="reward-card ${canRedeem ? '' : 'opacity-75'}" onclick="${canRedeem ? `openRedeem(${r.id},'${r.name.replace(/'/g,"\\'")}',${r.points_required})` : 'showToast(\"Not enough points\",\"error\")'}" >
-                <div style="height:100px;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;font-size:2.5rem;">🎁</div>
-                <div class="reward-card-body">
-                    <div class="small fw-semibold mb-1" style="font-size:.82rem;">${r.name}</div>
-                    <span class="reward-pts">${parseInt(r.points_required).toLocaleString()} pts</span>
-                    ${r.valid_until ? `<div class="text-muted" style="font-size:.7rem;margin-top:4px;">Expires ${r.valid_until}</div>` : ''}
-                    ${!canRedeem ? `<div class="text-danger mt-1" style="font-size:.7rem;">Need ${(r.points_required-myPoints).toLocaleString()} more pts</div>` : ''}
+        grid.innerHTML = rwRes.data.rewards.map(r => {
+            const canRedeem = myPoints >= r.points_required;
+            const onclick   = canRedeem
+                ? `openRedeem(${r.id},'${r.name.replace(/'/g,"\\'")}',${r.points_required})`
+                : `showToast('Not enough points','error')`;
+            return `
+            <div class="col-6">
+                <div class="reward-card ${canRedeem ? '' : 'opacity-75'}" onclick="${onclick}">
+                    <div style="height:100px;background:linear-gradient(135deg,#1a1a2e,#16213e);
+                                display:flex;align-items:center;justify-content:center;font-size:2.5rem;">🎁</div>
+                    <div class="reward-card-body">
+                        <div class="small fw-semibold mb-1" style="font-size:.82rem;">${r.name}</div>
+                        <span class="reward-pts">${parseInt(r.points_required).toLocaleString()} pts</span>
+                        ${r.valid_until
+                            ? `<div class="text-muted" style="font-size:.7rem;margin-top:4px;">Expires ${r.valid_until}</div>`
+                            : ''}
+                        ${!canRedeem
+                            ? `<div class="text-danger mt-1" style="font-size:.7rem;">Need ${(r.points_required - myPoints).toLocaleString()} more pts</div>`
+                            : ''}
+                    </div>
                 </div>
-            </div>
-        </div>`;
-    }).join('');
-    } catch(e) {
+            </div>`;
+        }).join('');
+
+    } catch (e) {
+        console.error('loadRewards error:', e);
         grid.innerHTML = '<div class="col-12 text-center text-muted py-5">Could not load rewards.</div>';
     }
 }
 
 async function loadVouchers() {
-    const res = await apiCall('rewards/my');
+    const res  = await apiCall('rewards/my');
     const list = document.getElementById('vouchers-list');
     if (res.status !== 'success' || !res.data.redemptions.length) {
         list.innerHTML = '<div class="text-center text-muted py-5">No vouchers yet.</div>';
@@ -125,11 +137,19 @@ async function loadVouchers() {
             <div class="d-flex justify-content-between align-items-start">
                 <div>
                     <div class="fw-semibold small">${v.reward_name}</div>
-                    <div class="text-muted" style="font-size:.75rem;">${new Date(v.redeemed_at).toLocaleDateString('en-MY')}</div>
+                    <div class="text-muted" style="font-size:.75rem;">
+                        ${new Date(v.redeemed_at).toLocaleDateString('en-MY')}
+                    </div>
                 </div>
-                <span class="badge bg-${v.status==='pending'?'success':v.status==='used'?'secondary':'danger'}">${v.status}</span>
+                <span class="badge bg-${v.status === 'pending' ? 'success' : v.status === 'used' ? 'secondary' : 'danger'}">
+                    ${v.status}
+                </span>
             </div>
-            ${v.voucher_code ? `<div class="mt-2 p-2 text-center rounded" style="background:#f8f9ff;"><code class="fs-6 fw-bold letter-spacing-wide">${v.voucher_code}</code></div>` : ''}
+            ${v.voucher_code
+                ? `<div class="mt-2 p-2 text-center rounded" style="background:#f8f9ff;">
+                       <code class="fs-6 fw-bold">${v.voucher_code}</code>
+                   </div>`
+                : ''}
         </div>`).join('');
 }
 
@@ -140,7 +160,9 @@ function openRedeem(id, name, points) {
         <div class="text-center py-2">
             <div style="font-size:3rem;">🎁</div>
             <div class="fw-bold mt-2">${name}</div>
-            <div class="text-muted small mt-1">This will deduct <strong>${points.toLocaleString()} pts</strong> from your balance.</div>
+            <div class="text-muted small mt-1">
+                This will deduct <strong>${points.toLocaleString()} pts</strong> from your balance.
+            </div>
         </div>`;
     redeemModal.show();
 }
@@ -148,7 +170,8 @@ function openRedeem(id, name, points) {
 document.getElementById('btn-confirm-redeem').onclick = async () => {
     if (!selectedRewardId) return;
     const btn = document.getElementById('btn-confirm-redeem');
-    btn.disabled = true; btn.textContent = 'Processing…';
+    btn.disabled    = true;
+    btn.textContent = 'Processing…';
 
     const res = await apiCall('rewards/redeem', 'POST', { reward_id: selectedRewardId });
     redeemModal.hide();
@@ -157,13 +180,16 @@ document.getElementById('btn-confirm-redeem').onclick = async () => {
         showToast('Redeemed! Voucher: ' + res.data.voucher_code, 'success');
         loadRewards();
     } else {
-        showToast(res.message, 'error');
+        showToast(res.message || 'Redemption failed.', 'error');
     }
-    btn.disabled = false; btn.textContent = 'Confirm Redeem';
+    btn.disabled    = false;
+    btn.textContent = 'Confirm Redeem';
 };
 
-if (!localStorage.getItem('fnb_token')) { window.location.href = '/app/login'; }
-else { loadRewards(); }
+// Init – apiCall is guaranteed available since app_footer.php is above
+if (!localStorage.getItem('fnb_token')) {
+    window.location.href = '/app/login';
+} else {
+    loadRewards();
+}
 </script>
-
-<?php require BASE_PATH . '/public/layout/app_footer.php'; ?>

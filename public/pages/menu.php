@@ -102,6 +102,8 @@ require BASE_PATH . '/public/layout/app_shell.php';
     <div class="offcanvas-body" id="item-canvas-body"></div>
 </div>
 
+<?php require BASE_PATH . '/public/layout/app_footer.php'; ?>
+
 <script>
 // ─── Cart helpers (localStorage) ──────────────────────────────────────────────
 function getCart() {
@@ -324,5 +326,3 @@ function escHtml(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 </script>
-
-<?php require BASE_PATH . '/public/layout/app_footer.php'; ?>

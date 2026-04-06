@@ -137,6 +137,8 @@ require BASE_PATH . '/public/layout/app_shell.php';
     </div>
 </div>
 
+<?php require BASE_PATH . '/public/layout/app_footer.php'; ?>
+
 <script>
 if (!localStorage.getItem('fnb_token')) window.location.href = '/app/login';
 
@@ -348,5 +350,3 @@ function escHtml(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 </script>
-
-<?php require BASE_PATH . '/public/layout/app_footer.php'; ?>

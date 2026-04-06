@@ -26,6 +26,8 @@ require BASE_PATH . '/public/layout/app_shell.php';
     <div class="offcanvas-body" id="order-canvas-body"></div>
 </div>
 
+<?php require BASE_PATH . '/public/layout/app_footer.php'; ?>
+
 <script>
 let orderCanvas = null;
 const statusColors = {pending:'warning',confirmed:'primary',preparing:'info',ready:'success',completed:'success',cancelled:'danger'};
@@ -113,5 +115,3 @@ async function viewOrder(id) {
 if (!localStorage.getItem('fnb_token')) { window.location.href = '/app/login'; }
 else { loadOrders(); }
 </script>
-
-<?php require BASE_PATH . '/public/layout/app_footer.php'; ?>

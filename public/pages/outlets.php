@@ -50,6 +50,8 @@ require BASE_PATH . '/public/layout/app_shell.php';
     </div>
 </div>
 
+<?php require BASE_PATH . '/public/layout/app_footer.php'; ?>
+
 <script>
 let allOutlets = [];
 let outletModal = null;
@@ -142,5 +144,3 @@ document.getElementById('btn-nearby').onclick = () => {
 
 loadOutlets();
 </script>
-
-<?php require BASE_PATH . '/public/layout/app_footer.php'; ?>
