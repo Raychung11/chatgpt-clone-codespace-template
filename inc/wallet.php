@@ -237,6 +237,16 @@ function process_payment_approval(int $order_id, int $admin_id): array
 
         $pdo->commit();
         log_activity('admin', $admin_id, 'approve_payment', 'Approved order #' . $order_id);
+
+        // Send approval email (non-blocking — failure doesn't affect approval)
+        if (function_exists('mail_payment_approved')) {
+            $usr = $pdo->prepare('SELECT name, email FROM `users` WHERE id=? LIMIT 1');
+            $usr->execute([(int)$order['user_id']]);
+            if ($row = $usr->fetch()) {
+                mail_payment_approved($row['email'], $row['name'], (float)$order['credits'], $order_id);
+            }
+        }
+
         return ['ok' => true];
 
     } catch (PDOException $e) {
@@ -263,6 +273,16 @@ function process_payment_rejection(int $order_id, int $admin_id, string $reason)
     }
 
     log_activity('admin', $admin_id, 'reject_payment', 'Rejected order #' . $order_id . ': ' . $reason);
+
+    // Send rejection email
+    if (function_exists('mail_payment_rejected')) {
+        $usr = db()->prepare('SELECT u.name, u.email FROM `payment_orders` po JOIN `users` u ON u.id=po.user_id WHERE po.id=? LIMIT 1');
+        $usr->execute([$order_id]);
+        if ($row = $usr->fetch()) {
+            mail_payment_rejected($row['email'], $row['name'], $reason, $order_id);
+        }
+    }
+
     return ['ok' => true];
 }
 
@@ -328,6 +348,22 @@ function trigger_referral_reward_if_eligible(int $user_id): void
 
         $pdo->commit();
         log_activity('system', null, 'referral_reward', 'Rewarded referrer #' . $referrer_id . ' for user #' . $user_id);
+
+        // Notify referrer by email
+        if (function_exists('mail_referral_reward')) {
+            $ref = $pdo->prepare('SELECT name, email FROM `users` WHERE id=? LIMIT 1');
+            $ref->execute([$referrer_id]);
+            $refRow  = $ref->fetch();
+            $refUser = $pdo->prepare('SELECT name FROM `users` WHERE id=? LIMIT 1');
+            $refUser->execute([$user_id]);
+            $refUserRow = $refUser->fetch();
+            if ($refRow && $refUserRow) {
+                mail_referral_reward(
+                    $refRow['email'], $refRow['name'],
+                    $reward_credits, $refUserRow['name']
+                );
+            }
+        }
 
     } catch (PDOException $e) {
         $pdo->rollBack();

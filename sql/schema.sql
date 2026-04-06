@@ -318,11 +318,24 @@ INSERT INTO `settings` (`key`, `value`, `type`, `label`, `group`) VALUES
 ('byteplus_api_key',     '',                                   'string',  'BytePlus API Key',             'api'),
 ('byteplus_api_url',     'https://api.byteplus.com/visugc/v1', 'string',  'BytePlus API Base URL',        'api'),
 ('referral_reward_credits','10.00',                            'float',   'Referral Reward (credits)',    'referral'),
+('mail_driver',          'mail',                               'string',  'Mail Driver (mail or smtp)',    'email'),
+('mail_from_name',       'VideoSaaS',                          'string',  'Mail From Name',               'email'),
+('mail_from_email',      'noreply@example.com',                'string',  'Mail From Email',              'email'),
+('smtp_host',            'smtp.mailtrap.io',                   'string',  'SMTP Host',                    'email'),
+('smtp_port',            '587',                                'integer', 'SMTP Port',                    'email'),
+('smtp_user',            '',                                   'string',  'SMTP Username',                'email'),
+('smtp_pass',            '',                                   'string',  'SMTP Password',                'email'),
+('smtp_secure',          'tls',                                'string',  'SMTP Encryption (tls/ssl)',    'email'),
 ('bank_name',            'Maybank',                            'string',  'Bank Name',                    'payment'),
 ('bank_account_number',  '1234567890',                         'string',  'Bank Account Number',          'payment'),
 ('bank_account_name',    'Your Company Sdn Bhd',               'string',  'Bank Account Name',            'payment'),
 ('max_upload_size_mb',   '5',                                  'integer', 'Max Receipt Upload Size (MB)', 'payment'),
-('video_poll_interval',  '30',                                 'integer', 'Video Poll Interval (seconds)','api')
+('video_poll_interval',  '30',                                 'integer', 'Video Poll Interval (seconds)','api'),
+('billplz_api_key',      '',                                   'string',  'Billplz API Key',              'payment'),
+('billplz_x_signature_key','',                                 'string',  'Billplz X-Signature Key',      'payment'),
+('stripe_secret_key',    '',                                   'string',  'Stripe Secret Key',            'payment'),
+('stripe_publishable_key','',                                  'string',  'Stripe Publishable Key',       'payment'),
+('stripe_webhook_secret','',                                   'string',  'Stripe Webhook Secret',        'payment')
 ON DUPLICATE KEY UPDATE `value` = VALUES(`value`);
 
 -- Sample credit packages

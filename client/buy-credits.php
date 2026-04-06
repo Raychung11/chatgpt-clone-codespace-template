@@ -12,6 +12,7 @@ require_once __DIR__ . '/../inc/functions.php';
 require_once __DIR__ . '/../inc/csrf.php';
 require_once __DIR__ . '/../inc/auth.php';
 require_once __DIR__ . '/../inc/wallet.php';
+require_once __DIR__ . '/../inc/mailer.php';
 require_once __DIR__ . '/../inc/layout.php';
 
 boot_session();
@@ -85,6 +86,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $pdo->commit();
                 log_activity('user', $uid, 'payment_order_created', 'Order #' . $order_id . ' submitted');
+
+                // Send confirmation email
+                mail_payment_received($user['email'], $user['name'], (float)$pkg['price'], (float)$pkg['credits'], $order_id);
+
                 flash_success('Payment submitted! Your credits will be added once the admin approves your payment (usually within 1 business day).');
                 redirect(BASE_URL . '/client/wallet.php');
             }

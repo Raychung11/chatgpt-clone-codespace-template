@@ -14,6 +14,7 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../inc/functions.php';
 require_once __DIR__ . '/../inc/csrf.php';
 require_once __DIR__ . '/../inc/auth.php';
+require_once __DIR__ . '/../inc/mailer.php';
 
 boot_session();
 
@@ -34,15 +35,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Always show success (prevent email enumeration)
         if ($token) {
             $reset_url = BASE_URL . '/public/reset-password.php?token=' . urlencode($token);
-            $siteName  = setting('site_name', 'VideoSaaS');
 
-            // ── Send email ──────────────────────────────────────────────
-            // TODO: Replace with PHPMailer / SMTP for production.
-            $subject = "[$siteName] Password Reset Request";
-            $body    = "Hello,\n\nClick the link below to reset your password (expires in 1 hour):\n\n$reset_url\n\nIf you did not request this, ignore this email.\n\n$siteName";
-            $headers = "From: noreply@" . parse_url(BASE_URL, PHP_URL_HOST) . "\r\nX-Mailer: PHP";
-            @mail($email, $subject, $body, $headers);
-            // ────────────────────────────────────────────────────────────
+            // Fetch user name for personalised email
+            $uStmt = db()->prepare('SELECT name FROM `users` WHERE email=? LIMIT 1');
+            $uStmt->execute([$email]);
+            $uRow = $uStmt->fetch();
+
+            mail_password_reset($email, $uRow['name'] ?? 'User', $reset_url);
         }
 
         $success = true;

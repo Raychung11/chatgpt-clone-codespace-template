@@ -35,11 +35,27 @@ function render_client_navbar(array $user, string $active = ''): void
                 <?php endforeach; ?>
             </ul>
             <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
-                <span class="navbar-wallet">⚡ <?= e($balance) ?> credits</span>
+                <span class="navbar-wallet">&#9889; <?= e($balance) ?> credits</span>
                 <a href="<?= BASE_URL ?>/public/logout.php" class="btn btn-ghost btn-sm">Logout</a>
             </div>
+            <!-- Mobile hamburger -->
+            <button class="hamburger" id="hamburgerBtn" aria-label="Menu" style="margin-left:12px">
+                <span></span><span></span><span></span>
+            </button>
         </div>
     </nav>
+
+    <!-- Mobile slide-down nav -->
+    <div class="mobile-nav" id="mobileNav">
+        <div class="nav-wallet">&#9889; <?= e($balance) ?> credits</div>
+        <?php foreach ($nav as $key => $item): ?>
+            <a href="<?= e($item['url']) ?>" class="<?= $active === $key ? 'active' : '' ?>">
+                <?= e($item['label']) ?>
+            </a>
+        <?php endforeach; ?>
+        <a href="<?= BASE_URL ?>/client/profile.php">Profile</a>
+        <a href="<?= BASE_URL ?>/public/logout.php" style="color:var(--color-danger)">Sign Out</a>
+    </div>
     <?php
 }
 
