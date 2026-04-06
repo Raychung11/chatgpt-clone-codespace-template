@@ -56,12 +56,13 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f3460); padding-bottom: 0;
                     <input type="password" id="reg-confirm" class="form-control form-control-app"
                            placeholder="Repeat password" autocomplete="new-password">
                 </div>
-                <?php if ($refCode): ?>
                 <div class="mb-3">
-                    <label class="form-label fw-semibold small">Referral Code</label>
-                    <input type="text" id="reg-ref" class="form-control form-control-app" value="<?= htmlspecialchars($refCode) ?>" readonly>
+                    <label class="form-label fw-semibold small text-muted">Referral Code <span class="fw-normal">(optional)</span></label>
+                    <input type="text" id="reg-ref" class="form-control form-control-app"
+                           placeholder="Enter referral code"
+                           value="<?= htmlspecialchars($refCode) ?>"
+                           <?= $refCode ? 'readonly' : '' ?>>
                 </div>
-                <?php endif; ?>
                 <button class="btn-brand" id="btn-reg-send">Send OTP</button>
                 <div class="text-center mt-3">
                     <span class="text-muted small">Already have an account? </span>

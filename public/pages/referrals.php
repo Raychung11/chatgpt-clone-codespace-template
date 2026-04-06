@@ -88,6 +88,7 @@ $refBonus  = (int)($settings['referral_referee_points'] ?? 50);
     </div>
 </div>
 
+<?php require BASE_PATH . '/public/layout/app_footer.php'; ?>
 <script>
 let myRefCode = '';
 let myRefLink = '';
@@ -129,4 +130,3 @@ if (!localStorage.getItem('fnb_token')) { window.location.href = '/app/login'; }
 else { loadReferrals(); }
 </script>
 
-<?php require BASE_PATH . '/public/layout/app_footer.php'; ?>
