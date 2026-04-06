@@ -177,6 +177,6 @@ document.getElementById('btn-back-reg').onclick = () => {
     document.getElementById('step-otp').style.display  = 'none';
     document.getElementById('step-info').style.display = 'block';
 };
-</script>
-
 <?php require BASE_PATH . '/public/layout/app_footer.php'; ?>
+
+</script>

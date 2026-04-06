@@ -292,6 +292,6 @@ function onLoginSuccess(res) {
 
 // Already logged in?
 if (localStorage.getItem('fnb_token')) window.location.href = '/app/dashboard';
-</script>
-
 <?php require BASE_PATH . '/public/layout/app_footer.php'; ?>
+
+</script>
