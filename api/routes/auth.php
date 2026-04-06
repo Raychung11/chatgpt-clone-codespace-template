@@ -300,6 +300,54 @@ switch ($action) {
         json_success('Profile updated.');
         break;
 
+    // ---------------------------------------------------
+    // POST /api/auth/subscribe
+    // Public: save subscriber (name + phone) for marketing
+    // ---------------------------------------------------
+    case 'subscribe':
+        if ($method !== 'POST') json_error('Method not allowed.', null, 405);
+
+        api_rate_limit('subscribe', 3, 300);
+
+        $name  = sanitize_string($body['name']  ?? '', 100);
+        $phone = sanitize_string($body['phone'] ?? '');
+
+        if (!$name)  json_error('Name is required.');
+        if (!$phone) json_error('Phone number is required.');
+        if (!validate_phone($phone)) json_error('Invalid phone number format.');
+
+        // Auto-create account if not registered yet; otherwise just link existing
+        $existing = Database::fetchOne('SELECT id FROM users WHERE phone = ?', [$phone]);
+        if ($existing) {
+            json_success('You are already a member! Sign in to access your account.');
+            break;
+        }
+
+        // Save to subscribers table (create if missing)
+        Database::execute("CREATE TABLE IF NOT EXISTS `subscribers` (
+            `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `name`       VARCHAR(100) NOT NULL,
+            `phone`      VARCHAR(20)  NOT NULL UNIQUE,
+            `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        // Upsert subscriber
+        Database::execute(
+            'INSERT INTO subscribers (name, phone) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name)',
+            [$name, $phone]
+        );
+
+        // Optional: send a welcome WhatsApp
+        $cfg = require BASE_PATH . '/config/app.php';
+        Notification::sendWhatsApp($phone,
+            "Hi {$name}! 👋 Thanks for subscribing to " . ($cfg['app_name'] ?? 'F&B Loyalty') . ".\n\n" .
+            "Create your free account to start earning points: " . ($cfg['app_url'] ?? '') . "/app/register"
+        );
+
+        json_success('Subscribed successfully! We\'ll keep you updated.');
+        break;
+
     default:
         json_error('Invalid auth endpoint.', null, 404);
 }

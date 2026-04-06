@@ -79,6 +79,7 @@ require BASE_PATH . '/public/layout/app_shell.php';
     </div>
 </div>
 
+<?php require BASE_PATH . '/public/layout/app_footer.php'; ?>
 <script>
 let selectedTime = '';
 
@@ -173,6 +174,17 @@ document.getElementById('btn-book').onclick = async () => {
     btn.innerHTML = '<i class="bi bi-calendar-check me-2"></i>Confirm Booking';
 };
 
+async function cancelReservation(resId) {
+    if (!confirm('Cancel this reservation?')) return;
+    const res = await apiCall('reservations/cancel', 'PUT', { reservation_id: resId });
+    if (res.status === 'success') {
+        showToast('Reservation cancelled.', 'success');
+        loadMyReservations();
+    } else {
+        showToast(res.message, 'error');
+    }
+}
+
 async function loadMyReservations() {
     const res = await apiCall('reservations/my');
     const container = document.getElementById('my-reservations');
@@ -181,25 +193,29 @@ async function loadMyReservations() {
         return;
     }
     const statusColors = {pending:'warning',confirmed:'primary',seated:'info',completed:'success',cancelled:'danger',no_show:'secondary'};
+    const cancellable  = ['pending','confirmed'];
     container.innerHTML = res.data.reservations.map(r => `
         <div class="card-clean mb-2 p-3">
             <div class="d-flex justify-content-between align-items-start">
-                <div>
+                <div class="flex-grow-1">
                     <div class="fw-semibold small">${r.outlet_name}</div>
                     <div class="text-muted" style="font-size:.78rem;">
                         📅 ${r.reserved_date} &nbsp;⏰ ${r.reserved_time.slice(0,5)} &nbsp;👥 ${r.party_size} pax
                     </div>
                     <code class="small">${r.reservation_no}</code>
+                    ${r.occasion ? `<div class="mt-1 small text-muted">🎉 ${r.occasion}</div>` : ''}
+                    ${r.points_earned ? `<div class="mt-1 small text-success">+${r.points_earned} pts earned</div>` : ''}
                 </div>
-                <span class="badge bg-${statusColors[r.status]||'secondary'}">${r.status}</span>
+                <div class="d-flex flex-column align-items-end gap-1">
+                    <span class="badge bg-${statusColors[r.status]||'secondary'}">${r.status}</span>
+                    ${cancellable.includes(r.status) ? `
+                    <button class="btn btn-outline-danger btn-sm" style="font-size:.7rem;padding:2px 8px;"
+                            onclick="cancelReservation(${r.id})">Cancel</button>` : ''}
+                </div>
             </div>
-            ${r.occasion ? `<div class="mt-1 small text-muted">🎉 ${r.occasion}</div>` : ''}
-            ${r.points_earned ? `<div class="mt-1 small text-success">+${r.points_earned} pts earned</div>` : ''}
         </div>`).join('');
 }
 
 if (!localStorage.getItem('fnb_token')) { window.location.href = '/app/login'; }
 else { loadOutlets(); }
 </script>
-
-<?php require BASE_PATH . '/public/layout/app_footer.php'; ?>

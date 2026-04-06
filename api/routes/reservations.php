@@ -48,7 +48,7 @@ switch ($action) {
         $specialReq   = sanitize_string($body['special_request']  ?? '', 500);
 
         // Validate outlet
-        $outlet = Database::fetchOne("SELECT id FROM outlets WHERE id = ? AND status = 'active'", [$outletId]);
+        $outlet = Database::fetchOne("SELECT id, name FROM outlets WHERE id = ? AND status = 'active'", [$outletId]);
         if (!$outlet) json_error('Outlet not found or inactive.');
 
         // Validate date (not in the past)
@@ -68,7 +68,7 @@ switch ($action) {
         Notification::send(
             $user['id'],
             'Reservation Confirmed! 🍽️',
-            "Your reservation at {$outlet['id']} on {$reservedDate} at {$reservedTime} for {$partySize} pax has been received. Ref: {$resNo}",
+            "Your reservation at {$outlet['name']} on {$reservedDate} at {$reservedTime} for {$partySize} pax has been received. Ref: {$resNo}",
             'reservation', 'in_app', 'reservation', $resId
         );
 

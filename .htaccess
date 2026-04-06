@@ -38,9 +38,9 @@ RewriteRule ^app/(.+)$ public/index.php [QSA,L]
 RewriteRule ^app/?$ public/index.php [QSA,L]
 
 # -------------------------------------------------------
-# Root → /app/
+# Root → public landing page
 # -------------------------------------------------------
-RewriteRule ^$ /app/ [R=302,L]
+RewriteRule ^$ landing.php [L]
 
 # -------------------------------------------------------
 # Force HTTPS – uncomment ONLY after SSL is active
