@@ -47,11 +47,12 @@ switch ($action) {
         // Send via WhatsApp
         $sent = Notification::sendWhatsApp($phone, "Your F&B Platform OTP is: {$otp}. Valid for 10 minutes. Do not share this code.");
 
-        // In dev mode, return OTP in response (NEVER in production)
         $cfg = require BASE_PATH . '/config/app.php';
         $responseData = ['phone' => $phone];
-        if ($cfg['app_env'] === 'local' || $cfg['app_debug']) {
-            $responseData['otp_debug'] = $otp; // remove in production
+        // Return OTP in response when: debug mode, local env, or WhatsApp not configured (no delivery method)
+        $whatsappConfigured = !empty($cfg['whatsapp_api_key']) && !empty($cfg['whatsapp_api_url']);
+        if ($cfg['app_env'] === 'local' || $cfg['app_debug'] || !$whatsappConfigured) {
+            $responseData['otp_debug'] = $otp;
         }
 
         json_success('OTP sent successfully.', $responseData);

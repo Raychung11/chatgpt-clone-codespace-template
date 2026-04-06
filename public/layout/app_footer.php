@@ -81,10 +81,10 @@ async function apiCall(endpoint, method = 'GET', body = null) {
     try {
         const res  = await fetch('/api/' + endpoint, opts);
         const data = await res.json();
-        // Auto-logout on invalid/expired token
+        // Auto-logout on invalid/expired token (not OTP errors)
         if (res.status === 401 ||
             (data.status === 'error' &&
-             /invalid|expired|unauthenticated/i.test(data.message || ''))) {
+             /invalid.*token|token.*invalid|expired.*token|token.*expired|unauthenticated/i.test(data.message || ''))) {
             localStorage.removeItem('fnb_token');
             localStorage.removeItem('fnb_user');
             localStorage.removeItem('fnb_profile');
