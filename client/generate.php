@@ -152,10 +152,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 flash_success('Video generation started! We\'ll process it shortly. You can track progress in your history.');
                 redirect(BASE_URL . '/client/history.php');
             }
-        } catch (PDOException $e) {
-            $pdo->rollBack();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
             error_log('[generate] ' . $e->getMessage());
-            $errors['general'] = 'Something went wrong. Please try again.';
+            $errors['general'] = 'Error: ' . $e->getMessage();
         }
     }
 }
