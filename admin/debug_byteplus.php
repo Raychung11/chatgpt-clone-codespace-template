@@ -109,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $submitResult = byteplus_create_task($prompt, '720p', 5);
     }
 
-    // Repair: re-extract video URL from stored api_response
+    // Repair: re-query BytePlus live + extract video URL
     if ($action === 'repair_job') {
         $repairId  = (int)($_POST['repair_job_id'] ?? 0);
         $repairMsg = '';
@@ -117,29 +117,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $row = db()->prepare('SELECT id, user_id, api_response, api_task_id FROM video_jobs WHERE id = ? LIMIT 1');
             $row->execute([$repairId]);
             $jobRow = $row->fetch();
-            if ($jobRow && $jobRow['api_response']) {
-                $raw = json_decode($jobRow['api_response'], true) ?? [];
 
-                // Try every known field pattern
+            if ($jobRow) {
+                $taskId   = $jobRow['api_task_id'];
                 $videoUrl = null;
                 $thumbUrl = null;
+                $liveRaw  = null;
 
-                // Pattern 1: content[] array
-                foreach ($raw['content'] ?? [] as $item) {
-                    if (($item['type'] ?? '') === 'video') {
-                        $videoUrl = $videoUrl ?? $item['video_url'] ?? $item['url'] ?? null;
-                        $thumbUrl = $thumbUrl ?? $item['cover_image_url'] ?? $item['thumbnail_url'] ?? null;
+                // Step 1: Re-query BytePlus live
+                if ($taskId && $apiKey) {
+                    $ch = curl_init($apiBase . '/contents/generations/tasks/' . urlencode($taskId));
+                    curl_setopt_array($ch, [
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_TIMEOUT        => 15,
+                        CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $apiKey, 'Accept: application/json'],
+                    ]);
+                    $liveBody = curl_exec($ch);
+                    $liveCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    curl_close($ch);
+                    $liveRaw  = json_decode($liveBody, true) ?? [];
+                    $repairMsg .= "Live API HTTP $liveCode. ";
+
+                    // Update stored api_response with fresh data
+                    if ($liveCode === 200 && $liveRaw) {
+                        db()->prepare('UPDATE video_jobs SET api_response=? WHERE id=?')
+                            ->execute([json_encode($liveRaw), $repairId]);
                     }
                 }
-                // Pattern 2: flat fields
-                $videoUrl = $videoUrl ?? $raw['video_url'] ?? $raw['output']['video_url'] ?? null;
-                $thumbUrl = $thumbUrl ?? $raw['thumbnail_url'] ?? null;
-                // Pattern 3: videos[]
-                foreach ($raw['videos'] ?? [] as $v) {
-                    $videoUrl = $videoUrl ?? $v['url'] ?? $v['video_url'] ?? null;
+
+                // Step 2: Try to extract video URL from live response first, then stored
+                $sources = array_filter([$liveRaw, json_decode($jobRow['api_response'] ?? '{}', true)]);
+                foreach ($sources as $raw) {
+                    if ($videoUrl) break;
+                    // Pattern 1: content[] array
+                    foreach ($raw['content'] ?? [] as $item) {
+                        if (($item['type'] ?? '') === 'video') {
+                            $videoUrl = $videoUrl ?? $item['video_url'] ?? $item['url'] ?? null;
+                            $thumbUrl = $thumbUrl ?? $item['cover_image_url'] ?? $item['thumbnail_url'] ?? null;
+                        }
+                    }
+                    // Pattern 2: flat
+                    $videoUrl = $videoUrl ?? $raw['video_url'] ?? $raw['output']['video_url'] ?? null;
+                    $thumbUrl = $thumbUrl ?? $raw['thumbnail_url'] ?? null;
+                    // Pattern 3: videos[]
+                    foreach ($raw['videos'] ?? [] as $v) {
+                        $videoUrl = $videoUrl ?? $v['url'] ?? $v['video_url'] ?? null;
+                    }
+                    // Pattern 4: data.video_url
+                    $videoUrl = $videoUrl ?? $raw['data']['video_url'] ?? $raw['data']['output_url'] ?? null;
                 }
 
-                $repairMsg = 'Stored api_response parsed. video_url found: ' . ($videoUrl ?? 'NONE');
+                $repairMsg .= 'video_url: ' . ($videoUrl ?? 'NOT FOUND in response');
 
                 if ($videoUrl) {
                     db()->prepare(
@@ -147,15 +175,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          VALUES (?,?,?,?)
                          ON DUPLICATE KEY UPDATE cdn_url=VALUES(cdn_url), thumbnail=VALUES(thumbnail)'
                     )->execute([$repairId, $jobRow['user_id'], $videoUrl, $thumbUrl]);
-                    $repairMsg .= ' — video_outputs updated!';
+                    $repairMsg .= ' — ✓ video_outputs updated!';
                 }
 
-                // Also show the full raw response for debugging
                 $queryResult = [
-                    'task_id'  => $jobRow['api_task_id'] ?? "job #$repairId (from DB)",
-                    'result'   => ['ok' => true, 'status' => 'stored', 'video_url' => $videoUrl],
-                    'raw_http' => 200,
-                    'raw_body' => $jobRow['api_response'],
+                    'task_id'    => $taskId ?? "job #$repairId",
+                    'result'     => ['ok' => true, 'status' => 'repaired', 'video_url' => $videoUrl],
+                    'raw_http'   => $liveCode ?? 0,
+                    'raw_body'   => json_encode($liveRaw ?? json_decode($jobRow['api_response'] ?? '{}', true),
+                                        JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
                     'repair_msg' => $repairMsg,
                 ];
             }
