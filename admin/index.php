@@ -24,7 +24,8 @@ function kpi(PDO $pdo, string $sql, array $params = []): int|float
 {
     $s = $pdo->prepare($sql);
     $s->execute($params);
-    return $s->fetchColumn() ?? 0;
+    $val = $s->fetchColumn();
+    return is_numeric($val) ? $val + 0 : 0;
 }
 
 try {
