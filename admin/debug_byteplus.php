@@ -41,9 +41,31 @@ $stuckJobs = db()->query(
 $testResult    = null;
 $queryResult   = null;
 $submitResult  = null;
+$saveMsg       = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
+
+    // Save API credentials to settings table
+    if ($action === 'save_keys') {
+        $newKey      = trim($_POST['new_api_key']      ?? '');
+        $newEndpoint = trim($_POST['new_endpoint_id']  ?? '');
+        $newUrl      = trim($_POST['new_api_url']      ?? '');
+        $pdo         = db();
+        $upsert      = $pdo->prepare(
+            'INSERT INTO `settings` (`key`,`value`,`type`,`label`,`group`)
+             VALUES (?,?,\'string\',?,\'api\')
+             ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)'
+        );
+        if ($newKey)      { $upsert->execute(['byteplus_api_key',     $newKey,      'BytePlus API Key']); }
+        if ($newEndpoint) { $upsert->execute(['byteplus_endpoint_id', $newEndpoint, 'BytePlus Endpoint ID']); }
+        if ($newUrl)      { $upsert->execute(['byteplus_api_url',     $newUrl,      'BytePlus API URL']); }
+        // Reload
+        $apiKey     = $newKey      ?: $apiKey;
+        $endpointId = $newEndpoint ?: $endpointId;
+        $apiBase    = $newUrl      ? rtrim($newUrl, '/') : $apiBase;
+        $saveMsg    = 'Settings saved. Keys are now active.';
+    }
 
     // Test raw API connectivity
     if ($action === 'test_connection') {
@@ -159,6 +181,35 @@ pre { background:var(--color-surface2); padding:14px; border-radius:8px; overflo
             <?= $reachOk ? e($host) . ':443 open' : 'Cannot reach ' . e($host) . ' — check server firewall/SSL' ?>
         </span>
     </div>
+</div>
+
+<!-- ── Save keys ──────────────────────────────────────────────── -->
+<div class="card" style="margin-bottom:20px;border:2px solid var(--color-primary)">
+    <div class="card-header"><span class="card-title">0. Set API Credentials</span></div>
+    <?php if ($saveMsg): ?>
+        <div class="alert alert--success"><?= e($saveMsg) ?></div>
+    <?php endif; ?>
+    <form method="POST">
+        <input type="hidden" name="action" value="save_keys">
+        <div class="form-group">
+            <label class="form-label">API Key <span class="text-muted text-sm">(from BytePlus Console → ModelArk → API keys)</span></label>
+            <input type="text" name="new_api_key" class="form-control"
+                   placeholder="Paste your API key here"
+                   value="<?= e($apiKey) ?>">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Endpoint ID <span class="text-muted text-sm">(from ModelArk → Online inference → your endpoint)</span></label>
+            <input type="text" name="new_endpoint_id" class="form-control"
+                   placeholder="ep-xxxxxxxx-xxxxxxxx"
+                   value="<?= e($endpointId) ?>">
+        </div>
+        <div class="form-group">
+            <label class="form-label">API Base URL</label>
+            <input type="text" name="new_api_url" class="form-control"
+                   value="<?= e($apiBase) ?>">
+        </div>
+        <button class="btn btn-primary">Save &amp; Activate</button>
+    </form>
 </div>
 
 <!-- ── Test connection ─────────────────────────────────────────── -->
