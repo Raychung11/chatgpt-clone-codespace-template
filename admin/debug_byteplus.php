@@ -145,26 +145,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
 
-                // Step 2: Try to extract video URL from live response first, then stored
+                // Step 2: Extract video URL — handles object OR array content shape
                 $sources = array_filter([$liveRaw, json_decode($jobRow['api_response'] ?? '{}', true)]);
                 foreach ($sources as $raw) {
                     if ($videoUrl) break;
-                    // Pattern 1: content[] array
-                    foreach ($raw['content'] ?? [] as $item) {
-                        if (($item['type'] ?? '') === 'video') {
-                            $videoUrl = $videoUrl ?? $item['video_url'] ?? $item['url'] ?? null;
-                            $thumbUrl = $thumbUrl ?? $item['cover_image_url'] ?? $item['thumbnail_url'] ?? null;
+                    $c = $raw['content'] ?? null;
+                    if (is_array($c)) {
+                        if (isset($c['video_url'])) {
+                            // Object: {"video_url":"..."}
+                            $videoUrl = $c['video_url'];
+                            $thumbUrl = $c['thumbnail_url'] ?? $c['cover_image_url'] ?? null;
+                        } else {
+                            // Array: [{"type":"video","video_url":"..."}]
+                            foreach ($c as $item) {
+                                if (($item['type'] ?? '') === 'video') {
+                                    $videoUrl = $videoUrl ?? $item['video_url'] ?? $item['url'] ?? null;
+                                    $thumbUrl = $thumbUrl ?? $item['cover_image_url'] ?? $item['thumbnail_url'] ?? null;
+                                }
+                            }
                         }
                     }
-                    // Pattern 2: flat
-                    $videoUrl = $videoUrl ?? $raw['video_url'] ?? $raw['output']['video_url'] ?? null;
+                    $videoUrl = $videoUrl ?? $raw['video_url'] ?? $raw['data']['video_url'] ?? null;
                     $thumbUrl = $thumbUrl ?? $raw['thumbnail_url'] ?? null;
-                    // Pattern 3: videos[]
                     foreach ($raw['videos'] ?? [] as $v) {
                         $videoUrl = $videoUrl ?? $v['url'] ?? $v['video_url'] ?? null;
                     }
-                    // Pattern 4: data.video_url
-                    $videoUrl = $videoUrl ?? $raw['data']['video_url'] ?? $raw['data']['output_url'] ?? null;
                 }
 
                 $repairMsg .= 'video_url: ' . ($videoUrl ?? 'NOT FOUND in response');

@@ -114,19 +114,27 @@ function byteplus_query_task(string $task_id): array
         default                                                                         => 'queued',
     };
 
-    // ModelArk returns output in content[] array
+    // ModelArk returns content as object {"video_url":"..."} OR array [{type:"video",...}]
     $videoUrl     = null;
     $thumbnailUrl = null;
-    if (!empty($raw['content']) && is_array($raw['content'])) {
-        foreach ($raw['content'] as $item) {
-            $type = $item['type'] ?? '';
-            if ($type === 'video' && !$videoUrl) {
-                $videoUrl     = $item['video_url'] ?? $item['url'] ?? null;
-                $thumbnailUrl = $item['cover_image_url'] ?? $item['thumbnail_url'] ?? null;
+    $content      = $raw['content'] ?? null;
+
+    if (is_array($content)) {
+        if (isset($content['video_url'])) {
+            // Object shape: "content": {"video_url": "..."}
+            $videoUrl     = $content['video_url'] ?? null;
+            $thumbnailUrl = $content['thumbnail_url'] ?? $content['cover_image_url'] ?? null;
+        } else {
+            // Array shape: "content": [{"type":"video","video_url":"..."}]
+            foreach ($content as $item) {
+                if (($item['type'] ?? '') === 'video' && !$videoUrl) {
+                    $videoUrl     = $item['video_url'] ?? $item['url'] ?? null;
+                    $thumbnailUrl = $item['cover_image_url'] ?? $item['thumbnail_url'] ?? null;
+                }
             }
         }
     }
-    // Fallback for flat response shapes
+    // Flat fallbacks
     $videoUrl     = $videoUrl     ?? $raw['video_url']     ?? $raw['output_url']    ?? null;
     $thumbnailUrl = $thumbnailUrl ?? $raw['thumbnail_url'] ?? $raw['cover_url']     ?? null;
     $errorMsg     = $raw['error']['message'] ?? $raw['error_message'] ?? $raw['message'] ?? '';
