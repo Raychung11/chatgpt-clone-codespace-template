@@ -224,9 +224,23 @@ $shareBase = BASE_URL . '/client/share.php?job_id=';
 
                     <!-- Thumbnail / Placeholder -->
                     <?php if ($isCompleted && $job['thumbnail']): ?>
-                        <img src="<?= e($job['thumbnail']) ?>" class="video-thumb" alt="thumbnail">
+                        <img src="<?= e($job['thumbnail']) ?>" class="video-thumb" alt="thumbnail"
+                             onclick="openVideoPlayer(<?= htmlspecialchars(json_encode($job['cdn_url']), ENT_QUOTES) ?>)"
+                             style="cursor:pointer">
                     <?php elseif ($isCompleted && $job['cdn_url']): ?>
-                        <div class="video-thumb-placeholder">🎥</div>
+                        <!-- Capture first frame as thumbnail via canvas -->
+                        <div class="video-thumb-placeholder" style="cursor:pointer;position:relative;overflow:hidden;padding:0"
+                             onclick="openVideoPlayer(<?= htmlspecialchars(json_encode($job['cdn_url']), ENT_QUOTES) ?>)">
+                            <video muted playsinline preload="metadata"
+                                   style="width:120px;height:68px;object-fit:cover;display:block;border-radius:6px"
+                                   data-capture-thumb="1"
+                                   src="<?= e($job['cdn_url']) ?>#t=0.5">
+                            </video>
+                            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+                                        background:rgba(0,0,0,.3);border-radius:6px;pointer-events:none">
+                                <span style="font-size:1.4rem">▶</span>
+                            </div>
+                        </div>
                     <?php elseif ($isRunning): ?>
                         <div class="video-thumb-placeholder" style="animation:pulse 2s infinite;opacity:.6">⏳</div>
                     <?php else: ?>
@@ -478,6 +492,15 @@ async function pollStatus() {
 setInterval(pollStatus, pollInterval);
 pollStatus(); // run immediately on load
 <?php endif; ?>
+
+// Load first frame of video thumbnails
+document.querySelectorAll('video[data-capture-thumb]').forEach(v => {
+    v.addEventListener('loadeddata', () => { v.currentTime = 0.5; });
+    v.addEventListener('error', () => {
+        // If video fails to load as thumb, show fallback icon
+        if (v.parentElement) v.parentElement.innerHTML = '<span style="font-size:1.5rem">🎥</span>';
+    });
+});
 
 // Video player modal
 function openVideoPlayer(url) {

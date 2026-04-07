@@ -13,22 +13,36 @@ declare(strict_types=1);
  */
 function social_generate_caption(string $prompt, string $platform = 'generic'): string
 {
-    // Keep the first sentence / up to 150 chars, add a CTA
-    $clean   = preg_replace('/\s+/', ' ', trim($prompt));
-    $snippet = mb_substr($clean, 0, 120);
-    if (mb_strlen($clean) > 120) $snippet .= '…';
+    // Strip template placeholders like {{variable}} or {{variable name}}
+    $clean = preg_replace('/\{\{[^}]*\}\}/', '', $prompt);
+    // Collapse extra whitespace and punctuation left behind
+    $clean = preg_replace('/\s{2,}/', ' ', $clean);
+    $clean = preg_replace('/[,.\s]+$/', '', trim($clean));
+
+    // Take first meaningful sentence (up to 100 chars)
+    $sentences = preg_split('/(?<=[.!?])\s+/', $clean, 2);
+    $snippet   = trim($sentences[0] ?? $clean);
+    if (mb_strlen($snippet) > 100) {
+        $snippet = mb_substr($snippet, 0, 97) . '…';
+    }
+    if (mb_strlen($snippet) < 10) {
+        $snippet = 'Check out this AI-generated marketing video!';
+    }
 
     $ctas = [
-        'Watch our latest AI-generated marketing video!',
-        'Just created this with AI — what do you think?',
-        'Bringing ideas to life with AI video generation.',
-        'New video drop! Created in seconds with AI.',
+        '✨ Created with AI in seconds.',
+        '🚀 Bringing ideas to life with AI.',
+        '🎯 AI-powered video marketing.',
+        '💡 New AI video — what do you think?',
     ];
     $cta = $ctas[abs(crc32($prompt)) % count($ctas)];
 
+    $siteName = defined('APP_ENV') ? (setting('site_name', 'VideoSaaS') ?: 'VideoSaaS') : 'VideoSaaS';
+
     return match ($platform) {
-        'twitter' => mb_substr($snippet . ' ' . $cta, 0, 240),
-        'linkedin' => "🎬 {$snippet}\n\n{$cta}",
+        'twitter'  => mb_substr("🎬 {$snippet} {$cta}", 0, 240),
+        'linkedin' => "🎬 {$snippet}\n\n{$cta}\n\nMade with {$siteName}",
+        'whatsapp' => "🎬 *{$snippet}*\n\n{$cta}",
         default    => "🎬 {$snippet}\n\n{$cta}",
     };
 }
