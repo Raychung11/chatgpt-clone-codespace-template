@@ -35,9 +35,9 @@ function byteplus_create_task(
     int    $duration   = 5,
     array  $extra      = []
 ): array {
-    $apiKey     = setting('byteplus_api_key',     BYTEPLUS_API_KEY);
-    $apiBase    = rtrim(setting('byteplus_api_url', BYTEPLUS_API_URL), '/');
-    $endpointId = setting('byteplus_endpoint_id', BYTEPLUS_ENDPOINT_ID);
+    $apiKey     = setting('byteplus_api_key',     BYTEPLUS_API_KEY)     ?: BYTEPLUS_API_KEY;
+    $apiBase    = rtrim(setting('byteplus_api_url', BYTEPLUS_API_URL)   ?: BYTEPLUS_API_URL, '/');
+    $endpointId = setting('byteplus_endpoint_id', BYTEPLUS_ENDPOINT_ID) ?: BYTEPLUS_ENDPOINT_ID;
 
     if (!$apiKey) {
         return ['ok' => false, 'error' => 'BytePlus API key is not configured.', 'raw' => []];
@@ -88,8 +88,8 @@ function byteplus_create_task(
  */
 function byteplus_query_task(string $task_id): array
 {
-    $apiKey  = setting('byteplus_api_key', BYTEPLUS_API_KEY);
-    $apiBase = rtrim(setting('byteplus_api_url', BYTEPLUS_API_URL), '/');
+    $apiKey  = setting('byteplus_api_key', BYTEPLUS_API_KEY) ?: BYTEPLUS_API_KEY;
+    $apiBase = rtrim(setting('byteplus_api_url', BYTEPLUS_API_URL) ?: BYTEPLUS_API_URL, '/');
 
     if (!$apiKey) {
         return ['ok' => false, 'error' => 'BytePlus API key not configured.', 'raw' => []];

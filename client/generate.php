@@ -155,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             error_log('[generate] ' . $e->getMessage());
-            $errors['general'] = 'Error: ' . $e->getMessage();
+            $errors['general'] = 'Something went wrong. Please try again.';
         }
     }
 }
