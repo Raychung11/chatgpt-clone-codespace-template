@@ -108,6 +108,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $prompt = trim($_POST['test_prompt'] ?? 'A short 5-second test video of a blue sky.');
         $submitResult = byteplus_create_task($prompt, '720p', 5);
     }
+
+    // Repair: re-extract video URL from stored api_response
+    if ($action === 'repair_job') {
+        $repairId  = (int)($_POST['repair_job_id'] ?? 0);
+        $repairMsg = '';
+        if ($repairId) {
+            $row = db()->prepare('SELECT id, user_id, api_response, api_task_id FROM video_jobs WHERE id = ? LIMIT 1');
+            $row->execute([$repairId]);
+            $jobRow = $row->fetch();
+            if ($jobRow && $jobRow['api_response']) {
+                $raw = json_decode($jobRow['api_response'], true) ?? [];
+
+                // Try every known field pattern
+                $videoUrl = null;
+                $thumbUrl = null;
+
+                // Pattern 1: content[] array
+                foreach ($raw['content'] ?? [] as $item) {
+                    if (($item['type'] ?? '') === 'video') {
+                        $videoUrl = $videoUrl ?? $item['video_url'] ?? $item['url'] ?? null;
+                        $thumbUrl = $thumbUrl ?? $item['cover_image_url'] ?? $item['thumbnail_url'] ?? null;
+                    }
+                }
+                // Pattern 2: flat fields
+                $videoUrl = $videoUrl ?? $raw['video_url'] ?? $raw['output']['video_url'] ?? null;
+                $thumbUrl = $thumbUrl ?? $raw['thumbnail_url'] ?? null;
+                // Pattern 3: videos[]
+                foreach ($raw['videos'] ?? [] as $v) {
+                    $videoUrl = $videoUrl ?? $v['url'] ?? $v['video_url'] ?? null;
+                }
+
+                $repairMsg = 'Stored api_response parsed. video_url found: ' . ($videoUrl ?? 'NONE');
+
+                if ($videoUrl) {
+                    db()->prepare(
+                        'INSERT INTO video_outputs (job_id, user_id, cdn_url, thumbnail)
+                         VALUES (?,?,?,?)
+                         ON DUPLICATE KEY UPDATE cdn_url=VALUES(cdn_url), thumbnail=VALUES(thumbnail)'
+                    )->execute([$repairId, $jobRow['user_id'], $videoUrl, $thumbUrl]);
+                    $repairMsg .= ' — video_outputs updated!';
+                }
+
+                // Also show the full raw response for debugging
+                $queryResult = [
+                    'task_id'  => $jobRow['api_task_id'] ?? "job #$repairId (from DB)",
+                    'result'   => ['ok' => true, 'status' => 'stored', 'video_url' => $videoUrl],
+                    'raw_http' => 200,
+                    'raw_body' => $jobRow['api_response'],
+                    'repair_msg' => $repairMsg,
+                ];
+            }
+        }
+    }
 }
 
 function jdump($v): string {
@@ -272,6 +325,44 @@ pre { background:var(--color-surface2); padding:14px; border-radius:8px; overflo
             <p style="margin-top:8px"><strong>Raw API response:</strong></p>
             <pre><?= jdump(json_decode($queryResult['raw_body'], true) ?? $queryResult['raw_body']) ?></pre>
         </div>
+    <?php endif; ?>
+</div>
+
+<!-- ── Repair completed jobs ───────────────────────────────────── -->
+<?php
+$completedJobs = db()->query(
+    'SELECT vj.id, vj.prompt, vj.api_task_id, vo.cdn_url
+     FROM video_jobs vj
+     LEFT JOIN video_outputs vo ON vo.job_id = vj.id
+     WHERE vj.status = "completed"
+     ORDER BY vj.id DESC LIMIT 10'
+)->fetchAll();
+?>
+<div class="card" style="margin-bottom:20px;border:2px solid var(--color-accent)">
+    <div class="card-header"><span class="card-title">2b. Repair Completed Jobs (fix missing video URL)</span></div>
+    <?php if (isset($queryResult['repair_msg'])): ?>
+        <div class="alert alert--<?= str_contains($queryResult['repair_msg'], 'updated') ? 'success' : 'warning' ?>">
+            <?= e($queryResult['repair_msg']) ?>
+        </div>
+    <?php endif; ?>
+    <?php foreach ($completedJobs as $cj): ?>
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--color-border)">
+        <div style="flex:1">
+            <span class="text-sm fw-bold">Job #<?= (int)$cj['id'] ?></span>
+            <span class="text-muted text-sm"> · <?= e(truncate($cj['prompt'], 50)) ?></span><br>
+            <span class="text-sm" style="color:<?= $cj['cdn_url'] ? '#4ade80' : '#f87171' ?>">
+                <?= $cj['cdn_url'] ? '✓ Has video URL' : '✗ Missing video URL' ?>
+            </span>
+        </div>
+        <form method="POST" style="display:inline">
+            <input type="hidden" name="action"        value="repair_job">
+            <input type="hidden" name="repair_job_id" value="<?= (int)$cj['id'] ?>">
+            <button class="btn btn-accent btn-sm">Inspect &amp; Repair</button>
+        </form>
+    </div>
+    <?php endforeach; ?>
+    <?php if (empty($completedJobs)): ?>
+        <p class="text-muted text-sm" style="padding:8px 0">No completed jobs found.</p>
     <?php endif; ?>
 </div>
 
