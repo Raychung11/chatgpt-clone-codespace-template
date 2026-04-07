@@ -322,6 +322,14 @@ $shareBase = BASE_URL . '/client/share.php?job_id=';
                                     </span>
                                 </div>
                             </div>
+                            <div style="margin-top:10px">
+                                <button type="button"
+                                        class="btn btn-ghost btn-sm"
+                                        style="color:var(--color-danger);border-color:var(--color-danger)"
+                                        onclick="cancelJob(<?= (int)$job['id'] ?>, this)">
+                                    ✕ Cancel &amp; Refund
+                                </button>
+                            </div>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -453,6 +461,40 @@ async function pollStatus() {
 setInterval(pollStatus, pollInterval);
 pollStatus(); // run immediately on load
 <?php endif; ?>
+
+// Cancel job
+async function cancelJob(jobId, btn) {
+    if (!confirm('Cancel this job and refund your credits?')) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Cancelling…';
+
+    const fd = new FormData();
+    fd.append('<?= CSRF_TOKEN_NAME ?>', CSRF_TOKEN);
+    fd.append('job_id', jobId);
+
+    try {
+        const res  = await fetch('<?= BASE_URL ?>/client/cancel_job.php', { method: 'POST', body: fd });
+        const data = await res.json();
+
+        if (data.ok) {
+            const label = document.getElementById(`status-label-${jobId}`);
+            const prog  = document.getElementById(`progress-${jobId}`);
+            if (label) label.textContent = '✓ Cancelled — ' + data.message;
+            if (prog)  prog.querySelector('.progress-bar-fill').style.background = 'var(--color-danger)';
+            btn.style.display = 'none';
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            btn.disabled = false;
+            btn.textContent = '✕ Cancel & Refund';
+            alert(data.error || 'Cancel failed. Please try again.');
+        }
+    } catch(e) {
+        btn.disabled = false;
+        btn.textContent = '✕ Cancel & Refund';
+        alert('Network error. Please try again.');
+    }
+}
 </script>
 </body>
 </html>
