@@ -423,33 +423,31 @@ setInterval(() => {
 
 // Poll status every 6s
 async function pollStatus() {
-    try {
-        const res  = await fetch(`?_action=poll_status&ids=${runningIds.join(',')}`);
-        const data = await res.json();
-        let anyCompleted = false;
+    for (const id of runningIds) {
+        try {
+            // Calls BytePlus directly — works without a cron job
+            const res  = await fetch(`<?= BASE_URL ?>/client/check_job_status.php?job_id=${id}`);
+            const data = await res.json();
 
-        runningIds.forEach(id => {
-            const job = data[id];
-            if (!job) return;
+            if (!data.ok) continue;
 
             const label = document.getElementById(`status-label-${id}`);
             const fill  = document.querySelector(`#progress-${id} .progress-bar-fill`);
 
-            if (job.status === 'completed') {
-                anyCompleted = true;
-                if (fill) fill.style.width = '100%';
+            if (data.status === 'completed') {
+                if (fill)  fill.style.width = '100%';
                 if (label) label.textContent = '✓ Done! Reloading…';
-            } else if (job.status === 'failed' || job.status === 'refunded') {
-                anyCompleted = true; // reload to show error
-            } else if (job.status === 'processing' && label) {
+                setTimeout(() => location.reload(), 1200);
+                return; // stop polling
+            } else if (data.status === 'refunded' || data.status === 'failed') {
+                if (label) label.textContent = '✗ Failed — credits refunded. Reloading…';
+                setTimeout(() => location.reload(), 1500);
+                return;
+            } else if (data.status === 'processing' && label) {
                 label.textContent = 'Generating video…';
             }
-        });
-
-        if (anyCompleted) {
-            setTimeout(() => location.reload(), 1200);
-        }
-    } catch(e) {}
+        } catch(e) {}
+    }
 }
 
 setInterval(pollStatus, pollInterval);
