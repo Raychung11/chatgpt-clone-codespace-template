@@ -3,22 +3,31 @@ declare(strict_types=1);
 
 /**
  * inc/byteplus.php
- * BytePlus / Bytedance Video Generation API provider layer.
+ * BytePlus ModelArk — Text-to-Video generation provider layer.
  *
- * All API calls are isolated here so they can be swapped out without
- * touching business logic. Each method returns a normalised result array:
+ * API: https://ark.ap-southeast-1.bytepluses.com/api/v3
+ * Docs: https://www.byteplus.com/en/docs/modelark
  *
+ * Setup:
+ *   1. BytePlus Console → ModelArk → Model activation → activate a video model
+ *      (e.g. seedance-1-5-lite-t2v-250428 or seedance-1-0-pro-t2v)
+ *   2. Online inference → Create endpoint → copy the Endpoint ID (ep-xxxxxxxx)
+ *   3. API keys → Create API Key
+ *   4. Set BYTEPLUS_API_KEY and BYTEPLUS_ENDPOINT_ID in config/config.php
+ *      or the admin settings table.
+ *
+ * All public methods return a normalised result:
  *   ['ok' => true,  'task_id' => '...', 'raw' => [...]]
  *   ['ok' => false, 'error'   => '...', 'raw' => [...]]
  */
 
 /**
- * Submit a text-to-video generation task.
+ * Submit a text-to-video generation task to ModelArk.
  *
  * @param string $prompt      The video prompt / script
- * @param string $resolution  e.g. '720p' or '1080p'
+ * @param string $resolution  '720p' | '1080p' | '480p'
  * @param int    $duration    Duration in seconds (5 or 10)
- * @param array  $extra       Optional extra params to merge into the payload
+ * @param array  $extra       Optional extra params merged into 'parameters'
  */
 function byteplus_create_task(
     string $prompt,
@@ -26,39 +35,43 @@ function byteplus_create_task(
     int    $duration   = 5,
     array  $extra      = []
 ): array {
-    $apiKey  = setting('byteplus_api_key', BYTEPLUS_API_KEY);
-    $apiBase = rtrim(setting('byteplus_api_url', BYTEPLUS_API_URL), '/');
+    $apiKey     = setting('byteplus_api_key',     BYTEPLUS_API_KEY);
+    $apiBase    = rtrim(setting('byteplus_api_url', BYTEPLUS_API_URL), '/');
+    $endpointId = setting('byteplus_endpoint_id', BYTEPLUS_ENDPOINT_ID);
 
     if (!$apiKey) {
         return ['ok' => false, 'error' => 'BytePlus API key is not configured.', 'raw' => []];
     }
+    if (!$endpointId) {
+        return ['ok' => false, 'error' => 'BytePlus Endpoint ID is not configured.', 'raw' => []];
+    }
 
-    // Build payload — adjust keys to match the live BytePlus API spec
-    $payload = array_merge([
-        'prompt'     => $prompt,
-        'resolution' => $resolution,
-        'duration'   => $duration,
-        'model'      => 'bytedance_v1.5',
-    ], $extra);
+    // ModelArk content-generation payload
+    $payload = [
+        'model'   => $endpointId,
+        'content' => [
+            ['type' => 'text', 'text' => $prompt],
+        ],
+        'parameters' => array_merge([
+            'resolution' => $resolution,
+            'duration'   => $duration,
+        ], $extra),
+    ];
 
-    $result = byteplus_post($apiBase . '/task/submit', $payload, $apiKey);
+    $result = byteplus_post($apiBase . '/contents/generations/tasks', $payload, $apiKey);
 
     if (!$result['ok']) {
         return $result;
     }
 
-    // Normalise: extract task_id from known response shapes
+    // Normalise: ModelArk returns { "id": "...", "status": "queued", ... }
     $raw    = $result['raw'];
-    $taskId = $raw['data']['task_id']
-           ?? $raw['task_id']
-           ?? $raw['data']['id']
-           ?? $raw['id']
-           ?? null;
+    $taskId = $raw['id'] ?? $raw['task_id'] ?? $raw['data']['id'] ?? $raw['data']['task_id'] ?? null;
 
     if (!$taskId) {
         return [
             'ok'    => false,
-            'error' => 'API returned success but no task_id found.',
+            'error' => 'API returned success but no task ID found.',
             'raw'   => $raw,
         ];
     }
@@ -67,11 +80,11 @@ function byteplus_create_task(
 }
 
 /**
- * Query the status of an existing task.
+ * Query the status of an existing ModelArk video task.
  *
- * Returns a normalised array:
+ * Returns:
  *   status: 'queued' | 'processing' | 'completed' | 'failed'
- *   video_url, thumbnail_url, error_message (when relevant)
+ *   video_url, thumbnail_url, error_message (populated when relevant)
  */
 function byteplus_query_task(string $task_id): array
 {
@@ -82,31 +95,48 @@ function byteplus_query_task(string $task_id): array
         return ['ok' => false, 'error' => 'BytePlus API key not configured.', 'raw' => []];
     }
 
-    $url = $apiBase . '/task/query?task_id=' . urlencode($task_id);
+    // GET /contents/generations/tasks/{task_id}
+    $url    = $apiBase . '/contents/generations/tasks/' . urlencode($task_id);
     $result = byteplus_get($url, $apiKey);
 
     if (!$result['ok']) {
         return $result;
     }
 
-    $raw    = $result['raw'];
-    $data   = $raw['data'] ?? $raw;
+    $raw = $result['raw'];
 
-    // Map provider status → internal status
-    $providerStatus = strtolower($data['status'] ?? 'unknown');
+    // ModelArk status values: queued | running | succeeded | failed
+    $providerStatus = strtolower($raw['status'] ?? 'unknown');
     $status = match (true) {
-        in_array($providerStatus, ['succeeded','success','completed','done'], true) => 'completed',
-        in_array($providerStatus, ['failed','error','cancelled'], true)             => 'failed',
-        in_array($providerStatus, ['processing','running','in_progress'], true)     => 'processing',
-        default                                                                     => 'queued',
+        in_array($providerStatus, ['succeeded', 'success', 'completed', 'done'], true) => 'completed',
+        in_array($providerStatus, ['failed', 'error', 'cancelled'], true)              => 'failed',
+        in_array($providerStatus, ['running', 'processing', 'in_progress'], true)      => 'processing',
+        default                                                                         => 'queued',
     };
+
+    // ModelArk returns output in content[] array
+    $videoUrl     = null;
+    $thumbnailUrl = null;
+    if (!empty($raw['content']) && is_array($raw['content'])) {
+        foreach ($raw['content'] as $item) {
+            $type = $item['type'] ?? '';
+            if ($type === 'video' && !$videoUrl) {
+                $videoUrl     = $item['video_url'] ?? $item['url'] ?? null;
+                $thumbnailUrl = $item['cover_image_url'] ?? $item['thumbnail_url'] ?? null;
+            }
+        }
+    }
+    // Fallback for flat response shapes
+    $videoUrl     = $videoUrl     ?? $raw['video_url']     ?? $raw['output_url']    ?? null;
+    $thumbnailUrl = $thumbnailUrl ?? $raw['thumbnail_url'] ?? $raw['cover_url']     ?? null;
+    $errorMsg     = $raw['error']['message'] ?? $raw['error_message'] ?? $raw['message'] ?? '';
 
     return [
         'ok'            => true,
         'status'        => $status,
-        'video_url'     => $data['video_url']     ?? $data['output_url'] ?? null,
-        'thumbnail_url' => $data['thumbnail_url'] ?? $data['cover_url']  ?? null,
-        'error_message' => $data['error_message'] ?? $data['message']    ?? '',
+        'video_url'     => $videoUrl,
+        'thumbnail_url' => $thumbnailUrl,
+        'error_message' => $errorMsg,
         'raw'           => $raw,
     ];
 }
@@ -128,7 +158,7 @@ function byteplus_request(string $method, string $url, array $payload, string $a
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 30,
+        CURLOPT_TIMEOUT        => 60,
         CURLOPT_HTTPHEADER     => [
             'Authorization: Bearer ' . $apiKey,
             'Content-Type: application/json',
@@ -140,7 +170,7 @@ function byteplus_request(string $method, string $url, array $payload, string $a
 
     if ($method === 'POST') {
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload, JSON_UNESCAPED_UNICODE));
     }
 
     $body     = curl_exec($ch);
@@ -155,16 +185,14 @@ function byteplus_request(string $method, string $url, array $payload, string $a
 
     $decoded = json_decode($body, true);
 
-    if ($httpCode < 200 || $httpCode >= 300) {
-        $msg = $decoded['message'] ?? $decoded['error'] ?? "HTTP $httpCode";
-        error_log("[BytePlus] API error $httpCode: $body");
-        return ['ok' => false, 'error' => $msg, 'raw' => $decoded ?? []];
+    if ($httpCode === 401) {
+        return ['ok' => false, 'error' => 'Invalid API key.', 'raw' => $decoded ?? []];
     }
 
-    // Some APIs return a top-level success/error flag
-    if (isset($decoded['code']) && $decoded['code'] !== 0 && $decoded['code'] !== 200) {
-        $msg = $decoded['message'] ?? $decoded['msg'] ?? 'API returned error code ' . $decoded['code'];
-        return ['ok' => false, 'error' => $msg, 'raw' => $decoded];
+    if ($httpCode < 200 || $httpCode >= 300) {
+        $msg = $decoded['error']['message'] ?? $decoded['message'] ?? $decoded['error'] ?? "HTTP $httpCode";
+        error_log("[BytePlus] API error $httpCode: $body");
+        return ['ok' => false, 'error' => $msg, 'raw' => $decoded ?? []];
     }
 
     return ['ok' => true, 'raw' => $decoded ?? []];

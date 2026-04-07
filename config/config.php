@@ -44,9 +44,13 @@ define('ALLOWED_RECEIPT_TYPES', ['image/jpeg', 'image/png', 'application/pdf']);
 // ── Pagination ────────────────────────────────────────────────────────────────
 define('ITEMS_PER_PAGE', 20);
 
-// ── BytePlus API (also configurable via settings table) ───────────────────────
-define('BYTEPLUS_API_URL', getenv('BYTEPLUS_API_URL') ?: 'https://api.byteplus.com/visugc/v1');
-define('BYTEPLUS_API_KEY', getenv('BYTEPLUS_API_KEY') ?: '');
+// ── BytePlus ModelArk API (also configurable via settings table) ─────────────
+// API URL: Asia Pacific (Jakarta) endpoint — change region if needed
+define('BYTEPLUS_API_URL',     getenv('BYTEPLUS_API_URL')     ?: 'https://ark.ap-southeast-1.bytepluses.com/api/v3');
+define('BYTEPLUS_API_KEY',     getenv('BYTEPLUS_API_KEY')     ?: '');
+// Endpoint ID: created in BytePlus Console → ModelArk → Online inference
+// Looks like: ep-20250407-xxxxxxxx  OR use a direct model ID e.g. seedance-1-5-lite-t2v-250428
+define('BYTEPLUS_ENDPOINT_ID', getenv('BYTEPLUS_ENDPOINT_ID') ?: '');
 
 // ── Error handling ────────────────────────────────────────────────────────────
 if (APP_DEBUG) {
