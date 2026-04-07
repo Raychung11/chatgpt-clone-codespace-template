@@ -4,7 +4,9 @@ declare(strict_types=1);
 /**
  * inc/wallet.php
  * Wallet / credit management functions.
- * All balance mutations run inside transactions with row-level locking.
+ * All balance mutations use row-level locking.
+ * wallet_credit() and wallet_deduct() are safe to call inside or outside
+ * an existing PDO transaction — they check inTransaction() first.
  */
 
 /**
@@ -20,12 +22,12 @@ function wallet_balance(int $user_id): float
 
 /**
  * Credit (add) credits to a user wallet.
- * Returns ['ok' => true] or ['ok' => false, 'error' => string]
+ * Safe to call inside an existing transaction — will not open a nested one.
  */
 function wallet_credit(
     int    $user_id,
     float  $amount,
-    string $type,           // 'topup','referral_reward','admin_adjustment'
+    string $type,
     string $ref_type = '',
     ?int   $ref_id = null,
     string $note = '',
@@ -36,15 +38,15 @@ function wallet_credit(
     }
 
     $pdo = db();
-    $pdo->beginTransaction();
+    $ownTx = !$pdo->inTransaction();
+    if ($ownTx) $pdo->beginTransaction();
+
     try {
-        // Lock row
         $stmt = $pdo->prepare('SELECT `balance` FROM `wallets` WHERE `user_id` = ? FOR UPDATE');
         $stmt->execute([$user_id]);
         $row = $stmt->fetch();
 
         if (!$row) {
-            // Auto-create wallet if missing
             $pdo->prepare('INSERT INTO `wallets` (`user_id`,`balance`) VALUES (?,0.00)')
                 ->execute([$user_id]);
             $before = 0.0;
@@ -63,19 +65,19 @@ function wallet_credit(
              VALUES (?,?,?,?,?,?,?,?,?)'
         )->execute([$user_id, $type, $amount, $before, $after, $ref_type ?: null, $ref_id, $note, $created_by]);
 
-        $pdo->commit();
+        if ($ownTx) $pdo->commit();
         return ['ok' => true, 'balance' => $after];
 
-    } catch (PDOException $e) {
-        $pdo->rollBack();
+    } catch (\Throwable $e) {
+        if ($ownTx && $pdo->inTransaction()) $pdo->rollBack();
         error_log('[wallet_credit] ' . $e->getMessage());
-        return ['ok' => false, 'error' => 'Wallet update failed. Please try again.'];
+        return ['ok' => false, 'error' => 'Wallet update failed: ' . $e->getMessage()];
     }
 }
 
 /**
  * Deduct credits from a user wallet.
- * Checks for sufficient balance first.
+ * Safe to call inside an existing transaction — will not open a nested one.
  */
 function wallet_deduct(
     int    $user_id,
@@ -91,21 +93,23 @@ function wallet_deduct(
     }
 
     $pdo = db();
-    $pdo->beginTransaction();
+    $ownTx = !$pdo->inTransaction();
+    if ($ownTx) $pdo->beginTransaction();
+
     try {
         $stmt = $pdo->prepare('SELECT `balance` FROM `wallets` WHERE `user_id` = ? FOR UPDATE');
         $stmt->execute([$user_id]);
         $row = $stmt->fetch();
 
         if (!$row) {
-            $pdo->rollBack();
+            if ($ownTx) $pdo->rollBack();
             return ['ok' => false, 'error' => 'Wallet not found.'];
         }
 
         $before = (float)$row['balance'];
 
         if ($before < $amount) {
-            $pdo->rollBack();
+            if ($ownTx) $pdo->rollBack();
             return ['ok' => false, 'error' => 'Insufficient credits.'];
         }
 
@@ -120,13 +124,13 @@ function wallet_deduct(
              VALUES (?,?,?,?,?,?,?,?,?)'
         )->execute([$user_id, $type, -$amount, $before, $after, $ref_type ?: null, $ref_id, $note, $created_by]);
 
-        $pdo->commit();
+        if ($ownTx) $pdo->commit();
         return ['ok' => true, 'balance' => $after];
 
-    } catch (PDOException $e) {
-        $pdo->rollBack();
+    } catch (\Throwable $e) {
+        if ($ownTx && $pdo->inTransaction()) $pdo->rollBack();
         error_log('[wallet_deduct] ' . $e->getMessage());
-        return ['ok' => false, 'error' => 'Wallet deduction failed. Please try again.'];
+        return ['ok' => false, 'error' => 'Wallet deduction failed: ' . $e->getMessage()];
     }
 }
 
@@ -151,7 +155,7 @@ function wallet_refund(
  */
 function wallet_admin_adjust(
     int    $user_id,
-    float  $amount,         // positive = add, negative = deduct
+    float  $amount,
     string $note,
     int    $admin_id
 ): array {
@@ -189,9 +193,7 @@ function wallet_transaction_count(int $user_id): int
 }
 
 /**
- * Process a payment order approval: add credits and record transaction.
- * Called by admin when approving a payment order.
- * Returns ['ok' => true] or ['ok' => false, 'error' => ...]
+ * Process a payment order approval: mark approved and credit wallet.
  */
 function process_payment_approval(int $order_id, int $admin_id): array
 {
@@ -209,14 +211,13 @@ function process_payment_approval(int $order_id, int $admin_id): array
 
     $pdo->beginTransaction();
     try {
-        // Mark order approved
         $pdo->prepare(
             'UPDATE `payment_orders`
              SET `status` = "approved", `approved_by` = ?, `approved_at` = NOW()
              WHERE `id` = ?'
         )->execute([$admin_id, $order_id]);
 
-        // Credit wallet
+        // wallet_credit() detects the active transaction and skips beginTransaction()
         $result = wallet_credit(
             (int)$order['user_id'],
             (float)$order['credits'],
@@ -232,13 +233,13 @@ function process_payment_approval(int $order_id, int $admin_id): array
             return $result;
         }
 
-        // Trigger referral reward if this is user's first approved payment
+        $pdo->commit();
+
+        // Post-commit: referral reward (its own transaction)
         trigger_referral_reward_if_eligible((int)$order['user_id']);
 
-        $pdo->commit();
         log_activity('admin', $admin_id, 'approve_payment', 'Approved order #' . $order_id);
 
-        // Send approval email (non-blocking — failure doesn't affect approval)
         if (function_exists('mail_payment_approved')) {
             $usr = $pdo->prepare('SELECT name, email FROM `users` WHERE id=? LIMIT 1');
             $usr->execute([(int)$order['user_id']]);
@@ -249,10 +250,10 @@ function process_payment_approval(int $order_id, int $admin_id): array
 
         return ['ok' => true];
 
-    } catch (PDOException $e) {
-        $pdo->rollBack();
+    } catch (\Throwable $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
         error_log('[process_payment_approval] ' . $e->getMessage());
-        return ['ok' => false, 'error' => 'Approval failed. Please try again.'];
+        return ['ok' => false, 'error' => 'Approval failed: ' . $e->getMessage()];
     }
 }
 
@@ -274,7 +275,6 @@ function process_payment_rejection(int $order_id, int $admin_id, string $reason)
 
     log_activity('admin', $admin_id, 'reject_payment', 'Rejected order #' . $order_id . ': ' . $reason);
 
-    // Send rejection email
     if (function_exists('mail_payment_rejected')) {
         $usr = db()->prepare('SELECT u.name, u.email FROM `payment_orders` po JOIN `users` u ON u.id=po.user_id WHERE po.id=? LIMIT 1');
         $usr->execute([$order_id]);
@@ -287,39 +287,32 @@ function process_payment_rejection(int $order_id, int $admin_id, string $reason)
 }
 
 /**
- * Trigger a referral reward for the referrer of $user_id
- * if this is the user's first successful purchase and not yet rewarded.
+ * Trigger a referral reward for the referrer of $user_id on their first purchase.
  */
 function trigger_referral_reward_if_eligible(int $user_id): void
 {
     $pdo = db();
 
-    // Find a pending referral for this user (they were referred by someone)
     $stmt = $pdo->prepare(
-        'SELECT r.*, u.referred_by FROM `referrals` r
-         JOIN `users` u ON u.id = r.referee_id
-         WHERE r.referee_id = ? AND r.status = "pending"
-         LIMIT 1'
+        'SELECT * FROM `referrals` WHERE `referee_id` = ? AND `status` = "pending" LIMIT 1'
     );
     $stmt->execute([$user_id]);
     $referral = $stmt->fetch();
 
     if (!$referral) return;
 
-    // Ensure this is really the first approved payment
     $count = $pdo->prepare(
-        'SELECT COUNT(*) FROM `payment_orders`
-         WHERE `user_id` = ? AND `status` = "approved"'
+        'SELECT COUNT(*) FROM `payment_orders` WHERE `user_id` = ? AND `status` = "approved"'
     );
     $count->execute([$user_id]);
-    if ((int)$count->fetchColumn() !== 1) return; // only reward on 1st purchase
+    if ((int)$count->fetchColumn() !== 1) return;
 
     $reward_credits = (float)setting('referral_reward_credits', 10.0);
     $referrer_id    = (int)$referral['referrer_id'];
 
     $pdo->beginTransaction();
     try {
-        // Credit referrer
+        // wallet_credit() detects the active transaction and skips beginTransaction()
         wallet_credit(
             $referrer_id,
             $reward_credits,
@@ -330,12 +323,10 @@ function trigger_referral_reward_if_eligible(int $user_id): void
             'system'
         );
 
-        // Mark referral rewarded
         $pdo->prepare(
             'UPDATE `referrals` SET `status` = "rewarded", `rewarded_at` = NOW() WHERE `id` = ?'
         )->execute([$referral['id']]);
 
-        // Log reward
         $pdo->prepare(
             'INSERT INTO `referral_rewards` (`referral_id`,`user_id`,`credits`,`note`)
              VALUES (?,?,?,?)'
@@ -349,9 +340,8 @@ function trigger_referral_reward_if_eligible(int $user_id): void
         $pdo->commit();
         log_activity('system', null, 'referral_reward', 'Rewarded referrer #' . $referrer_id . ' for user #' . $user_id);
 
-        // Notify referrer by email
         if (function_exists('mail_referral_reward')) {
-            $ref = $pdo->prepare('SELECT name, email FROM `users` WHERE id=? LIMIT 1');
+            $ref     = $pdo->prepare('SELECT name, email FROM `users` WHERE id=? LIMIT 1');
             $ref->execute([$referrer_id]);
             $refRow  = $ref->fetch();
             $refUser = $pdo->prepare('SELECT name FROM `users` WHERE id=? LIMIT 1');
@@ -365,8 +355,8 @@ function trigger_referral_reward_if_eligible(int $user_id): void
             }
         }
 
-    } catch (PDOException $e) {
-        $pdo->rollBack();
+    } catch (\Throwable $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
         error_log('[trigger_referral_reward] ' . $e->getMessage());
     }
 }
