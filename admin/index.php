@@ -27,6 +27,7 @@ function kpi(PDO $pdo, string $sql, array $params = []): int|float
     return $s->fetchColumn() ?? 0;
 }
 
+try {
 $totalUsers      = kpi($pdo, 'SELECT COUNT(*) FROM `users`');
 $activeUsers     = kpi($pdo, 'SELECT COUNT(*) FROM `users` WHERE `is_active` = 1');
 $pendingPayments = kpi($pdo, 'SELECT COUNT(*) FROM `payment_orders` WHERE `status` = "pending"');
@@ -59,6 +60,17 @@ $recentJobs = $pdo->query(
      FROM `video_jobs` vj JOIN `users` u ON u.id = vj.user_id
      ORDER BY vj.created_at DESC LIMIT 8'
 )->fetchAll();
+
+} catch (\Throwable $e) {
+    // Show DB error to admin so it can be diagnosed
+    http_response_code(500);
+    echo '<pre style="background:#1a1a2e;color:#ff6b6b;padding:24px;font-family:monospace;margin:0">';
+    echo '<strong>Dashboard DB Error</strong>' . "\n\n";
+    echo htmlspecialchars($e->getMessage()) . "\n\n";
+    echo 'Likely cause: missing database tables. Re-import sql/schema.sql via phpMyAdmin.' . "\n";
+    echo '</pre>';
+    exit;
+}
 
 $currency = setting('currency', 'MYR');
 ?>
