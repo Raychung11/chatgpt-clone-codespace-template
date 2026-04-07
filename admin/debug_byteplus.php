@@ -1,5 +1,10 @@
 <?php
 declare(strict_types=1);
+// Force error display regardless of production settings
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
+
 /**
  * admin/debug_byteplus.php
  * Diagnose BytePlus ModelArk API connectivity and job status.
@@ -13,7 +18,12 @@ require_once __DIR__ . '/../inc/auth.php';
 require_once __DIR__ . '/../inc/byteplus.php';
 
 boot_session();
-$admin = require_admin('/admin/login.php');
+// Simple admin check without layout dependency
+if (empty($_SESSION['admin_id'])) {
+    header('Location: ' . BASE_URL . '/admin/login.php');
+    exit;
+}
+$admin = ['name' => 'Admin'];
 
 $apiKey     = setting('byteplus_api_key',     BYTEPLUS_API_KEY)     ?: BYTEPLUS_API_KEY;
 $endpointId = setting('byteplus_endpoint_id', BYTEPLUS_ENDPOINT_ID) ?: BYTEPLUS_ENDPOINT_ID;
@@ -102,11 +112,8 @@ pre { background:var(--color-surface2); padding:14px; border-radius:8px; overflo
 .diag-val   { font-family:monospace; font-size:.85rem; max-width:60%; word-break:break-all; text-align:right; }
 </style>
 </head>
-<body>
-<?php render_admin_navbar($admin); ?>
-<div class="admin-wrap">
-<?php render_admin_sidebar('debug'); ?>
-<main class="admin-content">
+<body style="padding:24px;max-width:900px;margin:0 auto">
+<main>
 
 <div class="alert alert--warning" style="margin-bottom:20px">
     ⚠️ <strong>Diagnostic page — delete after use.</strong>
@@ -241,6 +248,5 @@ pre { background:var(--color-surface2); padding:14px; border-radius:8px; overflo
 </div>
 
 </main>
-</div>
 </body>
 </html>
