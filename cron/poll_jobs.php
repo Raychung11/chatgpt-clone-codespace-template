@@ -3,29 +3,58 @@ declare(strict_types=1);
 
 /**
  * cron/poll_jobs.php
- * Polls BytePlus API for pending/processing video jobs and updates their status.
+ * Polls BytePlus ModelArk for pending/processing video jobs and updates status.
  *
- * Schedule (Hostinger cPanel / VPS crontab):
- *   * * * * * php /path/to/cron/poll_jobs.php >> /path/to/logs/cron.log 2>&1
+ * ── Setup on Hostinger (two options) ────────────────────────────────────────
  *
- * Or every 2 minutes:
- *   *\/2 * * * * php /path/to/cron/poll_jobs.php >> /path/to/logs/cron.log 2>&1
+ * Option A — cPanel Cron Job (recommended):
+ *   Command: /usr/local/bin/php /home/YOUR_USER/public_html/cron/poll_jobs.php
+ *   Schedule: every 2 minutes  →  *\/2 * * * *
+ *
+ * Option B — URL-based cron (if CLI not available):
+ *   Set CRON_SECRET in config/config.php:
+ *     define('CRON_SECRET', 'your-random-secret-here');
+ *   Then hit:
+ *     https://yourdomain.com/cron/poll_jobs.php?secret=your-random-secret-here
+ *   Schedule via Hostinger cPanel → Cron Jobs → use a URL cron service, or
+ *   any external cron (e.g. cron-job.org — free).
  */
 
-// Prevent web access
-if (php_sapi_name() !== 'cli') {
-    http_response_code(403);
-    exit('CLI only.');
+// ── Access control ────────────────────────────────────────────────────────────
+$isCli = php_sapi_name() === 'cli';
+$isWeb = !$isCli;
+
+if ($isWeb) {
+    // Allow web access only with the correct secret token
+    require_once __DIR__ . '/../config/config.php';
+    $secret = defined('CRON_SECRET') ? CRON_SECRET : '';
+    if (!$secret || ($_GET['secret'] ?? '') !== $secret) {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+    header('Content-Type: text/plain');
+}
+
+if (!$isCli) {
+    require_once __DIR__ . '/../config/config.php';
 }
 
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../inc/functions.php';
 require_once __DIR__ . '/../inc/wallet.php';
+require_once __DIR__ . '/../inc/byteplus.php';
 
 $pdo = db();
 
-// Load active jobs that need polling
+function clog(string $msg): void {
+    echo date('[Y-m-d H:i:s]') . ' ' . $msg . "\n";
+    flush();
+}
+
+clog('Polling started.');
+
+// ── Load jobs that need polling ───────────────────────────────────────────────
 $stmt = $pdo->prepare(
     'SELECT * FROM `video_jobs`
      WHERE `status` IN ("queued","processing")
@@ -37,110 +66,126 @@ $stmt->execute();
 $jobs = $stmt->fetchAll();
 
 if (empty($jobs)) {
-    echo date('[Y-m-d H:i:s]') . " No jobs to poll.\n";
+    clog('No jobs to poll. Done.');
     exit(0);
 }
 
-$apiKey  = setting('byteplus_api_key', BYTEPLUS_API_KEY);
-$apiBase = rtrim(setting('byteplus_api_url', BYTEPLUS_API_URL), '/');
+clog('Found ' . count($jobs) . ' job(s) to poll.');
 
 foreach ($jobs as $job) {
-    $jobId    = (int)$job['id'];
-    $taskId   = $job['api_task_id'];
-    $userId   = (int)$job['user_id'];
+    $jobId  = (int)$job['id'];
+    $taskId = $job['api_task_id'];
+    $userId = (int)$job['user_id'];
 
-    echo date('[Y-m-d H:i:s]') . " Polling job #$jobId (task: $taskId)…\n";
+    clog("Checking job #$jobId (task_id: $taskId)");
 
-    // ── Call BytePlus status API ──────────────────────────────────────────────
-    $url = "$apiBase/task/query?task_id=" . urlencode($taskId);
-    $ch  = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 15,
-        CURLOPT_HTTPHEADER     => [
-            'Authorization: Bearer ' . $apiKey,
-            'Content-Type: application/json',
-        ],
-    ]);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlErr  = curl_error($ch);
-    curl_close($ch);
+    // Use the shared byteplus_query_task() — ModelArk endpoint
+    $result = byteplus_query_task($taskId);
 
-    if ($curlErr || $httpCode !== 200) {
-        echo date('[Y-m-d H:i:s]') . " ERROR job #$jobId: HTTP $httpCode $curlErr\n";
+    if (!$result['ok']) {
+        clog("  ERROR: " . $result['error']);
         continue;
     }
 
-    $data = json_decode($response, true);
-    if (!$data) {
-        echo date('[Y-m-d H:i:s]') . " ERROR job #$jobId: invalid JSON\n";
+    $status      = $result['status'];      // queued|processing|completed|failed
+    $videoUrl    = $result['video_url'];
+    $thumbUrl    = $result['thumbnail_url'];
+    $errorMsg    = $result['error_message'];
+    $raw         = $result['raw'];
+
+    // Extract token/cost usage from BytePlus response if available
+    $tokensUsed  = $raw['usage']['total_tokens']      ?? $raw['usage']['completion_tokens'] ?? null;
+    $inputTokens = $raw['usage']['prompt_tokens']     ?? null;
+    $costUsd     = $raw['usage']['total_cost']        ?? null;
+
+    clog("  Status: $status" . ($tokensUsed ? " | tokens: $tokensUsed" : ''));
+
+    if ($status === 'queued' || $status === 'processing') {
+        // Keep alive — update started_at if not set
+        $pdo->prepare(
+            'UPDATE `video_jobs`
+             SET `status` = ?, `started_at` = COALESCE(`started_at`, NOW())
+             WHERE `id` = ?'
+        )->execute([$status, $jobId]);
         continue;
     }
 
-    // ── Parse status from BytePlus response ───────────────────────────────────
-    // Adjust the path below to match actual BytePlus API response schema.
-    $apiStatus  = $data['data']['status']   ?? $data['status'] ?? 'unknown';
-    $videoUrl   = $data['data']['video_url'] ?? $data['video_url'] ?? null;
-    $thumbnailUrl = $data['data']['thumbnail_url'] ?? null;
-    $errorMsg   = $data['data']['error_message'] ?? $data['message'] ?? '';
-
-    // Map provider status → internal status
-    $newStatus = match (strtolower($apiStatus)) {
-        'succeeded', 'success', 'completed' => 'completed',
-        'failed', 'error'                   => 'failed',
-        'processing', 'running', 'pending'  => 'processing',
-        default                             => null, // no change
-    };
-
-    if ($newStatus === null) {
-        // Mark as processing if still running
-        $pdo->prepare('UPDATE `video_jobs` SET `status`="processing", `started_at`=COALESCE(`started_at`,NOW()) WHERE `id`=?')
-            ->execute([$jobId]);
-        echo date('[Y-m-d H:i:s]') . " job #$jobId still running (api_status=$apiStatus)\n";
-        continue;
-    }
-
+    // ── Terminal state ────────────────────────────────────────────────────────
     $pdo->beginTransaction();
     try {
-        if ($newStatus === 'completed' && $videoUrl) {
+        if ($status === 'completed' && $videoUrl) {
+
+            // Update job with cost data
             $pdo->prepare(
                 'UPDATE `video_jobs`
-                 SET `status`="completed", `completed_at`=NOW(), `api_response`=?
-                 WHERE `id`=?'
-            )->execute([json_encode($data), $jobId]);
+                 SET `status` = "completed",
+                     `completed_at` = NOW(),
+                     `api_response` = ?,
+                     `tokens_used`  = ?,
+                     `api_cost_usd` = ?
+                 WHERE `id` = ?'
+            )->execute([json_encode($raw), $tokensUsed, $costUsd, $jobId]);
 
-            // Store output
+            // Insert video output
             $pdo->prepare(
-                'INSERT INTO `video_outputs` (`job_id`,`user_id`,`cdn_url`,`thumbnail`)
-                 VALUES (?,?,?,?)'
-            )->execute([$jobId, $userId, $videoUrl, $thumbnailUrl]);
+                'INSERT INTO `video_outputs` (`job_id`, `user_id`, `cdn_url`, `thumbnail`)
+                 VALUES (?, ?, ?, ?)
+                 ON DUPLICATE KEY UPDATE `cdn_url` = VALUES(`cdn_url`), `thumbnail` = VALUES(`thumbnail`)'
+            )->execute([$jobId, $userId, $videoUrl, $thumbUrl]);
 
-            echo date('[Y-m-d H:i:s]') . " job #$jobId COMPLETED ✓\n";
+            $pdo->commit();
+            clog("  ✓ COMPLETED — video: $videoUrl");
 
-        } elseif ($newStatus === 'failed') {
+            // Send email notification (non-blocking)
+            if (function_exists('mail_video_completed')) {
+                $usr = $pdo->prepare('SELECT name, email FROM `users` WHERE id = ? LIMIT 1');
+                $usr->execute([$userId]);
+                if ($row = $usr->fetch()) {
+                    mail_video_completed($row['email'], $row['name'], $jobId, $videoUrl);
+                }
+            }
+
+        } elseif ($status === 'failed') {
+
             $pdo->prepare(
                 'UPDATE `video_jobs`
-                 SET `status`="failed", `error_message`=?, `api_response`=?
-                 WHERE `id`=?'
-            )->execute([$errorMsg, json_encode($data), $jobId]);
+                 SET `status` = "failed",
+                     `error_message` = ?,
+                     `api_response`  = ?,
+                     `tokens_used`   = ?,
+                     `api_cost_usd`  = ?
+                 WHERE `id` = ?'
+            )->execute([$errorMsg, json_encode($raw), $tokensUsed, $costUsd, $jobId]);
 
-            // Refund credits
-            $refund = wallet_refund($userId, (float)$job['credit_cost'], 'video_job', $jobId,
-                'Auto-refund: job #' . $jobId . ' failed');
+            // Refund credits — wallet_refund checks inTransaction()
+            wallet_refund($userId, (float)$job['credit_cost'], 'video_job', $jobId,
+                'Auto-refund: job #' . $jobId . ' failed at API');
 
-            $pdo->prepare('UPDATE `video_jobs` SET `status`="refunded", `refunded_at`=NOW() WHERE `id`=?')
-                ->execute([$jobId]);
+            $pdo->prepare(
+                'UPDATE `video_jobs` SET `status` = "refunded", `refunded_at` = NOW() WHERE `id` = ?'
+            )->execute([$jobId]);
 
-            echo date('[Y-m-d H:i:s]') . " job #$jobId FAILED — refunded " . $job['credit_cost'] . " credits to user #$userId\n";
+            $pdo->commit();
+            clog("  ✗ FAILED — refunded {$job['credit_cost']} credits to user #$userId");
         }
 
-        $pdo->commit();
-    } catch (PDOException $e) {
-        $pdo->rollBack();
-        echo date('[Y-m-d H:i:s]') . " DB ERROR job #$jobId: " . $e->getMessage() . "\n";
+    } catch (\Throwable $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        clog("  DB ERROR: " . $e->getMessage());
     }
 }
 
-echo date('[Y-m-d H:i:s]') . " Poll complete. Processed " . count($jobs) . " job(s).\n";
+// ── Usage summary for this run ────────────────────────────────────────────────
+$usageRow = $pdo->query(
+    'SELECT
+        COUNT(*) AS total_jobs,
+        COALESCE(SUM(tokens_used), 0) AS total_tokens,
+        COALESCE(SUM(api_cost_usd), 0) AS total_cost_usd
+     FROM video_jobs
+     WHERE status IN ("completed","failed","refunded")
+       AND completed_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)'
+)->fetch();
+
+clog("24h summary — jobs: {$usageRow['total_jobs']}, tokens: {$usageRow['total_tokens']}, est. cost: \${$usageRow['total_cost_usd']}");
+clog('Poll complete.');
 exit(0);

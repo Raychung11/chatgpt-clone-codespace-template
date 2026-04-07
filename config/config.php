@@ -44,6 +44,10 @@ define('ALLOWED_RECEIPT_TYPES', ['image/jpeg', 'image/png', 'application/pdf']);
 // ── Pagination ────────────────────────────────────────────────────────────────
 define('ITEMS_PER_PAGE', 20);
 
+// ── Cron secret (used when running poll_jobs.php via URL instead of CLI) ─────
+// Set a long random string, then hit: /cron/poll_jobs.php?secret=YOUR_SECRET
+define('CRON_SECRET', getenv('CRON_SECRET') ?: '');
+
 // ── BytePlus ModelArk API (also configurable via settings table) ─────────────
 // API URL: Asia Pacific (Jakarta) endpoint — change region if needed
 define('BYTEPLUS_API_URL',     getenv('BYTEPLUS_API_URL')     ?: 'https://ark.ap-southeast.bytepluses.com/api/v3');

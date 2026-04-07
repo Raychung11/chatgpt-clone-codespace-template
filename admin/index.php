@@ -37,6 +37,8 @@ $totalCreditsOut = kpi($pdo, 'SELECT COALESCE(SUM(`credits`),0) FROM `payment_or
 $totalJobs       = kpi($pdo, 'SELECT COUNT(*) FROM `video_jobs`');
 $jobsProcessing  = kpi($pdo, 'SELECT COUNT(*) FROM `video_jobs` WHERE `status` IN ("queued","processing")');
 $totalReferrals  = kpi($pdo, 'SELECT COUNT(*) FROM `referrals`');
+$totalTokens     = kpi($pdo, 'SELECT COALESCE(SUM(`tokens_used`),0) FROM `video_jobs` WHERE `status` IN ("completed","failed")');
+$totalApiCost    = kpi($pdo, 'SELECT COALESCE(SUM(`api_cost_usd`),0) FROM `video_jobs` WHERE `status` IN ("completed","failed")');
 
 // New users this month
 $newUsers30 = kpi($pdo, 'SELECT COUNT(*) FROM `users` WHERE `created_at` >= DATE_SUB(NOW(), INTERVAL 30 DAY)');
@@ -134,6 +136,11 @@ $currency = setting('currency', 'MYR');
                 <div class="kpi-label">Referrals</div>
                 <div class="kpi-value"><?= $totalReferrals ?></div>
                 <div class="kpi-sub">total tracked</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">API Tokens Used</div>
+                <div class="kpi-value"><?= number_format((float)$totalTokens) ?></div>
+                <div class="kpi-sub">est. cost: $<?= number_format((float)$totalApiCost, 4) ?></div>
             </div>
         </div>
 

@@ -175,6 +175,8 @@ CREATE TABLE IF NOT EXISTS `video_jobs` (
     `api_task_id`     VARCHAR(255)    NULL,
     `api_response`    JSON            NULL,
     `error_message`   TEXT            NULL,
+    `tokens_used`     INT UNSIGNED    NULL COMMENT 'API tokens consumed (from BytePlus usage)',
+    `api_cost_usd`    DECIMAL(10,6)   NULL COMMENT 'Estimated API cost in USD',
     `started_at`      DATETIME        NULL,
     `completed_at`    DATETIME        NULL,
     `refunded_at`     DATETIME        NULL,
