@@ -369,9 +369,20 @@ $completedJobs = db()->query(
 <div class="card" style="margin-bottom:20px;border:2px solid var(--color-accent)">
     <div class="card-header"><span class="card-title">2b. Repair Completed Jobs (fix missing video URL)</span></div>
     <?php if (isset($queryResult['repair_msg'])): ?>
-        <div class="alert alert--<?= str_contains($queryResult['repair_msg'], 'updated') ? 'success' : 'warning' ?>">
+        <div class="alert alert--<?= str_contains($queryResult['repair_msg'], '✓') ? 'success' : 'warning' ?>" style="margin-bottom:10px">
             <?= e($queryResult['repair_msg']) ?>
         </div>
+        <?php if (!empty($queryResult['raw_body'])): ?>
+            <p style="font-weight:700;margin:10px 0 4px">Full raw BytePlus response (copy this):</p>
+            <textarea style="width:100%;height:220px;font-family:monospace;font-size:.78rem;
+                             background:var(--color-surface2);color:var(--color-text);
+                             border:1px solid var(--color-border);border-radius:6px;padding:10px"
+                      onclick="this.select()"><?= htmlspecialchars(
+                          is_string($queryResult['raw_body'])
+                              ? $queryResult['raw_body']
+                              : json_encode($queryResult['raw_body'], JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES)
+                      ) ?></textarea>
+        <?php endif; ?>
     <?php endif; ?>
     <?php foreach ($completedJobs as $cj): ?>
     <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--color-border)">
