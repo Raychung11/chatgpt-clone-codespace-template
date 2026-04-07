@@ -46,7 +46,7 @@ define('ITEMS_PER_PAGE', 20);
 
 // ── BytePlus ModelArk API (also configurable via settings table) ─────────────
 // API URL: Asia Pacific (Jakarta) endpoint — change region if needed
-define('BYTEPLUS_API_URL',     getenv('BYTEPLUS_API_URL')     ?: 'https://ark.ap-southeast-1.bytepluses.com/api/v3');
+define('BYTEPLUS_API_URL',     getenv('BYTEPLUS_API_URL')     ?: 'https://ark.ap-southeast.bytepluses.com/api/v3');
 define('BYTEPLUS_API_KEY',     getenv('BYTEPLUS_API_KEY')     ?: '');
 // Endpoint ID: created in BytePlus Console → ModelArk → Online inference
 // Looks like: ep-20250407-xxxxxxxx  OR use a direct model ID e.g. seedance-1-5-lite-t2v-250428

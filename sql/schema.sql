@@ -317,7 +317,7 @@ INSERT INTO `settings` (`key`, `value`, `type`, `label`, `group`) VALUES
 ('currency',             'MYR',                                'string',  'Currency Code',                'general'),
 ('byteplus_api_key',      '',                                                 'string',  'BytePlus API Key',             'api'),
 ('byteplus_endpoint_id', '',                                                 'string',  'BytePlus Endpoint ID (ep-xxx)','api'),
-('byteplus_api_url',     'https://ark.ap-southeast-1.bytepluses.com/api/v3','string',  'BytePlus API Base URL',        'api'),
+('byteplus_api_url',     'https://ark.ap-southeast.bytepluses.com/api/v3',  'string',  'BytePlus API Base URL',        'api'),
 ('referral_reward_credits','10.00',                            'float',   'Referral Reward (credits)',    'referral'),
 ('mail_driver',          'mail',                               'string',  'Mail Driver (mail or smtp)',    'email'),
 ('mail_from_name',       'VideoSaaS',                          'string',  'Mail From Name',               'email'),
