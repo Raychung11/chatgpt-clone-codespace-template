@@ -47,7 +47,7 @@ function initHamburger() {
 
     btn.addEventListener('click', () => {
         const isOpen = btn.classList.toggle('open');
-        nav.classList.toggle('open', isOpen);
+        nav.style.display = isOpen ? 'block' : 'none';
         document.body.style.overflow = isOpen ? 'hidden' : '';
     });
 
@@ -55,7 +55,7 @@ function initHamburger() {
     nav.addEventListener('click', (e) => {
         if (e.target.tagName === 'A') {
             btn.classList.remove('open');
-            nav.classList.remove('open');
+            nav.style.display = 'none';
             document.body.style.overflow = '';
         }
     });

@@ -46,7 +46,7 @@ function render_client_navbar(array $user, string $active = ''): void
     </nav>
 
     <!-- Mobile slide-down nav -->
-    <div class="mobile-nav" id="mobileNav">
+    <div class="mobile-nav" id="mobileNav" style="display:none">
         <div class="nav-wallet">&#9889; <?= e($balance) ?> credits</div>
         <?php foreach ($nav as $key => $item): ?>
             <a href="<?= e($item['url']) ?>" class="<?= $active === $key ? 'active' : '' ?>">
