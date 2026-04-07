@@ -20,6 +20,27 @@ $user = require_auth('/public/login.php');
 $uid  = (int)$user['id'];
 $pdo  = db();
 
+// ── Handle AJAX status poll ───────────────────────────────────────────────────
+if (($_GET['_action'] ?? '') === 'poll_status') {
+    $ids = array_map('intval', explode(',', $_GET['ids'] ?? ''));
+    $ids = array_filter($ids);
+    if (empty($ids)) { json_response([]); }
+
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $stmt = $pdo->prepare(
+        "SELECT vj.id, vj.status, vo.cdn_url, vo.thumbnail
+         FROM video_jobs vj
+         LEFT JOIN video_outputs vo ON vo.job_id = vj.id
+         WHERE vj.id IN ($placeholders) AND vj.user_id = ?"
+    );
+    $stmt->execute([...$ids, $uid]);
+    $rows = [];
+    foreach ($stmt->fetchAll() as $r) {
+        $rows[(int)$r['id']] = ['status' => $r['status'], 'cdn_url' => $r['cdn_url'], 'thumbnail' => $r['thumbnail']];
+    }
+    json_response($rows);
+}
+
 // ── Handle share logging (AJAX POST) ─────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['_action'] ?? '') === 'log_share') {
     csrf_verify();
@@ -126,6 +147,26 @@ $shareBase = BASE_URL . '/client/share.php?job_id=';
                           background: var(--color-info); border-radius: 50%;
                           animation: pulse 1.5s infinite; margin-right: 5px; }
         @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.3 } }
+
+        /* Progress bar */
+        .progress-wrap { margin-top: 10px; }
+        .progress-bar-track {
+            height: 6px; border-radius: 3px;
+            background: var(--color-surface2);
+            overflow: hidden; margin-bottom: 6px;
+        }
+        .progress-bar-fill {
+            height: 100%; border-radius: 3px;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+            transition: width 1s ease;
+            animation: shimmer 2s infinite linear;
+            background-size: 200% 100%;
+        }
+        @keyframes shimmer {
+            0%   { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .progress-meta { display:flex; justify-content:space-between; font-size:.78rem; color:var(--color-muted); }
     </style>
 </head>
 <body>
@@ -268,9 +309,19 @@ $shareBase = BASE_URL . '/client/share.php?job_id=';
                             </div>
 
                         <?php elseif ($isRunning): ?>
-                            <p class="text-muted text-sm" style="margin-top:6px">
-                                Your video is being generated. This page auto-refreshes.
-                            </p>
+                            <div class="progress-wrap" id="progress-<?= (int)$job['id'] ?>">
+                                <div class="progress-bar-track">
+                                    <div class="progress-bar-fill" style="width:<?= $job['status']==='processing' ? '60%' : '15%' ?>"></div>
+                                </div>
+                                <div class="progress-meta">
+                                    <span id="status-label-<?= (int)$job['id'] ?>">
+                                        <?= $job['status'] === 'processing' ? 'Generating video…' : 'Queued — waiting to start…' ?>
+                                    </span>
+                                    <span id="elapsed-<?= (int)$job['id'] ?>"
+                                          data-started="<?= e($job['started_at'] ?? $job['created_at']) ?>">
+                                    </span>
+                                </div>
+                            </div>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -315,10 +366,94 @@ function copyText(text, btn, jobId, shareType) {
     });
 }
 
-// Auto-refresh every 15s if there are processing/queued jobs
-<?php $hasRunning = !empty(array_filter($jobs, fn($j) => in_array($j['status'], ['queued','processing']))); ?>
-<?php if ($hasRunning): ?>
-setTimeout(() => { location.reload(); }, 15000);
+// ── Live status polling ───────────────────────────────────────────────────────
+<?php
+$runningIds = array_values(array_map(
+    fn($j) => (int)$j['id'],
+    array_filter($jobs, fn($j) => in_array($j['status'], ['queued','processing']))
+));
+$runningStarted = [];
+foreach ($jobs as $j) {
+    if (in_array($j['status'], ['queued','processing'])) {
+        $runningStarted[(int)$j['id']] = $j['started_at'] ?? $j['created_at'];
+    }
+}
+?>
+<?php if (!empty($runningIds)): ?>
+const runningIds   = <?= json_encode($runningIds) ?>;
+const pollInterval = 6000; // 6 seconds
+
+// Elapsed time counters
+function formatElapsed(seconds) {
+    if (seconds < 60) return seconds + 's';
+    return Math.floor(seconds / 60) + 'm ' + (seconds % 60) + 's';
+}
+
+// Update elapsed time every second
+setInterval(() => {
+    document.querySelectorAll('[data-started]').forEach(el => {
+        const started = new Date(el.dataset.started.replace(' ', 'T') + 'Z');
+        const elapsed = Math.floor((Date.now() - started.getTime()) / 1000);
+        el.textContent = elapsed > 0 ? formatElapsed(Math.max(0, elapsed)) : '';
+    });
+}, 1000);
+
+// Animate progress bar forward over time
+function advanceProgress(jobId, currentPct) {
+    const fill = document.querySelector(`#progress-${jobId} .progress-bar-fill`);
+    if (!fill) return;
+    // Slowly creep toward 90% — never hits 100% until actually done
+    const next = Math.min(90, currentPct + (Math.random() * 3 + 1));
+    fill.style.width = next + '%';
+    return next;
+}
+
+let progressPcts = {};
+runningIds.forEach(id => {
+    const fill = document.querySelector(`#progress-${id} .progress-bar-fill`);
+    progressPcts[id] = fill ? parseFloat(fill.style.width) : 20;
+});
+
+// Advance bars every 3s
+setInterval(() => {
+    runningIds.forEach(id => {
+        progressPcts[id] = advanceProgress(id, progressPcts[id] || 20);
+    });
+}, 3000);
+
+// Poll status every 6s
+async function pollStatus() {
+    try {
+        const res  = await fetch(`?_action=poll_status&ids=${runningIds.join(',')}`);
+        const data = await res.json();
+        let anyCompleted = false;
+
+        runningIds.forEach(id => {
+            const job = data[id];
+            if (!job) return;
+
+            const label = document.getElementById(`status-label-${id}`);
+            const fill  = document.querySelector(`#progress-${id} .progress-bar-fill`);
+
+            if (job.status === 'completed') {
+                anyCompleted = true;
+                if (fill) fill.style.width = '100%';
+                if (label) label.textContent = '✓ Done! Reloading…';
+            } else if (job.status === 'failed' || job.status === 'refunded') {
+                anyCompleted = true; // reload to show error
+            } else if (job.status === 'processing' && label) {
+                label.textContent = 'Generating video…';
+            }
+        });
+
+        if (anyCompleted) {
+            setTimeout(() => location.reload(), 1200);
+        }
+    } catch(e) {}
+}
+
+setInterval(pollStatus, pollInterval);
+pollStatus(); // run immediately on load
 <?php endif; ?>
 </script>
 </body>
