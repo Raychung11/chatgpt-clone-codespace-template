@@ -373,9 +373,8 @@ ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
 
 -- ==============================================================
 -- DEFAULT SUPER ADMIN
--- Change the password hash before use!
--- Generate hash with: password_hash('YourPassword', PASSWORD_BCRYPT, ['cost'=>12])
+-- Default password: Admin@1234  -- CHANGE THIS after first login!
 -- ==============================================================
 INSERT INTO `admins` (`name`, `email`, `password_hash`, `role`) VALUES
-('Super Admin', 'admin@example.com', '$2y$12$REPLACE_THIS_WITH_REAL_HASH_XXXXX', 'super_admin')
-ON DUPLICATE KEY UPDATE `email` = VALUES(`email`);
+('Super Admin', 'admin@example.com', '$2y$12$XDLxuEiSkw97nCtVB1CYtO30rVL3CQkFHUpobCjpuUtAc21oAvM7O', 'super_admin')
+ON DUPLICATE KEY UPDATE `password_hash` = VALUES(`password_hash`), `role` = VALUES(`role`);
