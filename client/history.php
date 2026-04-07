@@ -261,9 +261,11 @@ $shareBase = BASE_URL . '/client/share.php?job_id=';
                             <div class="share-bar">
                                 <!-- Video preview -->
                                 <?php if ($job['cdn_url']): ?>
-                                    <a href="<?= e($job['cdn_url']) ?>" target="_blank" rel="noopener"
-                                       class="share-btn dl">▶ Preview</a>
-                                    <a href="<?= e($job['cdn_url']) ?>" download
+                                    <button type="button" class="share-btn dl"
+                                            onclick="openVideoPlayer(<?= htmlspecialchars(json_encode($job['cdn_url']), ENT_QUOTES) ?>)">
+                                        ▶ Preview
+                                    </button>
+                                    <a href="<?= e($job['cdn_url']) ?>" download="video_<?= (int)$job['id'] ?>.mp4"
                                        class="share-btn dl"
                                        onclick="logShare(<?= (int)$job['id'] ?>,'tiktok','download')">
                                         ↓ Download
@@ -338,6 +340,21 @@ $shareBase = BASE_URL . '/client/share.php?job_id=';
 
         <?php render_pagination($pager); ?>
     <?php endif; ?>
+</div>
+
+<!-- Video player modal -->
+<div id="videoModal" onclick="if(event.target===this)closeVideoPlayer()"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);
+            z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:14px">
+    <video id="modalVideo" controls playsinline
+           style="max-width:92vw;max-height:80vh;border-radius:10px;background:#000;outline:none">
+        Your browser does not support video playback.
+    </video>
+    <button onclick="closeVideoPlayer()"
+            style="background:rgba(255,255,255,.15);color:#fff;border:none;padding:8px 24px;
+                   border-radius:20px;cursor:pointer;font-size:.9rem">
+        ✕ Close
+    </button>
 </div>
 
 <script>
@@ -461,6 +478,23 @@ async function pollStatus() {
 setInterval(pollStatus, pollInterval);
 pollStatus(); // run immediately on load
 <?php endif; ?>
+
+// Video player modal
+function openVideoPlayer(url) {
+    const modal = document.getElementById('videoModal');
+    const video = document.getElementById('modalVideo');
+    video.src = url;
+    modal.style.display = 'flex';
+    video.play().catch(() => {});
+}
+function closeVideoPlayer() {
+    const modal = document.getElementById('videoModal');
+    const video = document.getElementById('modalVideo');
+    video.pause();
+    video.src = '';
+    modal.style.display = 'none';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVideoPlayer(); });
 
 // Cancel job
 async function cancelJob(jobId, btn) {
