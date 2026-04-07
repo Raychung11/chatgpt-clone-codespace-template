@@ -3,300 +3,274 @@ declare(strict_types=1);
 
 /**
  * client/share.php
- * Dedicated public-facing share page for a completed video job.
- * Provides caption, hashtags, platform share links, and download.
+ * PUBLIC share page — no login required.
+ * Anyone with the link can watch and reshare the video.
+ * Open Graph + Twitter card meta for social media previews.
  */
 
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../inc/functions.php';
-require_once __DIR__ . '/../inc/csrf.php';
-require_once __DIR__ . '/../inc/auth.php';
 require_once __DIR__ . '/../inc/social.php';
 require_once __DIR__ . '/../inc/layout.php';
 
 boot_session();
-$user = require_auth('/public/login.php');
-$uid  = (int)$user['id'];
-$pdo  = db();
 
 $jobId = (int)($_GET['job_id'] ?? 0);
 if (!$jobId) {
-    flash_error('Invalid video.');
-    redirect(BASE_URL . '/client/history.php');
+    http_response_code(404);
+    die('Video not found.');
 }
 
-// Load job — must belong to this user
+$pdo  = db();
 $stmt = $pdo->prepare(
-    'SELECT vj.*, vo.cdn_url, vo.file_path AS output_path, vo.thumbnail,
-            vo.caption AS stored_caption, vo.hashtags AS stored_hashtags
+    'SELECT vj.id, vj.prompt, vj.resolution, vj.duration, vj.created_at,
+            vo.cdn_url, vo.thumbnail,
+            vo.caption AS stored_caption, vo.hashtags AS stored_hashtags,
+            u.name AS creator_name
      FROM `video_jobs` vj
      LEFT JOIN `video_outputs` vo ON vo.job_id = vj.id
-     WHERE vj.id = ? AND vj.user_id = ?
+     LEFT JOIN `users` u ON u.id = vj.user_id
+     WHERE vj.id = ? AND vj.status = "completed"
      LIMIT 1'
 );
-$stmt->execute([$jobId, $uid]);
+$stmt->execute([$jobId]);
 $job = $stmt->fetch();
 
-if (!$job) {
-    flash_error('Video not found.');
-    redirect(BASE_URL . '/client/history.php');
+if (!$job || !$job['cdn_url']) {
+    http_response_code(404);
+    die('Video not found or not ready yet.');
 }
 
-if ($job['status'] !== 'completed') {
-    flash_info('This video is not ready yet.');
-    redirect(BASE_URL . '/client/history.php');
-}
-
-// Caption & hashtags — use stored or auto-generate
-$caption  = $job['stored_caption']  ?: social_generate_caption($job['prompt']);
-$hashtags = $job['stored_hashtags'] ?: social_generate_hashtags($job['prompt']);
-
+$siteName  = setting('site_name', 'VideoSaaS');
 $shareUrl  = BASE_URL . '/client/share.php?job_id=' . $jobId;
-$shareUrls = social_share_urls($shareUrl, $caption);
+$videoUrl  = $job['cdn_url'];
+$thumbUrl  = $job['thumbnail'] ?: '';
 
-$siteName = setting('site_name', 'VideoSaaS');
+$caption   = $job['stored_caption']  ?: social_generate_caption($job['prompt']);
+$hashtags  = $job['stored_hashtags'] ?: social_generate_hashtags($job['prompt']);
+$shareUrls = social_share_urls($shareUrl, $caption . "\n\n" . $hashtags);
 
-// Load share stats for this job
-$ss = $pdo->prepare(
-    'SELECT platform, COUNT(*) AS cnt
-     FROM `social_share_logs` WHERE video_job_id = ?
-     GROUP BY platform'
-);
-$ss->execute([$jobId]);
-$shareStats = [];
-foreach ($ss->fetchAll() as $row) {
-    $shareStats[$row['platform']] = (int)$row['cnt'];
-}
-$totalShares = array_sum($shareStats);
+// OG title — clean prompt, strip placeholders
+$ogTitle = preg_replace('/\{\{[^}]*\}\}/', '', $job['prompt']);
+$ogTitle = trim(preg_replace('/\s{2,}/', ' ', $ogTitle));
+$ogTitle = mb_substr($ogTitle ?: 'AI Marketing Video', 0, 80);
+
+// Log share view (best effort)
+try {
+    $pdo->prepare(
+        'INSERT INTO `social_share_logs` (user_id, video_job_id, platform, caption, hashtags, share_type)
+         VALUES (0, ?, "view", "", "", "view")
+         ON DUPLICATE KEY UPDATE video_job_id = video_job_id'
+    )->execute([$jobId]);
+} catch (\Throwable $e) {}
+
+// Is the current user the owner?
+require_once __DIR__ . '/../inc/csrf.php';
+require_once __DIR__ . '/../inc/auth.php';
+$currentUser = auth_user();
+$isOwner     = $currentUser && (int)$currentUser['id'] === (int)($pdo->prepare('SELECT user_id FROM video_jobs WHERE id=? LIMIT 1')->execute([$jobId]) ? $pdo->query("SELECT user_id FROM video_jobs WHERE id=$jobId LIMIT 1")->fetchColumn() : 0);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" prefix="og: https://ogp.me/ns#">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Share Video #<?= $jobId ?> — <?= e($siteName) ?></title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><?= e($ogTitle) ?> — <?= e($siteName) ?></title>
 
-    <!-- Open Graph for link previews -->
-    <meta property="og:title"       content="AI Marketing Video — <?= e($siteName) ?>">
-    <meta property="og:description" content="<?= e(truncate($job['prompt'], 120)) ?>">
-    <?php if ($job['thumbnail']): ?>
-    <meta property="og:image"       content="<?= e($job['thumbnail']) ?>">
-    <?php endif; ?>
-    <meta property="og:url"         content="<?= e($shareUrl) ?>">
-    <meta property="og:type"        content="video.other">
-    <meta name="twitter:card"       content="summary_large_image">
+<!-- ── Open Graph (Facebook, LinkedIn, WhatsApp) ──────────────── -->
+<meta property="og:type"              content="video.other">
+<meta property="og:site_name"         content="<?= e($siteName) ?>">
+<meta property="og:title"             content="<?= e($ogTitle) ?>">
+<meta property="og:description"       content="<?= e($caption) ?>">
+<meta property="og:url"               content="<?= e($shareUrl) ?>">
+<meta property="og:video"             content="<?= e($videoUrl) ?>">
+<meta property="og:video:secure_url"  content="<?= e($videoUrl) ?>">
+<meta property="og:video:type"        content="video/mp4">
+<meta property="og:video:width"       content="1280">
+<meta property="og:video:height"      content="720">
+<?php if ($thumbUrl): ?>
+<meta property="og:image"             content="<?= e($thumbUrl) ?>">
+<meta property="og:image:width"       content="1280">
+<meta property="og:image:height"      content="720">
+<?php endif; ?>
 
-    <link rel="stylesheet" href="<?= BASE_URL ?>/public/assets/css/main.css">
-    <style>
-        .share-platform-btn {
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            padding: 13px 20px; border-radius: var(--radius);
-            font-size: .95rem; font-weight: 700; cursor: pointer;
-            border: 1px solid var(--color-border); text-decoration: none;
-            transition: opacity .15s, transform .1s;
-        }
-        .share-platform-btn:hover { opacity: .85; transform: translateY(-1px); text-decoration: none; }
-        .share-platform-btn:active { transform: scale(.97); }
-        .wa  { background: #25d366; color: #fff; border-color: #25d366; }
-        .fb  { background: #1877f2; color: #fff; border-color: #1877f2; }
-        .tw  { background: #000;    color: #fff; border-color: #000; }
-        .li  { background: #0a66c2; color: #fff; border-color: #0a66c2; }
-        .ig  { background: linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); color:#fff; border:none; }
-        .tt  { background: #010101; color: #fff; border-color: #010101; }
-        .copy-field { background: var(--color-surface2); border: 1px solid var(--color-border);
-                      border-radius: var(--radius); padding: 14px; font-size: .9rem;
-                      line-height: 1.6; color: var(--color-text); white-space: pre-wrap;
-                      word-break: break-word; }
-        .video-preview-box {
-            background: #000; border-radius: var(--radius-lg); overflow: hidden;
-            position: relative; aspect-ratio: 16/9; max-height: 420px;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .video-preview-box video { width: 100%; height: 100%; object-fit: contain; }
-        .video-preview-box img   { width: 100%; height: 100%; object-fit: cover; }
-    </style>
+<!-- ── Twitter / X Card ───────────────────────────────────────── -->
+<meta name="twitter:card"             content="player">
+<meta name="twitter:title"            content="<?= e($ogTitle) ?>">
+<meta name="twitter:description"      content="<?= e($caption) ?>">
+<meta name="twitter:player"           content="<?= e($shareUrl) ?>&embed=1">
+<meta name="twitter:player:width"     content="1280">
+<meta name="twitter:player:height"    content="720">
+<?php if ($thumbUrl): ?>
+<meta name="twitter:image"            content="<?= e($thumbUrl) ?>">
+<?php endif; ?>
+
+<link rel="stylesheet" href="<?= BASE_URL ?>/public/assets/css/main.css">
+<style>
+    .video-hero {
+        background: #000; border-radius: var(--radius-lg); overflow: hidden;
+        position: relative; aspect-ratio: 16/9;
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 20px;
+    }
+    .video-hero video { width:100%; height:100%; object-fit:contain; outline:none; }
+    .share-btn-lg {
+        display:flex; align-items:center; justify-content:center; gap:10px;
+        padding:13px 18px; border-radius:var(--radius); font-weight:700;
+        font-size:.95rem; cursor:pointer; text-decoration:none;
+        transition:opacity .15s, transform .1s; border:none;
+    }
+    .share-btn-lg:hover { opacity:.85; transform:translateY(-1px); text-decoration:none; }
+    .wa  { background:#25d366; color:#fff; }
+    .fb  { background:#1877f2; color:#fff; }
+    .tw  { background:#000;    color:#fff; }
+    .li  { background:#0a66c2; color:#fff; }
+    .ig  { background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); color:#fff; }
+    .tt  { background:#010101; color:#fff; }
+    .copy-box {
+        background:var(--color-surface2); border:1px solid var(--color-border);
+        border-radius:var(--radius); padding:14px; font-size:.88rem;
+        line-height:1.7; white-space:pre-wrap; word-break:break-word;
+        color:var(--color-text);
+    }
+</style>
 </head>
 <body>
-<?php render_client_navbar($user, 'history'); ?>
 
-<div class="container main-content">
-    <?= render_flash() ?>
-
-    <div class="page-header">
-        <div>
-            <h1 class="page-title">Share Your Video</h1>
-            <p class="page-sub">Job #<?= $jobId ?> · <?= e($job['resolution'] ?? '') ?> · <?= (int)$job['duration'] ?>s</p>
+<!-- Minimal public navbar -->
+<nav class="navbar">
+    <div class="navbar-inner">
+        <a href="<?= BASE_URL ?>/client/dashboard.php" class="navbar-brand">
+            <?= e($siteName) ?><span></span>
+        </a>
+        <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
+            <?php if ($currentUser): ?>
+                <a href="<?= BASE_URL ?>/client/history.php" class="btn btn-ghost btn-sm">← My Videos</a>
+            <?php else: ?>
+                <a href="<?= BASE_URL ?>/public/login.php" class="btn btn-ghost btn-sm">Sign In</a>
+                <a href="<?= BASE_URL ?>/public/register.php" class="btn btn-primary btn-sm">Get Started</a>
+            <?php endif; ?>
         </div>
-        <a href="<?= BASE_URL ?>/client/history.php" class="btn btn-ghost">← History</a>
+    </div>
+</nav>
+
+<div class="container main-content" style="max-width:860px">
+
+    <!-- Creator credit -->
+    <p class="text-muted text-sm" style="margin-bottom:12px">
+        <?php if ($job['creator_name']): ?>
+            Shared by <strong><?= e($job['creator_name']) ?></strong> ·
+        <?php endif; ?>
+        <?= e($job['resolution'] ?? '') ?> · <?= (int)$job['duration'] ?>s ·
+        <?= e(format_datetime($job['created_at'])) ?>
+    </p>
+
+    <!-- Video player -->
+    <div class="video-hero">
+        <video controls playsinline autoplay muted loop
+               <?= $thumbUrl ? 'poster="' . e($thumbUrl) . '"' : '' ?>
+               id="mainVideo">
+            <source src="<?= e($videoUrl) ?>" type="video/mp4">
+        </video>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start">
+    <!-- Title -->
+    <h1 style="font-size:1.3rem;margin-bottom:6px"><?= e($ogTitle) ?></h1>
+    <p class="text-muted text-sm" style="margin-bottom:24px"><?= e($caption) ?></p>
 
-        <!-- Left column: preview + prompt -->
+    <div style="display:grid;grid-template-columns:1fr 300px;gap:24px;align-items:start">
+
+        <!-- Left: caption + hashtags -->
         <div>
-            <!-- Video / thumbnail preview -->
-            <div class="card mb-4" style="padding:0;overflow:hidden">
-                <div class="video-preview-box">
-                    <?php if ($job['cdn_url']): ?>
-                        <video controls playsinline preload="metadata"
-                               poster="<?= e($job['thumbnail'] ?? '') ?>">
-                            <source src="<?= e($job['cdn_url']) ?>">
-                            Your browser does not support video.
-                        </video>
-                    <?php elseif ($job['thumbnail']): ?>
-                        <img src="<?= e($job['thumbnail']) ?>" alt="Video thumbnail">
-                    <?php else: ?>
-                        <div style="color:var(--color-muted);font-size:1.2rem;text-align:center">
-                            🎬<br><span style="font-size:.85rem">No preview available</span>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <!-- Prompt used -->
-            <div class="card mb-4">
-                <div class="card-header"><span class="card-title">Prompt Used</span></div>
-                <p class="text-sm" style="line-height:1.7;color:var(--color-muted)"><?= e($job['prompt']) ?></p>
-            </div>
-
-            <!-- Caption -->
-            <div class="card mb-4">
+            <div class="card mb-3">
                 <div class="card-header d-flex justify-between align-center">
                     <span class="card-title">Caption</span>
-                    <button class="btn btn-ghost btn-sm" onclick="copyField('captionBox','caption')">📋 Copy</button>
+                    <button class="btn btn-ghost btn-sm" onclick="copyText('captionBox','Caption copied!')">📋 Copy</button>
                 </div>
-                <div id="captionBox" class="copy-field"><?= e($caption) ?></div>
+                <div id="captionBox" class="copy-box"><?= e($caption) ?></div>
             </div>
-
-            <!-- Hashtags -->
             <div class="card">
                 <div class="card-header d-flex justify-between align-center">
                     <span class="card-title">Hashtags</span>
-                    <button class="btn btn-ghost btn-sm" onclick="copyField('hashtagBox','hashtag')">📋 Copy</button>
+                    <button class="btn btn-ghost btn-sm" onclick="copyText('hashtagBox','Hashtags copied!')">📋 Copy</button>
                 </div>
-                <div id="hashtagBox" class="copy-field" style="color:var(--color-primary)"><?= e($hashtags) ?></div>
+                <div id="hashtagBox" class="copy-box" style="color:var(--color-primary)"><?= e($hashtags) ?></div>
             </div>
         </div>
 
-        <!-- Right column: share buttons + stats -->
+        <!-- Right: share buttons -->
         <div>
-            <!-- Download -->
-            <?php if ($job['cdn_url']): ?>
-            <div class="card mb-4">
-                <div class="card-header"><span class="card-title">Download</span></div>
-                <p class="text-muted text-sm mb-3">
-                    Download for <strong>Instagram</strong> and <strong>TikTok</strong> (direct file uploads only).
-                </p>
-                <a href="<?= e($job['cdn_url']) ?>" download
-                   class="btn btn-accent btn-block"
-                   onclick="logShare('tiktok','download');logShare('instagram','download')">
-                    ↓ Download Video
-                </a>
-            </div>
-            <?php endif; ?>
-
-            <!-- Social share buttons -->
-            <div class="card mb-4">
-                <div class="card-header"><span class="card-title">Share To</span></div>
-                <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="card mb-3">
+                <div class="card-header"><span class="card-title">Share Video</span></div>
+                <div style="display:flex;flex-direction:column;gap:8px">
                     <a href="<?= e($shareUrls['whatsapp']) ?>" target="_blank" rel="noopener"
-                       class="share-platform-btn wa"
-                       onclick="logShare('whatsapp','link')">
-                        💬 WhatsApp
-                    </a>
+                       class="share-btn-lg wa">💬 WhatsApp</a>
                     <a href="<?= e($shareUrls['facebook']) ?>" target="_blank" rel="noopener"
-                       class="share-platform-btn fb"
-                       onclick="logShare('facebook','link')">
-                        f&nbsp;&nbsp;Facebook
-                    </a>
+                       class="share-btn-lg fb">f&nbsp; Facebook</a>
                     <a href="<?= e($shareUrls['twitter']) ?>" target="_blank" rel="noopener"
-                       class="share-platform-btn tw"
-                       onclick="logShare('twitter','link')">
-                        𝕏&nbsp;&nbsp;Twitter / X
-                    </a>
+                       class="share-btn-lg tw">𝕏&nbsp; Twitter / X</a>
                     <a href="<?= e($shareUrls['linkedin']) ?>" target="_blank" rel="noopener"
-                       class="share-platform-btn li"
-                       onclick="logShare('linkedin','link')">
-                        in LinkedIn
-                    </a>
-                    <button class="share-platform-btn ig" style="border:none"
-                            onclick="alert('Download the video first, then upload to Instagram.')">
-                        📷 Instagram (download first)
+                       class="share-btn-lg li">in LinkedIn</a>
+                    <button class="share-btn-lg ig"
+                            onclick="document.getElementById('dlBtn').click();alert('Video downloading — upload it to Instagram!')">
+                        📷 Instagram
                     </button>
-                    <button class="share-platform-btn tt"
-                            onclick="alert('Download the video first, then upload to TikTok.')">
-                        ♪ TikTok (download first)
+                    <button class="share-btn-lg tt"
+                            onclick="document.getElementById('dlBtn').click();alert('Video downloading — upload it to TikTok!')">
+                        ♪ TikTok
                     </button>
                 </div>
             </div>
 
             <!-- Copy link -->
-            <div class="card mb-4">
+            <div class="card mb-3">
                 <div class="card-header"><span class="card-title">Copy Link</span></div>
                 <div style="display:flex;gap:8px">
-                    <input type="text" id="pageLinkInput" value="<?= e($shareUrl) ?>"
-                           class="form-control" readonly style="font-size:.82rem">
-                    <button class="btn btn-ghost btn-sm" onclick="copyLink()">Copy</button>
+                    <input id="shareLinkInput" type="text" class="form-control"
+                           style="font-size:.8rem" value="<?= e($shareUrl) ?>" readonly>
+                    <button class="btn btn-ghost btn-sm"
+                            onclick="copyText('shareLinkInput','Link copied!',true)">Copy</button>
                 </div>
             </div>
 
-            <!-- Share stats -->
-            <?php if ($totalShares > 0): ?>
-            <div class="card">
-                <div class="card-header"><span class="card-title">Share Stats</span></div>
-                <div class="text-muted text-sm mb-2"><?= $totalShares ?> total share<?= $totalShares !== 1 ? 's' : '' ?></div>
-                <?php foreach ($shareStats as $plat => $cnt): ?>
-                    <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:.85rem;border-bottom:1px solid var(--color-border)">
-                        <span style="text-transform:capitalize"><?= e($plat) ?></span>
-                        <span class="fw-bold"><?= $cnt ?></span>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-            <?php endif; ?>
+            <!-- Download -->
+            <a id="dlBtn" href="<?= e($videoUrl) ?>" download="video_<?= $jobId ?>.mp4"
+               class="btn btn-accent btn-block">↓ Download MP4</a>
         </div>
-
     </div>
+
+    <?php if (!$currentUser): ?>
+    <div class="card" style="margin-top:28px;text-align:center;padding:28px">
+        <p style="font-size:1.1rem;font-weight:700;margin-bottom:8px">Create your own AI marketing videos</p>
+        <p class="text-muted text-sm" style="margin-bottom:16px">Turn any idea into a professional video in seconds.</p>
+        <a href="<?= BASE_URL ?>/public/register.php" class="btn btn-primary">Get Started Free →</a>
+    </div>
+    <?php endif; ?>
+
 </div>
 
 <script>
-const CSRF_TOKEN = <?= json_encode(csrf_token()) ?>;
-const JOB_ID     = <?= $jobId ?>;
-
-function logShare(platform, shareType) {
-    const fd = new FormData();
-    fd.append('_action',    'log_share');
-    fd.append('<?= CSRF_TOKEN_NAME ?>', CSRF_TOKEN);
-    fd.append('job_id',     JOB_ID);
-    fd.append('platform',   platform);
-    fd.append('share_type', shareType);
-    fetch('history.php', { method: 'POST', body: fd }).catch(() => {});
-}
-
-function copyField(elId, type) {
-    const text = document.getElementById(elId).textContent;
-    navigator.clipboard.writeText(text.trim()).then(() => {
-        logShare('copy_link', type === 'caption' ? 'caption_copy' : 'hashtag_copy');
-        const msg = type === 'caption' ? 'Caption copied!' : 'Hashtags copied!';
-        showCopyFeedback(msg);
+function copyText(elId, msg, isInput = false) {
+    const el   = document.getElementById(elId);
+    const text = isInput ? el.value : el.textContent.trim();
+    navigator.clipboard.writeText(text).then(() => toast(msg)).catch(() => {
+        el.select?.();
+        document.execCommand('copy');
+        toast(msg);
     });
 }
-
-function copyLink() {
-    const val = document.getElementById('pageLinkInput').value;
-    navigator.clipboard.writeText(val).then(() => {
-        logShare('copy_link', 'link');
-        showCopyFeedback('Link copied!');
-    });
-}
-
-function showCopyFeedback(msg) {
+function toast(msg) {
     const el = document.createElement('div');
     el.textContent = msg;
-    el.style.cssText = 'position:fixed;bottom:24px;right:24px;background:var(--color-primary);color:#fff;padding:10px 20px;border-radius:8px;font-weight:700;z-index:9999;animation:fadeIn .2s';
+    el.style.cssText = 'position:fixed;bottom:24px;right:24px;background:var(--color-primary);color:#fff;padding:10px 20px;border-radius:8px;font-weight:700;z-index:9999;';
     document.body.appendChild(el);
-    setTimeout(() => el.remove(), 2500);
+    setTimeout(() => el.remove(), 2200);
 }
+// Unmute video on first click
+document.getElementById('mainVideo')?.addEventListener('click', function() {
+    this.muted = false;
+});
 </script>
 </body>
 </html>
