@@ -18,6 +18,7 @@ function render_client_navbar(array $user, string $active = ''): void
         'dashboard'   => ['label' => 'Dashboard',  'url' => BASE_URL . '/client/dashboard.php'],
         'generate'    => ['label' => 'Generate',   'url' => BASE_URL . '/client/generate.php'],
         'history'     => ['label' => 'History',    'url' => BASE_URL . '/client/history.php'],
+        'editor'      => ['label' => 'Editor',     'url' => BASE_URL . '/client/editor.php'],
         'wallet'      => ['label' => 'Wallet',     'url' => BASE_URL . '/client/wallet.php'],
         'referral'    => ['label' => 'Referral',   'url' => BASE_URL . '/client/referral.php'],
     ];

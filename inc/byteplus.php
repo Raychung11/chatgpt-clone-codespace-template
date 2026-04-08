@@ -47,14 +47,16 @@ function byteplus_create_task(
     }
 
     // ModelArk content-generation payload
+    // negative_prompt suppresses the AI model from baking garbled text / watermarks into frames
     $payload = [
         'model'   => $endpointId,
         'content' => [
             ['type' => 'text', 'text' => $prompt],
         ],
         'parameters' => array_merge([
-            'resolution' => $resolution,
-            'duration'   => $duration,
+            'resolution'      => $resolution,
+            'duration'        => $duration,
+            'negative_prompt' => 'text overlay, caption, subtitle, watermark, words, letters, writing, title card, lower third, on-screen text, blurry text, garbled text',
         ], $extra),
     ];
 
