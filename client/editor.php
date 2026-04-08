@@ -365,6 +365,21 @@ unset($v);
     <!-- ── Sidebar: video library ─────────────────────────────────────────── -->
     <div class="editor-sidebar">
         <div class="sidebar-header">📁 Your Videos</div>
+
+        <!-- Paste any URL for testing -->
+        <div style="padding:10px;border-bottom:1px solid var(--color-border)">
+            <div style="font-size:.72rem;color:var(--color-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Or paste a video URL</div>
+            <div style="display:flex;gap:6px">
+                <input type="url" id="pasteUrl"
+                       placeholder="https://…mp4"
+                       style="flex:1;background:var(--color-surface);border:1px solid var(--color-border);border-radius:4px;color:var(--color-text);padding:5px 8px;font-size:.78rem;min-width:0">
+                <button onclick="addUrlToSequence()"
+                        style="background:var(--color-primary);border:none;color:#fff;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:.8rem;white-space:nowrap">
+                    + Add
+                </button>
+            </div>
+        </div>
+
         <div class="sidebar-list" id="sidebarList">
             <?php if (empty($videos)): ?>
                 <div style="padding:16px;color:var(--color-muted);font-size:.83rem;text-align:center">
@@ -537,6 +552,26 @@ function addToSequence(card) {
         captions: [],
     };
     sequence.push(seg);
+    renderSequenceList();
+    selectSegment(sequence.length - 1);
+    showPlayer();
+}
+
+// Add any video URL directly (for testing or external videos)
+function addUrlToSequence() {
+    const input = document.getElementById('pasteUrl');
+    const url   = input.value.trim();
+    if (!url) { input.focus(); return; }
+    if (!url.startsWith('http')) { alert('Please enter a full URL starting with http(s)://'); return; }
+    const seg = {
+        id:       'url_' + Date.now(),
+        vidId:    'url_' + Date.now(),
+        url:      url,
+        label:    url.split('/').pop().split('?')[0] || 'Video URL',
+        captions: [],
+    };
+    sequence.push(seg);
+    input.value = '';
     renderSequenceList();
     selectSegment(sequence.length - 1);
     showPlayer();
