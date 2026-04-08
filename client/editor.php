@@ -288,6 +288,42 @@ $videos = $videos->fetchAll();
             animation: blink 1s infinite;
         }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        /* Caption overlay on player */
+        .player-wrap {
+            position: relative;
+            width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #mainVideo {
+            max-width: 100%; max-height: 100%;
+            border-radius: 6px;
+            box-shadow: 0 4px 32px rgba(0,0,0,.6);
+            display: block;
+            background: #000;
+        }
+        #captionOverlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 28px;
+        }
+        #captionOverlay.pos-top    { justify-content: flex-start; padding-top: 24px; padding-bottom: 0; }
+        #captionOverlay.pos-center { justify-content: center; padding-bottom: 0; }
+        .cap-overlay-text {
+            background: rgba(0,0,0,.55);
+            color: #fff;
+            padding: 6px 18px;
+            border-radius: 6px;
+            font-weight: 700;
+            line-height: 1.4;
+            text-align: center;
+            max-width: 85%;
+            margin: 3px 0;
+        }
         /* Responsive */
         @media (max-width: 700px) {
             .editor-wrap { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; }
@@ -338,14 +374,17 @@ $videos = $videos->fetchAll();
     <!-- ── Main editor area ───────────────────────────────────────────────── -->
     <div class="editor-main">
 
-        <!-- Canvas preview -->
+        <!-- Video preview area -->
         <div class="preview-area" id="previewArea">
             <div class="preview-empty" id="previewEmpty">
                 <div style="font-size:3rem;margin-bottom:8px">🎬</div>
                 <div style="font-size:1rem;font-weight:600">Click a video to add it to the sequence</div>
                 <div style="font-size:.85rem;margin-top:4px">Then add captions and export</div>
             </div>
-            <canvas id="previewCanvas" width="1280" height="720" style="display:none"></canvas>
+            <div class="player-wrap" id="playerWrap" style="display:none">
+                <video id="mainVideo" playsinline></video>
+                <div id="captionOverlay"></div>
+            </div>
         </div>
 
         <!-- Playback bar -->
@@ -452,61 +491,37 @@ $videos = $videos->fetchAll();
     </div><!-- /editor-main -->
 </div><!-- /editor-wrap -->
 
-<!-- Hidden video elements for canvas rendering (cross-origin anonymous) -->
-<div id="hiddenVideos" style="position:fixed;left:-9999px;width:1px;height:1px;overflow:hidden"></div>
-
 <script>
-// ── State ──────────────────────────────────────────────────────────────────────
-const sequence    = [];   // [{id, url, label, captions:[{text,start,end,pos,size,color}]}]
-let   activeSegIdx = -1;  // which segment's captions we're editing
-let   playing     = false;
+// ── State ─────────────────────────────────────────────────────────────────────
+const sequence     = [];  // [{id, url, label, captions:[{text,start,end,pos,size,color}]}]
+let   activeSegIdx = -1;
+let   playing      = false;
 let   currentSegIdx = 0;
-let   rafId       = null;
-let   mediaRecorder = null;
-let   recChunks   = [];
+let   rafId        = null;
 
-const canvas  = document.getElementById('previewCanvas');
-const ctx     = canvas.getContext('2d');
-const W = 1280, H = 720;
+const mainVideo      = document.getElementById('mainVideo');
+const captionOverlay = document.getElementById('captionOverlay');
 
-// ── Sidebar: add video to sequence ────────────────────────────────────────────
+// ── Sidebar: add video to sequence ───────────────────────────────────────────
 function addToSequence(card) {
-    const id    = card.dataset.id;
-    const url   = card.dataset.url;
-    const label = card.dataset.label;
-
-    // Allow same video multiple times in sequence (for looping effect)
-    const seg = { id: id + '_' + Date.now(), vidId: id, url, label, captions: [] };
+    const seg = {
+        id:       card.dataset.id + '_' + Date.now(),
+        vidId:    card.dataset.id,
+        url:      card.dataset.url,
+        label:    card.dataset.label,
+        captions: [],
+    };
     sequence.push(seg);
-
-    ensureVideoElement(seg);
     renderSequenceList();
     selectSegment(sequence.length - 1);
-    showCanvas();
+    showPlayer();
 }
 
-function ensureVideoElement(seg) {
-    if (document.getElementById('hv_' + seg.id)) return;
-    const v = document.createElement('video');
-    v.id        = 'hv_' + seg.id;
-    v.src       = seg.url;
-    v.crossOrigin = 'anonymous';
-    v.preload   = 'auto';
-    v.muted     = false;
-    v.playsInline = true;
-    v.style.cssText = 'width:1px;height:1px';
-    document.getElementById('hiddenVideos').appendChild(v);
-}
-
-function getVideo(seg) {
-    return document.getElementById('hv_' + seg.id);
-}
-
-// ── Sequence list UI ──────────────────────────────────────────────────────────
+// ── Sequence list UI ─────────────────────────────────────────────────────────
 function renderSequenceList() {
     const list  = document.getElementById('sequenceList');
     const empty = document.getElementById('seqEmpty');
-    if (sequence.length === 0) {
+    if (!sequence.length) {
         empty.style.display = 'block';
         list.innerHTML = '';
         list.appendChild(empty);
@@ -516,7 +531,7 @@ function renderSequenceList() {
     list.innerHTML = '';
     sequence.forEach((seg, i) => {
         const div = document.createElement('div');
-        div.className = 'seq-item' + (i === activeSegIdx ? ' seq-active' : '');
+        div.className = 'seq-item';
         div.style.borderColor = i === activeSegIdx ? 'var(--color-primary)' : '';
         div.innerHTML = `
             <span class="seq-label" onclick="selectSegment(${i})" style="cursor:pointer">
@@ -525,8 +540,7 @@ function renderSequenceList() {
             </span>
             <button onclick="moveSeq(${i},-1)" title="Move up">↑</button>
             <button onclick="moveSeq(${i},1)"  title="Move down">↓</button>
-            <button onclick="removeSeq(${i})"  title="Remove">✕</button>
-        `;
+            <button onclick="removeSeq(${i})"  title="Remove">✕</button>`;
         list.appendChild(div);
     });
 }
@@ -538,63 +552,92 @@ function moveSeq(i, dir) {
     if (activeSegIdx === i) activeSegIdx = j;
     else if (activeSegIdx === j) activeSegIdx = i;
     renderSequenceList();
-    renderCaptionList();
 }
 
 function removeSeq(i) {
-    const seg = sequence[i];
-    const v = getVideo(seg);
-    if (v) { v.pause(); v.remove(); }
     sequence.splice(i, 1);
     if (activeSegIdx >= sequence.length) activeSegIdx = sequence.length - 1;
     renderSequenceList();
     renderCaptionList();
-    if (sequence.length === 0) hideCanvas();
+    if (!sequence.length) { hidePlayer(); return; }
+    if (activeSegIdx >= 0) loadSegment(activeSegIdx);
 }
 
 function clearSequence() {
-    sequence.forEach(seg => { const v = getVideo(seg); if(v){v.pause();v.remove();} });
+    mainVideo.pause();
+    mainVideo.src = '';
     sequence.length = 0;
     activeSegIdx = -1;
     renderSequenceList();
     renderCaptionList();
-    hideCanvas();
+    hidePlayer();
 }
 
-// ── Segment selection (for caption editing) ───────────────────────────────────
+// ── Segment selection ────────────────────────────────────────────────────────
 function selectSegment(i) {
     activeSegIdx = i;
     renderSequenceList();
     renderCaptionList();
-    // Show the form and preview that segment
-    document.getElementById('capAddForm').style.display = 'flex';
-    document.getElementById('capAddForm').style.flexDirection = 'column';
+    document.getElementById('capAddForm').style.cssText = 'display:flex;flex-direction:column';
     document.getElementById('capEmpty').style.display = 'none';
     document.getElementById('capTarget').textContent = 'Editing: ' + sequence[i].label;
-    // Draw first frame
-    pauseAll();
-    const v = getVideo(sequence[i]);
-    if (v) {
-        v.currentTime = 0;
-        v.onseeked = () => { ctx.drawImage(v, 0, 0, W, H); drawCaptions(sequence[i], 0); };
-    }
+    loadSegment(i);
 }
 
-// ── Caption list UI ────────────────────────────────────────────────────────────
+function loadSegment(i) {
+    // Simply set src — no CORS needed for a normal <video> element
+    mainVideo.src = sequence[i].url;
+    mainVideo.load();
+    updateCaptionOverlay(sequence[i], 0);
+}
+
+// ── Caption overlay (CSS divs over the video, no canvas/CORS needed) ─────────
+function updateCaptionOverlay(seg, t) {
+    captionOverlay.innerHTML = '';
+    if (!seg) return;
+    seg.captions.forEach(cap => {
+        if (t < cap.start || t > cap.end) return;
+        const el = document.createElement('div');
+        el.className = 'cap-overlay-text';
+        el.textContent = cap.text;
+        el.style.color     = cap.color || '#fff';
+        el.style.fontSize  = (cap.size || 52) * 0.04 + 'vw'; // scale with viewport
+        captionOverlay.appendChild(el);
+    });
+    // Adjust position class
+    const pos = seg.captions.find(c => t >= c.start && t <= c.end)?.pos || 'bottom';
+    captionOverlay.className = pos === 'top' ? 'pos-top' : pos === 'center' ? 'pos-center' : '';
+}
+
+// RAF loop: keep caption overlay in sync with video time
+function startCaptionLoop() {
+    cancelAnimationFrame(rafId);
+    function tick() {
+        const seg = sequence[currentSegIdx];
+        if (seg && !mainVideo.paused) {
+            updateCaptionOverlay(seg, mainVideo.currentTime);
+            const total = sequence.reduce((a, _) => a + 5, 0); // rough total
+            const sofar = currentSegIdx * 5 + mainVideo.currentTime;
+            updateProgress(mainVideo.currentTime, mainVideo.duration || 1);
+        }
+        rafId = requestAnimationFrame(tick);
+    }
+    rafId = requestAnimationFrame(tick);
+}
+
+// ── Caption list UI ──────────────────────────────────────────────────────────
 function renderCaptionList() {
     const list = document.getElementById('capList');
     list.innerHTML = '';
     if (activeSegIdx < 0 || !sequence[activeSegIdx]) return;
-    const caps = sequence[activeSegIdx].captions;
-    caps.forEach((cap, i) => {
+    sequence[activeSegIdx].captions.forEach((cap, i) => {
         const div = document.createElement('div');
         div.className = 'cap-item';
         div.style.borderLeftColor = cap.color;
         div.innerHTML = `
             <span class="cap-text">${escHtml(cap.text)}</span>
-            <span class="cap-time">${cap.start}s – ${cap.end}s · ${cap.pos}</span>
-            <button onclick="removeCaption(${i})" title="Delete">✕</button>
-        `;
+            <span class="cap-time">${cap.start}s–${cap.end}s · ${cap.pos}</span>
+            <button onclick="removeCaption(${i})" title="Delete">✕</button>`;
         list.appendChild(div);
     });
 }
@@ -614,10 +657,10 @@ function addCaption() {
     sequence[activeSegIdx].captions.push({ text, start, end, pos, size, color });
     document.getElementById('capText').value = '';
     renderCaptionList();
-    renderSequenceList(); // update cap count
-    // Redraw preview at current time with new caption
-    const v = getVideo(sequence[activeSegIdx]);
-    if (v) { ctx.drawImage(v, 0, 0, W, H); drawCaptions(sequence[activeSegIdx], v.currentTime); }
+    renderSequenceList();
+    // Jump video to the start of the caption so user sees it instantly
+    mainVideo.currentTime = start;
+    updateCaptionOverlay(sequence[activeSegIdx], start);
 }
 
 function removeCaption(i) {
@@ -627,263 +670,173 @@ function removeCaption(i) {
     renderSequenceList();
 }
 
-// ── Canvas rendering ──────────────────────────────────────────────────────────
-function showCanvas() {
-    document.getElementById('previewEmpty').style.display = 'none';
-    canvas.style.display = 'block';
+// ── Player show/hide ─────────────────────────────────────────────────────────
+function showPlayer() {
+    document.getElementById('previewEmpty').style.display  = 'none';
+    document.getElementById('playerWrap').style.display    = 'flex';
 }
-function hideCanvas() {
-    document.getElementById('previewEmpty').style.display = 'block';
-    canvas.style.display = 'none';
-}
-
-function drawCaptions(seg, t) {
-    seg.captions.forEach(cap => {
-        if (t < cap.start || t > cap.end) return;
-        const fs   = cap.size || 52;
-        const line = Math.ceil(fs * 1.2);
-        ctx.font = `bold ${fs}px "Arial", sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'alphabetic';
-
-        // Word-wrap at 80% canvas width
-        const maxW  = W * 0.85;
-        const words = cap.text.split(' ');
-        const lines = [];
-        let cur = '';
-        words.forEach(w => {
-            const test = cur ? cur + ' ' + w : w;
-            if (ctx.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; }
-            else cur = test;
-        });
-        if (cur) lines.push(cur);
-
-        const totalH = lines.length * line;
-        let   baseY;
-        if (cap.pos === 'top')    baseY = fs + 24;
-        else if (cap.pos === 'center') baseY = (H - totalH) / 2 + fs;
-        else                      baseY = H - 24 - (lines.length - 1) * line; // bottom
-
-        lines.forEach((ln, li) => {
-            const y  = baseY + li * line;
-            const tw = ctx.measureText(ln).width;
-            // Shadow/background for readability
-            ctx.fillStyle = 'rgba(0,0,0,0.55)';
-            ctx.beginPath();
-            ctx.roundRect(W/2 - tw/2 - 12, y - fs - 4, tw + 24, fs + 14, 6);
-            ctx.fill();
-            // Text
-            ctx.fillStyle = cap.color || '#ffffff';
-            ctx.fillText(ln, W/2, y);
-        });
-    });
+function hidePlayer() {
+    document.getElementById('previewEmpty').style.display  = 'block';
+    document.getElementById('playerWrap').style.display    = 'none';
+    captionOverlay.innerHTML = '';
 }
 
-// ── Playback ──────────────────────────────────────────────────────────────────
+// ── Playback ─────────────────────────────────────────────────────────────────
 function togglePlay() {
-    if (sequence.length === 0) return;
-    if (playing) pausePreview();
-    else         startPreview();
-}
-
-function startPreview() {
-    playing      = true;
-    currentSegIdx = Math.max(0, activeSegIdx === -1 ? 0 : activeSegIdx);
-    document.getElementById('playBtn').textContent = '⏸ Pause';
-    playSegment(currentSegIdx);
-}
-
-function pausePreview() {
-    playing = false;
-    document.getElementById('playBtn').textContent = '▶ Play';
-    pauseAll();
-    cancelAnimationFrame(rafId);
+    if (!sequence.length) return;
+    if (mainVideo.paused) {
+        mainVideo.play().catch(() => {});
+        document.getElementById('playBtn').textContent = '⏸ Pause';
+        startCaptionLoop();
+    } else {
+        mainVideo.pause();
+        document.getElementById('playBtn').textContent = '▶ Play';
+    }
 }
 
 function restartPreview() {
-    pausePreview();
+    mainVideo.pause();
     currentSegIdx = 0;
-    sequence.forEach(seg => { const v = getVideo(seg); if(v) v.currentTime = 0; });
-    updateProgress(0, 0);
-    if (sequence.length > 0) { selectSegment(0); }
-}
-
-function pauseAll() {
-    sequence.forEach(seg => { const v = getVideo(seg); if(v) v.pause(); });
-    cancelAnimationFrame(rafId);
-}
-
-function playSegment(i) {
-    if (i >= sequence.length) {
-        // Sequence finished
-        playing = false;
-        document.getElementById('playBtn').textContent = '▶ Play';
-        if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
-        return;
-    }
-    currentSegIdx = i;
-    const seg = sequence[i];
-    const v   = getVideo(seg);
-    if (!v) { playSegment(i + 1); return; }
-
-    v.currentTime = 0;
-    v.onended = () => { cancelAnimationFrame(rafId); playSegment(i + 1); };
-    v.play().catch(() => {});
-    renderLoop(seg, v);
-}
-
-function renderLoop(seg, v) {
-    function frame() {
-        if (!playing && !mediaRecorder) return;
-        ctx.drawImage(v, 0, 0, W, H);
-        drawCaptions(seg, v.currentTime);
-
-        // Update progress bar
-        const total = getTotalDuration();
-        const sofar = getElapsedBefore(currentSegIdx) + v.currentTime;
-        updateProgress(sofar, total);
-        rafId = requestAnimationFrame(frame);
-    }
-    rafId = requestAnimationFrame(frame);
-}
-
-function getTotalDuration() {
-    return sequence.reduce((acc, seg) => {
-        const v = getVideo(seg);
-        return acc + (v ? (v.duration || 5) : 5);
-    }, 0);
-}
-
-function getElapsedBefore(idx) {
-    let t = 0;
-    for (let i = 0; i < idx; i++) {
-        const v = getVideo(sequence[i]);
-        t += v ? (v.duration || 5) : 5;
-    }
-    return t;
+    document.getElementById('playBtn').textContent = '▶ Play';
+    if (sequence.length) selectSegment(0);
 }
 
 function updateProgress(current, total) {
     const pct = total > 0 ? Math.min(100, (current / total) * 100) : 0;
     document.getElementById('progressFill').style.width = pct + '%';
-    document.getElementById('timeDisplay').textContent =
-        current.toFixed(1) + ' / ' + (total || 0).toFixed(1) + ' s';
+    document.getElementById('timeDisplay').textContent  =
+        (current || 0).toFixed(1) + ' / ' + (total || 0).toFixed(1) + ' s';
 }
 
 function seekTo(e) {
-    if (sequence.length === 0) return;
+    if (!mainVideo.duration) return;
     const track = document.getElementById('progressTrack');
     const rect  = track.getBoundingClientRect();
     const pct   = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const total = getTotalDuration();
-    const target = pct * total;
-
-    let acc = 0, idx = 0;
-    for (let i = 0; i < sequence.length; i++) {
-        const v = getVideo(sequence[i]);
-        const d = v ? (v.duration || 5) : 5;
-        if (acc + d >= target) { idx = i; break; }
-        acc += d;
-    }
-    const v = getVideo(sequence[idx]);
-    if (v) v.currentTime = target - acc;
-    currentSegIdx = idx;
+    mainVideo.currentTime = pct * mainVideo.duration;
 }
 
-// ── Export (Canvas → MediaRecorder → WebM) ───────────────────────────────────
+// Wire up native video events
+mainVideo.addEventListener('timeupdate', () => {
+    const seg = sequence[currentSegIdx];
+    if (seg) updateCaptionOverlay(seg, mainVideo.currentTime);
+    updateProgress(mainVideo.currentTime, mainVideo.duration);
+});
+
+mainVideo.addEventListener('ended', () => {
+    // Advance to next segment in sequence
+    currentSegIdx++;
+    if (currentSegIdx < sequence.length) {
+        loadSegment(currentSegIdx);
+        mainVideo.play().catch(() => {});
+    } else {
+        currentSegIdx = 0;
+        document.getElementById('playBtn').textContent = '▶ Play';
+    }
+});
+
+// ── Export: SRT (always works) ───────────────────────────────────────────────
+function downloadSRT() {
+    let srt = '', cueIdx = 1, offset = 0;
+    sequence.forEach(seg => {
+        const dur = mainVideo.duration || 5; // best approximation
+        seg.captions.forEach(cap => {
+            srt += cueIdx++ + '\n'
+                +  toSRTTime(offset + cap.start) + ' --> ' + toSRTTime(offset + cap.end) + '\n'
+                +  cap.text + '\n\n';
+        });
+        offset += dur;
+    });
+    if (!srt.trim()) { alert('No captions added yet.'); return; }
+    const a = Object.assign(document.createElement('a'), {
+        href: URL.createObjectURL(new Blob([srt], { type: 'text/plain' })),
+        download: 'captions.srt',
+    });
+    a.click();
+}
+
+// ── Export: record screen via captureStream (best-effort, no CORS needed) ────
 function startExport() {
-    if (sequence.length === 0) { alert('Add at least one video to the sequence first.'); return; }
+    if (!sequence.length) { alert('Add at least one video first.'); return; }
 
-    const mimeTypes = [
-        'video/webm;codecs=vp9',
-        'video/webm;codecs=vp8',
-        'video/webm',
-    ];
-    let mimeType = mimeTypes.find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+    // Use the visible <video> element's stream — no canvas, no CORS issues
+    let stream;
+    try {
+        stream = mainVideo.captureStream ? mainVideo.captureStream(30)
+               : mainVideo.mozCaptureStream ? mainVideo.mozCaptureStream(30)
+               : null;
+    } catch(e) { stream = null; }
 
-    const stream = canvas.captureStream(30);
-    recChunks    = [];
-    mediaRecorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 5_000_000 });
+    if (!stream) {
+        alert('Your browser does not support video capture. Download the SRT file and use it with the original video in VLC or any editor.');
+        return;
+    }
 
-    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recChunks.push(e.data); };
-    mediaRecorder.onstop = () => {
-        const blob = new Blob(recChunks, { type: mimeType });
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        a.href     = url;
-        a.download = 'video_with_captions_' + Date.now() + '.webm';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
+    const mimeType = ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm']
+        .find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+
+    const chunks = [];
+    const mr = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 5_000_000 });
+    mr.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    mr.onstop = () => {
+        const a = Object.assign(document.createElement('a'), {
+            href: URL.createObjectURL(new Blob(chunks, { type: mimeType })),
+            download: 'video_with_captions_' + Date.now() + '.webm',
+        });
+        document.body.appendChild(a); a.click(); a.remove();
         setRecordingUI(false);
     };
 
-    mediaRecorder.start(1000); // collect every 1s
-    setRecordingUI(true);
+    mr.start(500);
+    setRecordingUI(true, mr);
 
-    // Auto-play sequence for recording
-    playing       = true;
+    // Restart and play from beginning so the whole video is captured
     currentSegIdx = 0;
+    loadSegment(0);
+    mainVideo.play().catch(() => {});
     document.getElementById('playBtn').textContent = '⏸ Pause';
-    playSegment(0);
+    startCaptionLoop();
+
+    // Auto-stop when last segment ends (listen once)
+    mainVideo.addEventListener('ended', function autoStop() {
+        if (currentSegIdx >= sequence.length - 1) {
+            mr.stop();
+            mainVideo.removeEventListener('ended', autoStop);
+        }
+    });
 }
 
+let _activeRecorder = null;
 function stopExport() {
-    pausePreview();
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    mainVideo.pause();
+    document.getElementById('playBtn').textContent = '▶ Play';
+    if (_activeRecorder && _activeRecorder.state !== 'inactive') _activeRecorder.stop();
     else setRecordingUI(false);
 }
 
-function setRecordingUI(active) {
+function setRecordingUI(active, mr) {
+    if (mr) _activeRecorder = mr;
     document.getElementById('exportBtn').style.display = active ? 'none' : 'inline-block';
     document.getElementById('stopBtn').style.display   = active ? 'inline-block' : 'none';
     document.getElementById('recDot').style.display    = active ? 'inline-block' : 'none';
     document.getElementById('recStatus').textContent   = active
-        ? 'Recording… play through your video then click Stop'
+        ? 'Recording… video will download when done'
         : 'Ready to export';
-    if (!active) mediaRecorder = null;
 }
 
-// ── SRT export ────────────────────────────────────────────────────────────────
-function downloadSRT() {
-    let srt = '';
-    let cueIdx = 1;
-    let timeOffset = 0;
-
-    sequence.forEach(seg => {
-        const v = getVideo(seg);
-        const dur = v ? (v.duration || 5) : 5;
-        seg.captions.forEach(cap => {
-            srt += cueIdx++ + '\n';
-            srt += toSRTTime(timeOffset + cap.start) + ' --> ' + toSRTTime(timeOffset + cap.end) + '\n';
-            srt += cap.text + '\n\n';
-        });
-        timeOffset += dur;
-    });
-
-    if (!srt.trim()) { alert('No captions to export.'); return; }
-    const blob = new Blob([srt], { type: 'text/plain' });
-    const a    = document.createElement('a');
-    a.href     = URL.createObjectURL(blob);
-    a.download = 'captions.srt';
-    a.click();
-}
-
+// ── Helpers ──────────────────────────────────────────────────────────────────
 function toSRTTime(s) {
-    const h   = Math.floor(s / 3600);
-    const m   = Math.floor((s % 3600) / 60);
-    const sec = Math.floor(s % 60);
-    const ms  = Math.round((s % 1) * 1000);
-    return [h, m, sec].map(n => String(n).padStart(2,'0')).join(':') + ',' + String(ms).padStart(3,'0');
+    const h  = Math.floor(s / 3600);
+    const m  = Math.floor((s % 3600) / 60);
+    const sc = Math.floor(s % 60);
+    const ms = Math.round((s % 1) * 1000);
+    return [h,m,sc].map(n=>String(n).padStart(2,'0')).join(':') + ',' + String(ms).padStart(3,'0');
 }
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+// ── Init ─────────────────────────────────────────────────────────────────────
 renderSequenceList();
 renderCaptionList();
 </script>
