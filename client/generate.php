@@ -14,6 +14,7 @@ require_once __DIR__ . '/../inc/csrf.php';
 require_once __DIR__ . '/../inc/auth.php';
 require_once __DIR__ . '/../inc/wallet.php';
 require_once __DIR__ . '/../inc/byteplus.php';
+require_once __DIR__ . '/../inc/prompt_enhancer.php';
 require_once __DIR__ . '/../inc/layout.php';
 
 boot_session();
@@ -80,18 +81,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors)) {
         $creditCost = (float)$rule['credit_cost'];
 
+        // ── Step 1: LLM prompt enhancement ───────────────────────────────────
+        $enhanceResult   = enhance_video_prompt($prompt);
+        $enhancedPrompt  = $enhanceResult['enhanced'];   // falls back to original on error
+        $enhanceSkipped  = $enhanceResult['skipped'] ?? false;
+        $enhanceFailed   = !$enhanceResult['ok'];
+
         // Create job row first (status = queued)
         $pdo->beginTransaction();
         try {
             $stmt = $pdo->prepare(
                 'INSERT INTO `video_jobs`
-                 (`user_id`,`pricing_rule_id`,`prompt`,`resolution`,`duration`,`credit_cost`,`status`)
-                 VALUES (?,?,?,?,?,?,"queued")'
+                 (`user_id`,`pricing_rule_id`,`prompt`,`enhanced_prompt`,`resolution`,`duration`,`credit_cost`,`status`)
+                 VALUES (?,?,?,?,?,?,?,"queued")'
             );
             $stmt->execute([
                 $uid,
                 $rule['id'],
-                $prompt,
+                $prompt,                          // original user prompt
+                $enhanceFailed ? null : ($enhanceSkipped ? null : $enhancedPrompt),
                 $rule['resolution'],
                 (int)$rule['duration'],
                 $creditCost,
@@ -109,9 +117,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->rollBack();
                 $errors['balance'] = $deduct['error'];
             } else {
-                // Submit to BytePlus API
+                // ── Step 2: Submit enhanced (or original) prompt to BytePlus ─
                 $apiResult = byteplus_create_task(
-                    $prompt,
+                    $enhancedPrompt,              // LLM-enhanced prompt sent to API
                     $rule['resolution'] ?? '720p',
                     (int)($rule['duration'] ?? 5)
                 );
@@ -127,7 +135,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $jobId,
                     ]);
                 } else {
-                    // API failed — mark job failed and refund
                     $pdo->prepare(
                         'UPDATE `video_jobs`
                          SET `status`="failed", `error_message`=?
@@ -149,7 +156,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->commit();
                 log_activity('user', $uid, 'video_job_created', 'Job #' . $jobId . ' submitted');
 
-                flash_success('Video generation started! We\'ll process it shortly. You can track progress in your history.');
+                $successMsg = 'Video generation started!';
+                if (!$enhanceFailed && !$enhanceSkipped) {
+                    $successMsg .= ' Your prompt was enhanced by AI for better results.';
+                }
+                flash_success($successMsg . ' Track progress in your history.');
                 redirect(BASE_URL . '/client/history.php');
             }
         } catch (\Throwable $e) {
@@ -191,6 +202,70 @@ $balance = wallet_balance($uid);
         }
         .tpl-btn:hover { border-color: var(--color-primary); color: var(--color-text); }
         #charCount { font-size: .8rem; color: var(--color-muted); text-align: right; margin-top: 4px; }
+        /* AI Enhance */
+        .enhance-btn {
+            background: linear-gradient(135deg, #6c47ff, #a855f7);
+            border: none;
+            color: #fff;
+            border-radius: var(--radius);
+            padding: 7px 18px;
+            font-size: .83rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: opacity .15s;
+        }
+        .enhance-btn:hover   { opacity: .88; }
+        .enhance-btn:disabled { opacity: .5; cursor: not-allowed; }
+        .enhance-box {
+            background: linear-gradient(135deg, rgba(108,71,255,.07), rgba(168,85,247,.07));
+            border: 1px solid rgba(108,71,255,.35);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            margin-top: 12px;
+            display: none;
+        }
+        .enhance-box .enhance-label {
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--color-primary);
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .enhance-box .enhance-text {
+            font-size: .88rem;
+            line-height: 1.65;
+            color: var(--color-text);
+            white-space: pre-wrap;
+        }
+        .enhance-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .enhance-actions button {
+            background: var(--color-surface2);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            color: var(--color-text);
+            padding: 5px 14px;
+            font-size: .8rem;
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .enhance-actions button:hover { border-color: var(--color-primary); }
+        .enhance-spinner {
+            display: inline-block;
+            width: 14px; height: 14px;
+            border: 2px solid rgba(255,255,255,.4);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -258,12 +333,17 @@ $balance = wallet_balance($uid);
         <div class="card mb-4">
             <div class="card-header d-flex justify-between align-center" style="flex-wrap:wrap;gap:10px">
                 <span class="card-title">Step 2 — Write Your Prompt</span>
-                <?php if (!empty($templates)): ?>
-                    <button type="button" onclick="toggleTemplates()"
-                            class="btn btn-ghost btn-sm" id="tplToggle">
-                        📋 Use Template
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                    <?php if (!empty($templates)): ?>
+                        <button type="button" onclick="toggleTemplates()"
+                                class="btn btn-ghost btn-sm" id="tplToggle">
+                            📋 Use Template
+                        </button>
+                    <?php endif; ?>
+                    <button type="button" class="enhance-btn" id="enhanceBtn" onclick="enhancePrompt()">
+                        ✨ Enhance with AI
                     </button>
-                <?php endif; ?>
+                </div>
             </div>
 
             <!-- Template picker (hidden by default) -->
@@ -301,17 +381,38 @@ Example: A vibrant product launch video for a new energy drink. Show the can aga
                 <div id="charCount">0 / 2000 characters</div>
             </div>
 
+            <!-- AI-enhanced prompt preview box -->
+            <div class="enhance-box" id="enhanceBox">
+                <div class="enhance-label">
+                    <span>✨</span> AI-Enhanced Prompt
+                    <span id="enhanceBadge" style="background:rgba(34,197,94,.15);color:#22c55e;font-size:.68rem;padding:2px 8px;border-radius:99px">
+                        Ready to generate
+                    </span>
+                </div>
+                <div class="enhance-text" id="enhanceText"></div>
+                <div class="enhance-actions">
+                    <button type="button" onclick="useEnhanced()" id="useEnhancedBtn">
+                        ✅ Use this prompt
+                    </button>
+                    <button type="button" onclick="editEnhanced()">
+                        ✏️ Edit before using
+                    </button>
+                    <button type="button" onclick="dismissEnhance()" style="color:var(--color-muted)">
+                        ✕ Dismiss
+                    </button>
+                </div>
+            </div>
+
             <!-- Prompt writing tips -->
             <details style="margin-top:8px">
                 <summary style="cursor:pointer;font-size:.85rem;color:var(--color-muted)">
                     💡 Tips for better prompts
                 </summary>
                 <ul style="margin:10px 0 0 20px;font-size:.85rem;color:var(--color-muted);line-height:1.8">
-                    <li>Describe the <strong style="color:var(--color-text)">scene, product, and mood</strong> clearly</li>
-                    <li>Mention your <strong style="color:var(--color-text)">target audience</strong></li>
-                    <li>Specify <strong style="color:var(--color-text)">visual style</strong> (cinematic, minimalist, bold, etc.)</li>
-                    <li>Include <strong style="color:var(--color-text)">brand colours or key messages</strong> if relevant</li>
-                    <li>Be specific — more detail = better results</li>
+                    <li>Just describe your idea simply — <strong style="color:var(--color-text)">AI will enhance it</strong> into a full cinematic prompt</li>
+                    <li>Mention the <strong style="color:var(--color-text)">product, brand, and target audience</strong></li>
+                    <li>Specify <strong style="color:var(--color-text)">mood or style</strong> if you have one (luxury, energetic, minimal…)</li>
+                    <li>Click <strong style="color:var(--color-primary)">✨ Enhance with AI</strong> to preview the improved prompt</li>
                 </ul>
             </details>
         </div>
@@ -411,12 +512,98 @@ function applyTemplate(template) {
     ta.focus();
 }
 
-// Prevent double submission
+// Prevent double submission — show spinner while LLM enhances + submits
 document.getElementById('genForm').addEventListener('submit', function() {
     const btn = document.getElementById('submitBtn');
     btn.disabled = true;
-    btn.textContent = 'Submitting…';
+    btn.innerHTML = '<span class="enhance-spinner"></span> Generating…';
 });
+
+// ── AI Prompt Enhancement ────────────────────────────────────────────────────
+const CSRF = <?= json_encode($_SESSION[CSRF_TOKEN_NAME] ?? '') ?>;
+let enhancedText = '';
+
+async function enhancePrompt() {
+    const ta   = document.getElementById('prompt');
+    const raw  = ta.value.trim();
+    const btn  = document.getElementById('enhanceBtn');
+    const box  = document.getElementById('enhanceBox');
+
+    if (raw.length < 5) {
+        ta.focus();
+        ta.style.borderColor = 'var(--color-danger)';
+        setTimeout(() => ta.style.borderColor = '', 1500);
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="enhance-spinner"></span> Enhancing…';
+    box.style.display = 'none';
+
+    try {
+        const fd = new FormData();
+        fd.append('prompt', raw);
+        fd.append(<?= json_encode(CSRF_TOKEN_NAME) ?>, CSRF);
+
+        const res  = await fetch('<?= BASE_URL ?>/client/enhance_prompt.php', {
+            method: 'POST', body: fd
+        });
+        const data = await res.json();
+
+        if (data.ok && data.enhanced && data.enhanced !== raw) {
+            enhancedText = data.enhanced;
+            document.getElementById('enhanceText').textContent = data.enhanced;
+            box.style.display = 'block';
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else if (!data.ok) {
+            showEnhanceError(data.error || 'Enhancement unavailable. Configure LLM endpoint in admin settings.');
+        } else {
+            showEnhanceError('No changes — try a more descriptive prompt.');
+        }
+    } catch (e) {
+        showEnhanceError('Network error. Check your connection.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '✨ Enhance with AI';
+    }
+}
+
+function showEnhanceError(msg) {
+    const box = document.getElementById('enhanceBox');
+    document.getElementById('enhanceText').textContent = '⚠ ' + msg;
+    document.getElementById('enhanceBadge').textContent = 'Not available';
+    document.getElementById('enhanceBadge').style.cssText = 'background:rgba(239,68,68,.15);color:#ef4444;font-size:.68rem;padding:2px 8px;border-radius:99px';
+    document.getElementById('useEnhancedBtn').style.display = 'none';
+    box.style.display = 'block';
+}
+
+function useEnhanced() {
+    if (!enhancedText) return;
+    const ta = document.getElementById('prompt');
+    ta.value = enhancedText;
+    updateCharCount(ta);
+    document.getElementById('enhanceBox').style.display = 'none';
+    ta.style.borderColor = 'var(--color-primary)';
+    setTimeout(() => ta.style.borderColor = '', 1800);
+    ta.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function editEnhanced() {
+    if (!enhancedText) return;
+    const ta = document.getElementById('prompt');
+    ta.value = enhancedText;
+    updateCharCount(ta);
+    document.getElementById('enhanceBox').style.display = 'none';
+    ta.focus();
+}
+
+function dismissEnhance() {
+    document.getElementById('enhanceBox').style.display = 'none';
+    enhancedText = '';
+    document.getElementById('enhanceBadge').textContent = 'Ready to generate';
+    document.getElementById('enhanceBadge').style.cssText = 'background:rgba(34,197,94,.15);color:#22c55e;font-size:.68rem;padding:2px 8px;border-radius:99px';
+    document.getElementById('useEnhancedBtn').style.display = '';
+}
 </script>
 </body>
 </html>
