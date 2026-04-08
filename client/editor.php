@@ -124,12 +124,14 @@ unset($v);
             flex: 1;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
             background: #0a0a0c;
             min-height: 0;
             overflow: hidden;
+            position: relative;
         }
         .preview-empty {
-            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -295,32 +297,21 @@ unset($v);
             animation: blink 1s infinite;
         }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-        /* Caption overlay on player */
-        .player-wrap {
-            flex: 1;
-            min-height: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-        }
-        /* videoContainer wraps only the <video> so overlay tracks it exactly */
-        #videoContainer {
-            position: relative;
-            line-height: 0;
-            max-width: 100%;
-        }
+        /* Main video — sits directly inside .preview-area */
         #mainVideo {
-            display: block;
+            display: none;
             max-width: 100%;
+            max-height: calc(100vh - 340px);
+            min-height: 200px;
             width: auto;
             height: auto;
-            max-height: calc(100vh - 320px);
-            min-height: 200px;
             border-radius: 6px;
             box-shadow: 0 4px 32px rgba(0,0,0,.6);
             background: #000;
+            z-index: 1;
+            position: relative;
         }
+        /* Caption overlay — absolutely positioned over the whole preview-area */
         #captionOverlay {
             position: absolute;
             inset: 0;
@@ -330,8 +321,8 @@ unset($v);
             justify-content: flex-end;
             align-items: center;
             padding-bottom: 3%;
-            border-radius: 6px;
             overflow: hidden;
+            z-index: 2;
         }
         #captionOverlay.pos-top    { justify-content: flex-start; padding-top: 3%; padding-bottom: 0; }
         #captionOverlay.pos-center { justify-content: center; padding-bottom: 0; }
@@ -419,12 +410,8 @@ unset($v);
                 <div style="font-size:1rem;font-weight:600">Click a video to add it to the sequence</div>
                 <div style="font-size:.85rem;margin-top:4px">Then add captions and export</div>
             </div>
-            <div class="player-wrap" id="playerWrap" style="display:none">
-                <div id="videoContainer">
-                    <video id="mainVideo" controls playsinline preload="metadata"></video>
-                    <div id="captionOverlay"></div>
-                </div>
-            </div>
+            <video id="mainVideo" controls playsinline preload="metadata"></video>
+            <div id="captionOverlay"></div>
         </div>
 
         <!-- Playback bar -->
@@ -738,13 +725,12 @@ function removeCaption(i) {
 
 // ── Player show/hide ─────────────────────────────────────────────────────────
 function showPlayer() {
-    document.getElementById('previewEmpty').style.display  = 'none';
-    document.getElementById('playerWrap').style.display    = 'flex';
-    document.getElementById('playerWrap').style.flex       = '1';
+    document.getElementById('previewEmpty').style.display = 'none';
+    mainVideo.style.display = 'block';
 }
 function hidePlayer() {
-    document.getElementById('previewEmpty').style.display  = 'flex';
-    document.getElementById('playerWrap').style.display    = 'none';
+    document.getElementById('previewEmpty').style.display = 'flex';
+    mainVideo.style.display = 'none';
     captionOverlay.innerHTML = '';
 }
 
