@@ -113,20 +113,17 @@ $videos = $videos->fetchAll();
         .preview-area {
             flex: 1;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column;
             background: #0a0a0c;
-            padding: 16px;
-            position: relative;
             min-height: 0;
-        }
-        #previewCanvas {
-            max-width: 100%;
-            max-height: 100%;
-            border-radius: 6px;
-            box-shadow: 0 4px 32px rgba(0,0,0,.6);
+            overflow: hidden;
         }
         .preview-empty {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             color: var(--color-muted);
             text-align: center;
         }
@@ -290,26 +287,29 @@ $videos = $videos->fetchAll();
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
         /* Caption overlay on player */
         .player-wrap {
-            position: relative;
-            width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center;
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
         }
         /* videoContainer wraps only the <video> so overlay tracks it exactly */
         #videoContainer {
             position: relative;
-            display: inline-flex;
-            max-width: 100%;
-            max-height: 100%;
             line-height: 0;
+            max-width: 100%;
         }
         #mainVideo {
+            display: block;
             max-width: 100%;
-            max-height: calc(100vh - 280px);
+            width: auto;
+            height: auto;
+            max-height: calc(100vh - 320px);
+            min-height: 200px;
             border-radius: 6px;
             box-shadow: 0 4px 32px rgba(0,0,0,.6);
-            display: block;
             background: #000;
-            min-width: 240px;
         }
         #captionOverlay {
             position: absolute;
@@ -695,9 +695,10 @@ function removeCaption(i) {
 function showPlayer() {
     document.getElementById('previewEmpty').style.display  = 'none';
     document.getElementById('playerWrap').style.display    = 'flex';
+    document.getElementById('playerWrap').style.flex       = '1';
 }
 function hidePlayer() {
-    document.getElementById('previewEmpty').style.display  = 'block';
+    document.getElementById('previewEmpty').style.display  = 'flex';
     document.getElementById('playerWrap').style.display    = 'none';
     captionOverlay.innerHTML = '';
 }
