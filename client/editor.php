@@ -13,6 +13,7 @@ require_once __DIR__ . '/../inc/functions.php';
 require_once __DIR__ . '/../inc/csrf.php';
 require_once __DIR__ . '/../inc/auth.php';
 require_once __DIR__ . '/../inc/wallet.php';
+require_once __DIR__ . '/../inc/byteplus.php';
 require_once __DIR__ . '/../inc/layout.php';
 
 boot_session();
@@ -20,8 +21,8 @@ $user = require_auth('/public/login.php');
 $uid  = (int)$user['id'];
 $pdo  = db();
 
-// Load user's completed videos
-$videos = $pdo->prepare(
+// Load user's completed videos and refresh any expired signed URLs
+$stmt = $pdo->prepare(
     'SELECT vj.id, vj.prompt, vj.resolution, vj.duration, vj.created_at,
             vo.cdn_url, vo.thumbnail
      FROM video_jobs vj
@@ -31,8 +32,17 @@ $videos = $pdo->prepare(
      ORDER BY vj.created_at DESC
      LIMIT 50'
 );
-$videos->execute([$uid]);
-$videos = $videos->fetchAll();
+$stmt->execute([$uid]);
+$videos = $stmt->fetchAll();
+
+// Auto-refresh expired BytePlus signed URLs (they expire after 24h)
+foreach ($videos as &$v) {
+    if (byteplus_url_is_expired($v['cdn_url'])) {
+        $fresh = byteplus_ensure_fresh_url((int)$v['id'], $pdo);
+        if ($fresh) $v['cdn_url'] = $fresh;
+    }
+}
+unset($v);
 ?>
 <!DOCTYPE html>
 <html lang="en">

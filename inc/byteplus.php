@@ -207,3 +207,55 @@ function byteplus_request(string $method, string $url, array $payload, string $a
 
     return ['ok' => true, 'raw' => $decoded ?? []];
 }
+
+/**
+ * Check if a BytePlus signed CDN URL is expired (or expiring within 30 min).
+ */
+function byteplus_url_is_expired(string $url): bool
+{
+    parse_str((string)parse_url($url, PHP_URL_QUERY), $p);
+    $dateStr = $p['X-Tos-Date'] ?? '';
+    $expires = (int)($p['X-Tos-Expires'] ?? 0);
+    if (!$dateStr || !$expires) return false;
+
+    $dt = \DateTime::createFromFormat('Ymd\THis\Z', $dateStr, new \DateTimeZone('UTC'));
+    if (!$dt) return false;
+
+    // Treat as expired if less than 30 minutes remaining
+    return time() > ($dt->getTimestamp() + $expires - 1800);
+}
+
+/**
+ * If the stored CDN URL is expired, re-query BytePlus and update video_outputs.
+ * Returns the fresh URL (or the original if still valid / refresh failed).
+ */
+function byteplus_ensure_fresh_url(int $jobId, \PDO $pdo): string
+{
+    $row = $pdo->prepare(
+        'SELECT vj.api_task_id, vo.cdn_url
+         FROM video_jobs vj
+         LEFT JOIN video_outputs vo ON vo.job_id = vj.id
+         WHERE vj.id = ? LIMIT 1'
+    );
+    $row->execute([$jobId]);
+    $data = $row->fetch();
+
+    if (!$data || !$data['api_task_id']) return $data['cdn_url'] ?? '';
+
+    // URL still valid — return as-is
+    if ($data['cdn_url'] && !byteplus_url_is_expired($data['cdn_url'])) {
+        return $data['cdn_url'];
+    }
+
+    // Re-query BytePlus for a fresh URL
+    $result = byteplus_query_task($data['api_task_id']);
+    if ($result['ok'] && $result['status'] === 'completed' && $result['video_url']) {
+        $freshUrl = $result['video_url'];
+        $pdo->prepare(
+            'UPDATE video_outputs SET cdn_url=?, thumbnail=COALESCE(?,thumbnail) WHERE job_id=?'
+        )->execute([$freshUrl, $result['thumbnail_url'], $jobId]);
+        return $freshUrl;
+    }
+
+    return $data['cdn_url'] ?? '';
+}
