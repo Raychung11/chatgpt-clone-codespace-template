@@ -56,6 +56,18 @@ define('BYTEPLUS_API_KEY',     getenv('BYTEPLUS_API_KEY')     ?: '');
 // Looks like: ep-20250407-xxxxxxxx  OR use a direct model ID e.g. seedance-1-5-lite-t2v-250428
 define('BYTEPLUS_ENDPOINT_ID', getenv('BYTEPLUS_ENDPOINT_ID') ?: '');
 
+// ── BytePlus Vision AI — OmniHuman (AK/SK auth, separate from ModelArk) ──────
+// Console: https://console.byteplus.com/ai/overview  (Vision AI → Model Plaza → OmniHuman)
+// AK/SK:   https://console.byteplus.com/iam/keymanage
+// API URL: Vision AI endpoint (Asia Pacific)
+define('VISION_AI_URL', getenv('VISION_AI_URL') ?: 'https://visual.ap-southeast-1.bytepluses.com');
+define('VISION_AI_AK',  getenv('VISION_AI_AK')  ?: '');   // Access Key ID
+define('VISION_AI_SK',  getenv('VISION_AI_SK')  ?: '');   // Secret Access Key
+// req_key for OmniHuman models:
+//   dreamina_omni_human_v1_5  (OmniHuman 1.5)
+//   dreamina_omni_human       (OmniHuman 1.0)
+define('OMNIHUMAN_REQ_KEY', getenv('OMNIHUMAN_REQ_KEY') ?: 'dreamina_omni_human_v1_5');
+
 // ── Error handling ────────────────────────────────────────────────────────────
 if (APP_DEBUG) {
     ini_set('display_errors', '1');
