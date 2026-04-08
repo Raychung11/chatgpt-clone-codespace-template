@@ -294,12 +294,22 @@ $videos = $videos->fetchAll();
             width: 100%; height: 100%;
             display: flex; align-items: center; justify-content: center;
         }
+        /* videoContainer wraps only the <video> so overlay tracks it exactly */
+        #videoContainer {
+            position: relative;
+            display: inline-flex;
+            max-width: 100%;
+            max-height: 100%;
+            line-height: 0;
+        }
         #mainVideo {
-            max-width: 100%; max-height: 100%;
+            max-width: 100%;
+            max-height: calc(100vh - 280px);
             border-radius: 6px;
             box-shadow: 0 4px 32px rgba(0,0,0,.6);
             display: block;
             background: #000;
+            min-width: 240px;
         }
         #captionOverlay {
             position: absolute;
@@ -309,20 +319,23 @@ $videos = $videos->fetchAll();
             flex-direction: column;
             justify-content: flex-end;
             align-items: center;
-            padding-bottom: 28px;
+            padding-bottom: 3%;
+            border-radius: 6px;
+            overflow: hidden;
         }
-        #captionOverlay.pos-top    { justify-content: flex-start; padding-top: 24px; padding-bottom: 0; }
+        #captionOverlay.pos-top    { justify-content: flex-start; padding-top: 3%; padding-bottom: 0; }
         #captionOverlay.pos-center { justify-content: center; padding-bottom: 0; }
         .cap-overlay-text {
-            background: rgba(0,0,0,.55);
+            background: rgba(0,0,0,.62);
             color: #fff;
-            padding: 6px 18px;
-            border-radius: 6px;
+            padding: 5px 16px;
+            border-radius: 5px;
             font-weight: 700;
             line-height: 1.4;
             text-align: center;
-            max-width: 85%;
-            margin: 3px 0;
+            max-width: 90%;
+            margin: 2px 0;
+            font-size: clamp(14px, 2vw, 28px);
         }
         /* Responsive */
         @media (max-width: 700px) {
@@ -382,8 +395,10 @@ $videos = $videos->fetchAll();
                 <div style="font-size:.85rem;margin-top:4px">Then add captions and export</div>
             </div>
             <div class="player-wrap" id="playerWrap" style="display:none">
-                <video id="mainVideo" playsinline></video>
-                <div id="captionOverlay"></div>
+                <div id="videoContainer">
+                    <video id="mainVideo" controls playsinline preload="metadata"></video>
+                    <div id="captionOverlay"></div>
+                </div>
             </div>
         </div>
 
@@ -585,10 +600,16 @@ function selectSegment(i) {
 }
 
 function loadSegment(i) {
-    // Simply set src — no CORS needed for a normal <video> element
+    currentSegIdx = i;
     mainVideo.src = sequence[i].url;
     mainVideo.load();
+    // Show first frame once enough data is available
+    mainVideo.addEventListener('loadedmetadata', function onMeta() {
+        mainVideo.currentTime = 0.1;
+        mainVideo.removeEventListener('loadedmetadata', onMeta);
+    }, { once: true });
     updateCaptionOverlay(sequence[i], 0);
+    updateProgress(0, 0);
 }
 
 // ── Caption overlay (CSS divs over the video, no canvas/CORS needed) ─────────
@@ -681,16 +702,17 @@ function hidePlayer() {
     captionOverlay.innerHTML = '';
 }
 
+// Keep custom play button in sync with native controls
+mainVideo.addEventListener('play',  () => { document.getElementById('playBtn').textContent = '⏸ Pause'; startCaptionLoop(); });
+mainVideo.addEventListener('pause', () => { document.getElementById('playBtn').textContent = '▶ Play'; });
+
 // ── Playback ─────────────────────────────────────────────────────────────────
 function togglePlay() {
     if (!sequence.length) return;
     if (mainVideo.paused) {
-        mainVideo.play().catch(() => {});
-        document.getElementById('playBtn').textContent = '⏸ Pause';
-        startCaptionLoop();
+        mainVideo.play().catch(err => console.warn('play() blocked:', err));
     } else {
         mainVideo.pause();
-        document.getElementById('playBtn').textContent = '▶ Play';
     }
 }
 
