@@ -455,51 +455,64 @@ unset($v);
             <div id="captionOverlay"></div>
         </div>
 
-    <!-- ── INLINE DEBUG PANEL (remove when fixed) ───────────────────────── -->
+    <!-- ── INLINE DEBUG PANEL v2 ────────────────────────────────────────────── -->
     <div id="dbgPanel" style="
-        position:fixed;bottom:10px;right:10px;width:380px;max-height:55vh;overflow-y:auto;
+        position:fixed;bottom:10px;right:10px;width:400px;max-height:70vh;overflow-y:auto;
         background:#0d0d12;border:1px solid #ff6b35;border-radius:8px;
         font-family:monospace;font-size:.72rem;color:#e2e8f0;
         z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,.7)">
         <div style="background:#ff6b35;color:#000;padding:6px 10px;font-weight:700;display:flex;align-items:center;justify-content:space-between;cursor:pointer"
              onclick="document.getElementById('dbgBody').style.display = document.getElementById('dbgBody').style.display==='none'?'block':'none'">
-            🔧 Editor Debug Panel
+            🔧 Debug Panel v2 — BytePlus URL test
             <span style="font-size:.7rem;opacity:.7">click to toggle</span>
         </div>
         <div id="dbgBody" style="padding:10px;display:block">
 
-            <!-- Quick test with known-good video -->
+            <!-- ① BytePlus URLs from sidebar -->
             <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #333">
-                <div style="color:#ff6b35;font-weight:700;margin-bottom:4px">① Test with public video</div>
-                <button onclick="dbgLoadUrl('https://www.w3schools.com/html/mov_bbb.mp4')"
-                        style="background:#1a56db;border:none;color:#fff;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:.72rem;margin-right:6px">
-                    Load W3Schools MP4
-                </button>
-                <button onclick="dbgLoadUrl('https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4')"
-                        style="background:#1a56db;border:none;color:#fff;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:.72rem">
-                    Load BBB MP4
-                </button>
+                <div style="color:#ff6b35;font-weight:700;margin-bottom:6px">① Your BytePlus video URLs</div>
+                <?php if (empty($videos)): ?>
+                    <div style="color:#ef4444">No completed videos found in DB.</div>
+                <?php else: ?>
+                    <?php foreach ($videos as $v): ?>
+                        <div style="margin-bottom:6px;padding:6px;background:#1a1a2e;border-radius:4px">
+                            <div style="color:#94a3b8;margin-bottom:3px;word-break:break-all">
+                                #<?= (int)$v['id'] ?> — <?= e(mb_strimwidth($v['prompt'],0,40,'…')) ?>
+                            </div>
+                            <div style="color:#64b5f6;word-break:break-all;font-size:.65rem;margin-bottom:4px">
+                                <?= e($v['cdn_url'] ?? '(no URL)') ?>
+                            </div>
+                            <div style="display:flex;gap:4px;flex-wrap:wrap">
+                                <button onclick="dbgTestBytePlusUrl(<?= htmlspecialchars(json_encode($v['cdn_url']), ENT_QUOTES) ?>)"
+                                        style="background:#1a56db;border:none;color:#fff;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:.7rem">
+                                    ▶ Load into player
+                                </button>
+                                <button onclick="dbgFetchCheck(<?= htmlspecialchars(json_encode($v['cdn_url']), ENT_QUOTES) ?>)"
+                                        style="background:#065f46;border:none;color:#fff;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:.7rem">
+                                    🌐 HTTP check (fetch)
+                                </button>
+                                <button onclick="window.open(<?= htmlspecialchars(json_encode($v['cdn_url']), ENT_QUOTES) ?>,'_blank')"
+                                        style="background:#333;border:none;color:#ccc;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:.7rem">
+                                    Open URL
+                                </button>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
 
-            <!-- Layout sizes -->
+            <!-- ② Video state -->
             <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #333">
-                <div style="color:#ff6b35;font-weight:700;margin-bottom:4px">② Computed sizes</div>
-                <div id="dbgSizes" style="line-height:1.8"></div>
-                <button onclick="dbgRefreshSizes()" style="background:#333;border:none;color:#ccc;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:.7rem;margin-top:4px">Refresh</button>
-            </div>
-
-            <!-- Video element state -->
-            <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #333">
-                <div style="color:#ff6b35;font-weight:700;margin-bottom:4px">③ Video element state</div>
+                <div style="color:#ff6b35;font-weight:700;margin-bottom:4px">② Player state</div>
                 <div id="dbgVideoState" style="line-height:1.8"></div>
                 <button onclick="dbgRefreshVideoState()" style="background:#333;border:none;color:#ccc;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:.7rem;margin-top:4px">Refresh</button>
             </div>
 
-            <!-- Event log -->
+            <!-- ③ Event + action log -->
             <div>
-                <div style="color:#ff6b35;font-weight:700;margin-bottom:4px">④ Event log</div>
-                <div id="dbgLog" style="line-height:1.7;max-height:120px;overflow-y:auto"></div>
-                <button onclick="document.getElementById('dbgLog').innerHTML=''" style="background:#333;border:none;color:#ccc;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:.7rem;margin-top:4px">Clear log</button>
+                <div style="color:#ff6b35;font-weight:700;margin-bottom:4px">③ Live log (video events + actions)</div>
+                <div id="dbgLog" style="line-height:1.7;max-height:180px;overflow-y:auto"></div>
+                <button onclick="document.getElementById('dbgLog').innerHTML=''" style="background:#333;border:none;color:#ccc;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:.7rem;margin-top:4px">Clear</button>
             </div>
 
         </div>
@@ -514,46 +527,55 @@ unset($v);
         el.scrollTop = el.scrollHeight;
     };
 
-    function dbgRefreshSizes() {
-        const v   = document.getElementById('mainVideo');
-        const pa  = document.getElementById('previewArea');
-        const em  = document.getElementById('previewEmpty');
-        const out = [
-            `previewArea: ${pa ? pa.offsetWidth + 'x' + pa.offsetHeight : 'n/a'}`,
-            `mainVideo display: ${v ? getComputedStyle(v).display : 'n/a'}`,
-            `mainVideo offset: ${v ? v.offsetWidth + 'x' + v.offsetHeight : 'n/a'}`,
-            `mainVideo natural: ${v ? v.videoWidth + 'x' + v.videoHeight : 'n/a'}`,
-            `previewEmpty display: ${em ? getComputedStyle(em).display : 'n/a'}`,
-        ];
-        document.getElementById('dbgSizes').innerHTML = out.map(s=>`<div>${s}</div>`).join('');
-    }
-
     function dbgRefreshVideoState() {
         const v = document.getElementById('mainVideo');
         if (!v) { document.getElementById('dbgVideoState').textContent = 'no element'; return; }
-        const srcShort = v.src ? (v.src.length > 60 ? v.src.slice(0,60)+'…' : v.src) : '(empty)';
+        const srcShort = v.src ? (v.src.length > 70 ? '…' + v.src.slice(-70) : v.src) : '(empty)';
+        const rsLabel  = ['HAVE_NOTHING','HAVE_METADATA','HAVE_CURRENT_DATA','HAVE_FUTURE_DATA','HAVE_ENOUGH_DATA'];
+        const nsLabel  = ['EMPTY','IDLE','LOADING','NO_SOURCE'];
         const out = [
+            `display: ${getComputedStyle(v).display}   size: ${v.offsetWidth}×${v.offsetHeight}`,
             `src: ${srcShort}`,
-            `readyState: ${v.readyState} (0=HAVE_NOTHING, 4=HAVE_ENOUGH)`,
-            `networkState: ${v.networkState} (0=EMPTY, 1=IDLE, 2=LOADING, 3=NO_SRC)`,
-            `error: ${v.error ? v.error.code + ' / ' + v.error.message : 'none'}`,
-            `paused: ${v.paused}`,
-            `duration: ${isNaN(v.duration) ? 'NaN' : v.duration.toFixed(2) + 's'}`,
-            `currentTime: ${v.currentTime.toFixed(2)}s`,
+            `readyState: ${v.readyState} (${rsLabel[v.readyState]||'?'})`,
+            `networkState: ${v.networkState} (${nsLabel[v.networkState]||'?'})`,
+            `error: ${v.error ? 'code='+v.error.code+' '+v.error.message : 'none'}`,
+            `duration: ${isNaN(v.duration) ? 'NaN' : v.duration.toFixed(2)+'s'}   videoSize: ${v.videoWidth}×${v.videoHeight}`,
         ];
         document.getElementById('dbgVideoState').innerHTML = out.map(s=>`<div>${s}</div>`).join('');
     }
 
-    function dbgLoadUrl(url) {
-        _dbgLog(`Loading test URL: ${url.split('/').pop()}`, '#64b5f6');
+    // Load BytePlus URL directly into player (bypasses addToSequence)
+    function dbgTestBytePlusUrl(url) {
+        _dbgLog(`▶ Direct load BytePlus URL: …${url.slice(-50)}`, '#64b5f6');
         const v = document.getElementById('mainVideo');
-        // Force show
         document.getElementById('previewEmpty').style.display = 'none';
         v.style.display = 'block';
         v.src = url;
         v.load();
-        setTimeout(dbgRefreshSizes, 200);
-        setTimeout(dbgRefreshVideoState, 200);
+        setTimeout(dbgRefreshVideoState, 300);
+    }
+
+    // HTTP fetch check — shows status code and headers
+    async function dbgFetchCheck(url) {
+        _dbgLog(`🌐 fetch HEAD → …${url.slice(-40)}`, '#94a3b8');
+        try {
+            const r = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
+            _dbgLog(`fetch OK — type=${r.type} status=${r.status || '(opaque, likely 200)'}`, '#a8e063');
+        } catch(e) {
+            _dbgLog(`fetch FAILED: ${e.message}`, '#ef4444');
+        }
+        // Also try GET with range to see if server responds
+        try {
+            const r2 = await fetch(url, { method: 'GET', headers: { Range: 'bytes=0-1023' }, mode: 'cors' });
+            _dbgLog(`fetch GET cors: status=${r2.status} ok=${r2.ok}`, r2.ok ? '#a8e063' : '#ef4444');
+            // Log relevant response headers
+            ['content-type','content-length','accept-ranges','access-control-allow-origin'].forEach(h => {
+                const val = r2.headers.get(h);
+                if (val) _dbgLog(`  header ${h}: ${val}`, '#94a3b8');
+            });
+        } catch(e2) {
+            _dbgLog(`fetch GET cors FAILED: ${e2.message}`, '#f59e0b');
+        }
     }
 
     // Wire all video events to the log
@@ -565,21 +587,21 @@ unset($v);
                         'playing','waiting','seeking','seeked','ended','durationchange'];
         events.forEach(name => {
             v.addEventListener(name, () => {
-                const col = name === 'error' ? '#ef4444' : name === 'canplay' ? '#a8e063' : '#e2e8f0';
-                _dbgLog(`video:${name}  readyState=${v.readyState}  w=${v.videoWidth}  h=${v.videoHeight}  dur=${isNaN(v.duration)?'?':v.duration.toFixed(1)}`, col);
-                dbgRefreshSizes();
+                const col = name === 'error' ? '#ef4444' : name.startsWith('can') ? '#a8e063' : '#e2e8f0';
+                _dbgLog(`video:${name}  rs=${v.readyState}  ns=${v.networkState}  ${v.videoWidth}×${v.videoHeight}  dur=${isNaN(v.duration)?'?':v.duration.toFixed(1)}s`, col);
                 dbgRefreshVideoState();
             });
         });
-        // Also log any media error detail
         v.addEventListener('error', () => {
-            if (v.error) _dbgLog(`ERROR code=${v.error.code}: ${v.error.message}`, '#ef4444');
+            if (v.error) _dbgLog(`  → ERROR detail code=${v.error.code}: ${v.error.message}`, '#ef4444');
         });
     })();
 
-    // Initial size check after page ready
-    window.addEventListener('DOMContentLoaded', () => { dbgRefreshSizes(); dbgRefreshVideoState(); });
-    setTimeout(() => { dbgRefreshSizes(); dbgRefreshVideoState(); }, 500);
+    // Intercept showPlayer to log when it's called
+    const _origShowPlayer = typeof showPlayer !== 'undefined' ? showPlayer : null;
+
+    // Initial state
+    setTimeout(() => { dbgRefreshVideoState(); _dbgLog('Page loaded. Click a sidebar card or use buttons above.', '#94a3b8'); }, 600);
     </script>
     <!-- ── END DEBUG PANEL ───────────────────────────────────────────────────── -->
 
@@ -738,6 +760,7 @@ const captionOverlay = document.getElementById('captionOverlay');
 
 // ── Sidebar: add video to sequence ───────────────────────────────────────────
 function addToSequence(card) {
+    _dbgLog && _dbgLog(`addToSequence called  id=${card.dataset.id}  url=…${(card.dataset.url||'').slice(-50)}`, '#facc15');
     const seg = {
         id:       card.dataset.id + '_' + Date.now(),
         vidId:    card.dataset.id,
@@ -840,6 +863,7 @@ function selectSegment(i) {
 
 function loadSegment(i) {
     currentSegIdx = i;
+    _dbgLog && _dbgLog(`loadSegment(${i})  url=…${(sequence[i].url||'').slice(-60)}`, '#facc15');
     mainVideo.src = sequence[i].url;
     mainVideo.load();
     // Show first frame once enough data is available
@@ -932,8 +956,10 @@ function removeCaption(i) {
 
 // ── Player show/hide ─────────────────────────────────────────────────────────
 function showPlayer() {
+    _dbgLog && _dbgLog('showPlayer() called', '#facc15');
     document.getElementById('previewEmpty').style.display = 'none';
     mainVideo.style.display = 'block';
+    _dbgLog && _dbgLog(`  mainVideo.display now=${getComputedStyle(mainVideo).display}  offset=${mainVideo.offsetWidth}×${mainVideo.offsetHeight}`, '#facc15');
 }
 function hidePlayer() {
     document.getElementById('previewEmpty').style.display = 'flex';
