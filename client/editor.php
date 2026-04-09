@@ -455,6 +455,134 @@ unset($v);
             <div id="captionOverlay"></div>
         </div>
 
+    <!-- ── INLINE DEBUG PANEL (remove when fixed) ───────────────────────── -->
+    <div id="dbgPanel" style="
+        position:fixed;bottom:10px;right:10px;width:380px;max-height:55vh;overflow-y:auto;
+        background:#0d0d12;border:1px solid #ff6b35;border-radius:8px;
+        font-family:monospace;font-size:.72rem;color:#e2e8f0;
+        z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,.7)">
+        <div style="background:#ff6b35;color:#000;padding:6px 10px;font-weight:700;display:flex;align-items:center;justify-content:space-between;cursor:pointer"
+             onclick="document.getElementById('dbgBody').style.display = document.getElementById('dbgBody').style.display==='none'?'block':'none'">
+            🔧 Editor Debug Panel
+            <span style="font-size:.7rem;opacity:.7">click to toggle</span>
+        </div>
+        <div id="dbgBody" style="padding:10px;display:block">
+
+            <!-- Quick test with known-good video -->
+            <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #333">
+                <div style="color:#ff6b35;font-weight:700;margin-bottom:4px">① Test with public video</div>
+                <button onclick="dbgLoadUrl('https://www.w3schools.com/html/mov_bbb.mp4')"
+                        style="background:#1a56db;border:none;color:#fff;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:.72rem;margin-right:6px">
+                    Load W3Schools MP4
+                </button>
+                <button onclick="dbgLoadUrl('https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4')"
+                        style="background:#1a56db;border:none;color:#fff;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:.72rem">
+                    Load BBB MP4
+                </button>
+            </div>
+
+            <!-- Layout sizes -->
+            <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #333">
+                <div style="color:#ff6b35;font-weight:700;margin-bottom:4px">② Computed sizes</div>
+                <div id="dbgSizes" style="line-height:1.8"></div>
+                <button onclick="dbgRefreshSizes()" style="background:#333;border:none;color:#ccc;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:.7rem;margin-top:4px">Refresh</button>
+            </div>
+
+            <!-- Video element state -->
+            <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #333">
+                <div style="color:#ff6b35;font-weight:700;margin-bottom:4px">③ Video element state</div>
+                <div id="dbgVideoState" style="line-height:1.8"></div>
+                <button onclick="dbgRefreshVideoState()" style="background:#333;border:none;color:#ccc;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:.7rem;margin-top:4px">Refresh</button>
+            </div>
+
+            <!-- Event log -->
+            <div>
+                <div style="color:#ff6b35;font-weight:700;margin-bottom:4px">④ Event log</div>
+                <div id="dbgLog" style="line-height:1.7;max-height:120px;overflow-y:auto"></div>
+                <button onclick="document.getElementById('dbgLog').innerHTML=''" style="background:#333;border:none;color:#ccc;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:.7rem;margin-top:4px">Clear log</button>
+            </div>
+
+        </div>
+    </div>
+    <script>
+    // ── Debug helpers ────────────────────────────────────────────────────────────
+    const _dbgLog = (msg, color='#a8e063') => {
+        const el = document.getElementById('dbgLog');
+        if (!el) return;
+        const ts = new Date().toTimeString().slice(0,8);
+        el.innerHTML += `<div style="color:${color}">[${ts}] ${msg}</div>`;
+        el.scrollTop = el.scrollHeight;
+    };
+
+    function dbgRefreshSizes() {
+        const v   = document.getElementById('mainVideo');
+        const pa  = document.getElementById('previewArea');
+        const em  = document.getElementById('previewEmpty');
+        const out = [
+            `previewArea: ${pa ? pa.offsetWidth + 'x' + pa.offsetHeight : 'n/a'}`,
+            `mainVideo display: ${v ? getComputedStyle(v).display : 'n/a'}`,
+            `mainVideo offset: ${v ? v.offsetWidth + 'x' + v.offsetHeight : 'n/a'}`,
+            `mainVideo natural: ${v ? v.videoWidth + 'x' + v.videoHeight : 'n/a'}`,
+            `previewEmpty display: ${em ? getComputedStyle(em).display : 'n/a'}`,
+        ];
+        document.getElementById('dbgSizes').innerHTML = out.map(s=>`<div>${s}</div>`).join('');
+    }
+
+    function dbgRefreshVideoState() {
+        const v = document.getElementById('mainVideo');
+        if (!v) { document.getElementById('dbgVideoState').textContent = 'no element'; return; }
+        const srcShort = v.src ? (v.src.length > 60 ? v.src.slice(0,60)+'…' : v.src) : '(empty)';
+        const out = [
+            `src: ${srcShort}`,
+            `readyState: ${v.readyState} (0=HAVE_NOTHING, 4=HAVE_ENOUGH)`,
+            `networkState: ${v.networkState} (0=EMPTY, 1=IDLE, 2=LOADING, 3=NO_SRC)`,
+            `error: ${v.error ? v.error.code + ' / ' + v.error.message : 'none'}`,
+            `paused: ${v.paused}`,
+            `duration: ${isNaN(v.duration) ? 'NaN' : v.duration.toFixed(2) + 's'}`,
+            `currentTime: ${v.currentTime.toFixed(2)}s`,
+        ];
+        document.getElementById('dbgVideoState').innerHTML = out.map(s=>`<div>${s}</div>`).join('');
+    }
+
+    function dbgLoadUrl(url) {
+        _dbgLog(`Loading test URL: ${url.split('/').pop()}`, '#64b5f6');
+        const v = document.getElementById('mainVideo');
+        // Force show
+        document.getElementById('previewEmpty').style.display = 'none';
+        v.style.display = 'block';
+        v.src = url;
+        v.load();
+        setTimeout(dbgRefreshSizes, 200);
+        setTimeout(dbgRefreshVideoState, 200);
+    }
+
+    // Wire all video events to the log
+    (() => {
+        const v = document.getElementById('mainVideo');
+        if (!v) return;
+        const events = ['loadstart','progress','suspend','abort','error','emptied','stalled',
+                        'loadedmetadata','loadeddata','canplay','canplaythrough',
+                        'playing','waiting','seeking','seeked','ended','durationchange'];
+        events.forEach(name => {
+            v.addEventListener(name, () => {
+                const col = name === 'error' ? '#ef4444' : name === 'canplay' ? '#a8e063' : '#e2e8f0';
+                _dbgLog(`video:${name}  readyState=${v.readyState}  w=${v.videoWidth}  h=${v.videoHeight}  dur=${isNaN(v.duration)?'?':v.duration.toFixed(1)}`, col);
+                dbgRefreshSizes();
+                dbgRefreshVideoState();
+            });
+        });
+        // Also log any media error detail
+        v.addEventListener('error', () => {
+            if (v.error) _dbgLog(`ERROR code=${v.error.code}: ${v.error.message}`, '#ef4444');
+        });
+    })();
+
+    // Initial size check after page ready
+    window.addEventListener('DOMContentLoaded', () => { dbgRefreshSizes(); dbgRefreshVideoState(); });
+    setTimeout(() => { dbgRefreshSizes(); dbgRefreshVideoState(); }, 500);
+    </script>
+    <!-- ── END DEBUG PANEL ───────────────────────────────────────────────────── -->
+
         <!-- Playback bar -->
         <div class="playback-bar">
             <button onclick="togglePlay()" id="playBtn">▶ Play</button>
