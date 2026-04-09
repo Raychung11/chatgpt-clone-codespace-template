@@ -97,11 +97,14 @@ function format_currency(float $amount, string $currency = 'MYR'): string
     return $currency . ' ' . number_format($amount, 2);
 }
 
-/** Format datetime for display */
+/** Format datetime for display in app timezone (Asia/Kuala_Lumpur / MYT) */
 function format_datetime(string|null $datetime): string
 {
     if (!$datetime) return '—';
-    return date('d M Y, h:i A', strtotime($datetime));
+    $tz = new \DateTimeZone(defined('APP_TIMEZONE') ? APP_TIMEZONE : 'Asia/Kuala_Lumpur');
+    $dt = new \DateTime($datetime, new \DateTimeZone('UTC'));
+    $dt->setTimezone($tz);
+    return $dt->format('d M Y, h:i A');
 }
 
 /** Truncate text */

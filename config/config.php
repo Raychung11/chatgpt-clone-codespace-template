@@ -11,6 +11,10 @@ declare(strict_types=1);
 define('APP_ENV', getenv('APP_ENV') ?: 'production'); // 'development' | 'production'
 define('APP_DEBUG', APP_ENV === 'development');
 
+// ── Timezone ─────────────────────────────────────────────────────────────────
+define('APP_TIMEZONE', 'Asia/Kuala_Lumpur');
+date_default_timezone_set(APP_TIMEZONE);
+
 // ── Paths ─────────────────────────────────────────────────────────────────────
 define('BASE_PATH',   dirname(__DIR__));
 define('CONFIG_PATH', BASE_PATH . '/config');
