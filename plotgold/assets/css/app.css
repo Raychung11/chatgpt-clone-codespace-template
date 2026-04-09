@@ -61,6 +61,12 @@ a:hover { color: var(--pg-gold-light); }
 .bg-pale-gold  { background-color: var(--pg-gold-pale) !important; }
 .bg-navy       { background-color: var(--pg-navy) !important; }
 
+/* Font-weight numeric aliases (Bootstrap 5 uses fw-medium/semibold/bold) */
+.fw-400 { font-weight: 400 !important; }
+.fw-500 { font-weight: 500 !important; }
+.fw-600 { font-weight: 600 !important; }
+.fw-700 { font-weight: 700 !important; }
+
 /* ── Brand ──────────────────────────────────────────────────────── */
 .brand-pg   { color: var(--pg-navy); font-weight: 700; letter-spacing: -.5px; }
 .brand-gold { color: var(--pg-gold); font-weight: 700; }
@@ -174,14 +180,16 @@ a:hover { color: var(--pg-gold-light); }
 
 /* ── Listing Card ───────────────────────────────────────────────── */
 .listing-card { position: relative; }
-.listing-card .listing-price {
+.listing-price {
   font-family: var(--font-display);
   font-size: 1.4rem;
   font-weight: 600;
   color: var(--pg-navy);
 }
-.listing-card .listing-location { font-size: .82rem; color: var(--pg-muted); }
-.listing-card .listing-type-tag {
+.listing-location { font-size: .82rem; color: var(--pg-muted); }
+
+/* .listing-type-tag works standalone anywhere (park cards, compare, detail) */
+.listing-type-tag {
   background: var(--pg-gold-pale);
   color: var(--pg-gold);
   font-size: .72rem;
@@ -190,6 +198,7 @@ a:hover { color: var(--pg-gold-light); }
   border-radius: 20px;
   text-transform: uppercase;
   letter-spacing: .03em;
+  display: inline-block;
 }
 
 /* ── Badges ─────────────────────────────────────────────────────── */
@@ -300,7 +309,8 @@ a:hover { color: var(--pg-gold-light); }
   text-align: center;
   padding: 32px 24px;
 }
-.trust-badge .trust-icon {
+/* .trust-icon works standalone OR inside .trust-badge */
+.trust-icon {
   width: 60px; height: 60px;
   border-radius: 50%;
   background: var(--pg-gold-pale);
