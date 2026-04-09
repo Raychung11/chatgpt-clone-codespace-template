@@ -508,10 +508,22 @@ unset($v);
                 <button onclick="dbgRefreshVideoState()" style="background:#333;border:none;color:#ccc;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:.7rem;margin-top:4px">Refresh</button>
             </div>
 
+            <!-- ② Simulate card click -->
+            <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #333">
+                <div style="color:#ff6b35;font-weight:700;margin-bottom:4px">② Simulate sidebar card click</div>
+                <div style="color:#94a3b8;margin-bottom:5px;font-size:.68rem">
+                    Calls addToSequence() directly — bypasses DOM click. If video shows → onclick on card is broken. If not → JS error in addToSequence.
+                </div>
+                <button onclick="dbgSimulateCardClick()"
+                        style="background:#7c3aed;border:none;color:#fff;padding:3px 12px;border-radius:4px;cursor:pointer;font-size:.72rem">
+                    ▶ Run addToSequence(firstCard)
+                </button>
+            </div>
+
             <!-- ③ Event + action log -->
             <div>
                 <div style="color:#ff6b35;font-weight:700;margin-bottom:4px">③ Live log (video events + actions)</div>
-                <div id="dbgLog" style="line-height:1.7;max-height:180px;overflow-y:auto"></div>
+                <div id="dbgLog" style="line-height:1.7;max-height:200px;overflow-y:auto"></div>
                 <button onclick="document.getElementById('dbgLog').innerHTML=''" style="background:#333;border:none;color:#ccc;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:.7rem;margin-top:4px">Clear</button>
             </div>
 
@@ -597,11 +609,25 @@ unset($v);
         });
     })();
 
-    // Intercept showPlayer to log when it's called
-    const _origShowPlayer = typeof showPlayer !== 'undefined' ? showPlayer : null;
+    // Simulate sidebar card click — directly call addToSequence() on first card
+    function dbgSimulateCardClick() {
+        const card = document.querySelector('.vid-thumb-card');
+        if (!card) {
+            _dbgLog('No sidebar cards found in DOM.', '#ef4444');
+            return;
+        }
+        _dbgLog(`Simulating click on card id=${card.dataset.id}  url=…${(card.dataset.url||'(empty)').slice(-55)}`, '#a78bfa');
+        try {
+            addToSequence(card);
+            _dbgLog('addToSequence() returned OK', '#a8e063');
+        } catch(err) {
+            _dbgLog(`addToSequence() THREW: ${err}`, '#ef4444');
+            console.error(err);
+        }
+    }
 
     // Initial state
-    setTimeout(() => { dbgRefreshVideoState(); _dbgLog('Page loaded. Click a sidebar card or use buttons above.', '#94a3b8'); }, 600);
+    setTimeout(() => { dbgRefreshVideoState(); _dbgLog('Page loaded. Use ① Load buttons or ② Simulate card click.', '#94a3b8'); }, 600);
     </script>
     <!-- ── END DEBUG PANEL ───────────────────────────────────────────────────── -->
 
@@ -760,7 +786,7 @@ const captionOverlay = document.getElementById('captionOverlay');
 
 // ── Sidebar: add video to sequence ───────────────────────────────────────────
 function addToSequence(card) {
-    _dbgLog && _dbgLog(`addToSequence called  id=${card.dataset.id}  url=…${(card.dataset.url||'').slice(-50)}`, '#facc15');
+    typeof _dbgLog!=='undefined' && _dbgLog(`addToSequence called  id=${card.dataset.id}  url=…${(card.dataset.url||'').slice(-50)}`, '#facc15');
     const seg = {
         id:       card.dataset.id + '_' + Date.now(),
         vidId:    card.dataset.id,
@@ -863,7 +889,7 @@ function selectSegment(i) {
 
 function loadSegment(i) {
     currentSegIdx = i;
-    _dbgLog && _dbgLog(`loadSegment(${i})  url=…${(sequence[i].url||'').slice(-60)}`, '#facc15');
+    typeof _dbgLog!=='undefined' && _dbgLog(`loadSegment(${i})  url=…${(sequence[i].url||'').slice(-60)}`, '#facc15');
     mainVideo.src = sequence[i].url;
     mainVideo.load();
     // Show first frame once enough data is available
@@ -956,10 +982,10 @@ function removeCaption(i) {
 
 // ── Player show/hide ─────────────────────────────────────────────────────────
 function showPlayer() {
-    _dbgLog && _dbgLog('showPlayer() called', '#facc15');
+    typeof _dbgLog!=='undefined' && _dbgLog('showPlayer() called', '#facc15');
     document.getElementById('previewEmpty').style.display = 'none';
     mainVideo.style.display = 'block';
-    _dbgLog && _dbgLog(`  mainVideo.display now=${getComputedStyle(mainVideo).display}  offset=${mainVideo.offsetWidth}×${mainVideo.offsetHeight}`, '#facc15');
+    typeof _dbgLog!=='undefined' && _dbgLog(`  mainVideo.display now=${getComputedStyle(mainVideo).display}  offset=${mainVideo.offsetWidth}×${mainVideo.offsetHeight}`, '#facc15');
 }
 function hidePlayer() {
     document.getElementById('previewEmpty').style.display = 'flex';
