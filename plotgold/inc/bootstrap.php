@@ -16,3 +16,6 @@ require_once __DIR__ . '/functions.php';
 
 // Start session
 pg_session_start();
+
+// Load i18n — must come after session start
+require_once __DIR__ . '/lang.php';

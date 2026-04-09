@@ -11,7 +11,7 @@ $body_class       = $body_class       ?? '';
 $site_name        = get_setting('site_name', 'PlotGold Malaysia');
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="<?= html_lang() ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

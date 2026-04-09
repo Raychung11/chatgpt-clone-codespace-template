@@ -634,3 +634,30 @@ a:hover { color: var(--pg-gold-light); }
   .search-bar { border-radius: var(--radius-md); }
   .search-bar .row > .col-12 + .col-12 { border-top: 1px solid var(--pg-border); }
 }
+
+/* ── Language Switcher ──────────────────────────────────────────── */
+.lang-switcher { font-size: .8rem; }
+.lang-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: .75rem;
+  color: var(--pg-slate);
+  text-decoration: none;
+  transition: background .15s, color .15s;
+  cursor: pointer;
+}
+.lang-pill:hover { background: var(--pg-gold-pale); color: var(--pg-gold); }
+.lang-pill.lang-active {
+  background: var(--pg-gold);
+  color: #fff;
+  pointer-events: none;
+}
+.lang-sep { color: var(--pg-border); font-size: .75rem; user-select: none; }
+
+/* Footer lang pills — lighter on dark background */
+.pg-footer .lang-pill { color: rgba(255,255,255,.65); }
+.pg-footer .lang-pill:hover { background: rgba(255,255,255,.1); color: #fff; }
+.pg-footer .lang-pill.lang-active { background: var(--pg-gold-light); color: var(--pg-navy); }
+.pg-footer .lang-sep { color: rgba(255,255,255,.25); }
