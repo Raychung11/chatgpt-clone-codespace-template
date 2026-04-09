@@ -653,9 +653,8 @@ unset($v);
                         Clear
                     </button>
                 </div>
-                <div class="sequence-list" id="sequenceList">
-                    <div class="seq-empty" id="seqEmpty">Add videos from the left panel</div>
-                </div>
+                <div class="seq-empty" id="seqEmpty">Add videos from the left panel</div>
+                <div class="sequence-list" id="sequenceList"></div>
             </div>
 
             <!-- Caption editor -->
@@ -824,14 +823,14 @@ function addUrlToSequence() {
 function renderSequenceList() {
     const list  = document.getElementById('sequenceList');
     const empty = document.getElementById('seqEmpty');
+    // seqEmpty is a sibling of sequenceList (not inside it), so list.innerHTML=''
+    // never destroys it and getElementById always returns it safely.
+    list.innerHTML = '';
     if (!sequence.length) {
-        empty.style.display = 'block';
-        list.innerHTML = '';
-        list.appendChild(empty);
+        if (empty) empty.style.display = 'block';
         return;
     }
-    empty.style.display = 'none';
-    list.innerHTML = '';
+    if (empty) empty.style.display = 'none';
     sequence.forEach((seg, i) => {
         const div = document.createElement('div');
         div.className = 'seq-item';
