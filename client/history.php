@@ -98,15 +98,35 @@ $jobs = $pdo->prepare(
 $jobs->execute($params);
 $jobs = $jobs->fetchAll();
 
-// Auto-refresh any expired BytePlus signed URLs
+// Auto-refresh any expired BytePlus signed URLs and compute expiry info
 foreach ($jobs as &$job) {
-    if ($job['status'] === 'completed' && !empty($job['cdn_url'])
-        && byteplus_url_is_expired($job['cdn_url'])) {
-        $fresh = byteplus_ensure_fresh_url((int)$job['id'], $pdo);
-        if ($fresh) $job['cdn_url'] = $fresh;
+    if ($job['status'] === 'completed' && !empty($job['cdn_url'])) {
+        if (byteplus_url_is_expired($job['cdn_url'])) {
+            $fresh = byteplus_ensure_fresh_url((int)$job['id'], $pdo);
+            if ($fresh) $job['cdn_url'] = $fresh;
+        }
+        // Compute time-remaining info for display
+        $job['_expiry_text']  = $job['cdn_url'] ? byteplus_url_time_remaining($job['cdn_url']) : '';
+        $expiresAt            = $job['cdn_url'] ? byteplus_url_expires_at($job['cdn_url']) : null;
+        $secsLeft             = $expiresAt ? ($expiresAt->getTimestamp() - time()) : PHP_INT_MAX;
+        $job['_expiry_class'] = match(true) {
+            $secsLeft <= 0        => 'expiry-expired',
+            $secsLeft < 7200      => 'expiry-danger',   // < 2h
+            $secsLeft < 43200     => 'expiry-warn',     // < 12h
+            default               => 'expiry-ok',
+        };
     }
 }
 unset($job);
+
+// Check if any completed video is expiring soon (< 4h)
+$hasExpiringSoon = false;
+foreach ($jobs as $j) {
+    if (!empty($j['_expiry_class']) && in_array($j['_expiry_class'], ['expiry-danger','expiry-expired'])) {
+        $hasExpiringSoon = true;
+        break;
+    }
+}
 
 $statusBadge = [
     'queued'     => ['badge-muted',    'Queued'],
@@ -154,6 +174,15 @@ $shareBase = BASE_URL . '/client/share.php?job_id=';
         .share-btn.tw    { border-color: #1da1f2; color: #1da1f2; }
         .share-btn.li    { border-color: #0a66c2; color: #0a66c2; }
         .share-btn.dl    { border-color: var(--color-accent); color: var(--color-accent); }
+        .expiry-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: .72rem; font-weight: 600; padding: 2px 8px;
+            border-radius: 10px; white-space: nowrap;
+        }
+        .expiry-badge.expiry-ok      { background: rgba(34,197,94,.12);  color: #22c55e; }
+        .expiry-badge.expiry-warn    { background: rgba(234,179, 8,.15); color: #eab308; }
+        .expiry-badge.expiry-danger  { background: rgba(239,68, 68,.15); color: #ef4444; }
+        .expiry-badge.expiry-expired { background: rgba(239,68, 68,.2);  color: #ef4444; }
         .poll-indicator { display: inline-block; width: 8px; height: 8px;
                           background: var(--color-info); border-radius: 50%;
                           animation: pulse 1.5s infinite; margin-right: 5px; }
@@ -193,6 +222,18 @@ $shareBase = BASE_URL . '/client/share.php?job_id=';
         </div>
         <a href="<?= BASE_URL ?>/client/generate.php" class="btn btn-primary">+ Generate New</a>
     </div>
+
+    <!-- Expiry warning banner -->
+    <?php if ($hasExpiringSoon): ?>
+        <div class="alert alert--warning" style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+            <span style="font-size:1.3rem">⚠️</span>
+            <div>
+                <strong>Some videos are expiring soon!</strong>
+                BytePlus video links expire after <strong>24 hours</strong>.
+                Download any videos you want to keep before they disappear.
+            </div>
+        </div>
+    <?php endif; ?>
 
     <!-- Status filter tabs -->
     <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
@@ -270,6 +311,11 @@ $shareBase = BASE_URL . '/client/share.php?job_id=';
                             <span class="text-muted text-sm">#<?= (int)$job['id'] ?></span>
                             <span class="text-muted text-sm"><?= e($job['resolution'] ?? '—') ?> · <?= (int)$job['duration'] ?>s</span>
                             <span class="text-muted text-sm"><?= e(format_credits((float)$job['credit_cost'])) ?> credits</span>
+                            <?php if (!empty($job['_expiry_text'])): ?>
+                                <span class="expiry-badge <?= $job['_expiry_class'] ?>">
+                                    ⏱ <?= e($job['_expiry_text']) ?>
+                                </span>
+                            <?php endif; ?>
                             <span class="text-muted text-sm" style="margin-left:auto"><?= e(format_datetime($job['created_at'])) ?></span>
                         </div>
 
@@ -333,6 +379,19 @@ $shareBase = BASE_URL . '/client/share.php?job_id=';
                                 <a href="<?= e($shareUrl) ?>" class="share-btn">
                                     🔗 Share Page
                                 </a>
+
+                                <!-- Recreate -->
+                                <a href="<?= BASE_URL ?>/client/generate.php?prompt=<?= urlencode($job['prompt']) ?>"
+                                   class="share-btn" title="Generate a new video with the same prompt">
+                                    🔄 Recreate
+                                </a>
+
+                                <!-- Delete -->
+                                <button type="button" class="share-btn"
+                                        style="color:var(--color-danger);border-color:var(--color-danger)"
+                                        onclick="deleteJob(<?= (int)$job['id'] ?>, this)">
+                                    🗑 Delete
+                                </button>
                             </div>
 
                         <?php elseif ($isRunning): ?>
@@ -355,6 +414,18 @@ $shareBase = BASE_URL . '/client/share.php?job_id=';
                                         style="color:var(--color-danger);border-color:var(--color-danger)"
                                         onclick="cancelJob(<?= (int)$job['id'] ?>, this)">
                                     ✕ Cancel &amp; Refund
+                                </button>
+                            </div>
+                        <?php elseif (in_array($job['status'], ['failed','refunded'], true)): ?>
+                            <div class="share-bar" style="margin-top:8px">
+                                <a href="<?= BASE_URL ?>/client/generate.php?prompt=<?= urlencode($job['prompt']) ?>"
+                                   class="share-btn" title="Try again with the same prompt">
+                                    🔄 Try Again
+                                </a>
+                                <button type="button" class="share-btn"
+                                        style="color:var(--color-danger);border-color:var(--color-danger)"
+                                        onclick="deleteJob(<?= (int)$job['id'] ?>, this)">
+                                    🗑 Delete
                                 </button>
                             </div>
                         <?php endif; ?>
@@ -529,6 +600,41 @@ function closeVideoPlayer() {
     modal.style.display = 'none';
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVideoPlayer(); });
+
+// Delete job
+async function deleteJob(jobId, btn) {
+    if (!confirm('Permanently delete this video and its record? This cannot be undone.')) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Deleting…';
+
+    const fd = new FormData();
+    fd.append('<?= CSRF_TOKEN_NAME ?>', CSRF_TOKEN);
+    fd.append('job_id', jobId);
+
+    try {
+        const res  = await fetch('<?= BASE_URL ?>/client/delete_job.php', { method: 'POST', body: fd });
+        const data = await res.json();
+
+        if (data.ok) {
+            // Remove card from DOM
+            const card = btn.closest('.video-card');
+            if (card) {
+                card.style.transition = 'opacity .3s';
+                card.style.opacity = '0';
+                setTimeout(() => card.remove(), 300);
+            }
+        } else {
+            btn.disabled = false;
+            btn.textContent = '🗑 Delete';
+            alert(data.error || 'Delete failed.');
+        }
+    } catch(e) {
+        btn.disabled = false;
+        btn.textContent = '🗑 Delete';
+        alert('Network error. Please try again.');
+    }
+}
 
 // Cancel job
 async function cancelJob(jobId, btn) {

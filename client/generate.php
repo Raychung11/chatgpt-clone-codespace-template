@@ -377,7 +377,7 @@ $balance = wallet_balance($uid);
                           rows="6" maxlength="2000" required
                           placeholder="Describe your marketing video in detail.
 Example: A vibrant product launch video for a new energy drink. Show the can against a neon-lit city background, with fast cuts and upbeat music. Target audience: 18-30 year olds. Tone: energetic, bold."
-                          oninput="updateCharCount(this)"><?= e($_POST['prompt'] ?? '') ?></textarea>
+                          oninput="updateCharCount(this)"><?= e($_POST['prompt'] ?? $_GET['prompt'] ?? '') ?></textarea>
                 <div id="charCount">0 / 2000 characters</div>
             </div>
 

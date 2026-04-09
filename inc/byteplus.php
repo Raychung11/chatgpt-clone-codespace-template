@@ -226,6 +226,44 @@ function byteplus_url_is_expired(string $url): bool
 }
 
 /**
+ * Return the exact UTC DateTime when a BytePlus signed URL expires,
+ * or null if the URL has no expiry params.
+ */
+function byteplus_url_expires_at(string $url): ?\DateTime
+{
+    parse_str((string)parse_url($url, PHP_URL_QUERY), $p);
+    $dateStr = $p['X-Tos-Date'] ?? '';
+    $expires = (int)($p['X-Tos-Expires'] ?? 0);
+    if (!$dateStr || !$expires) return null;
+
+    $dt = \DateTime::createFromFormat('Ymd\THis\Z', $dateStr, new \DateTimeZone('UTC'));
+    if (!$dt) return null;
+
+    $dt->modify('+' . $expires . ' seconds');
+    return $dt;
+}
+
+/**
+ * Return a human-readable string for time remaining until expiry,
+ * e.g. "22h 14m" or "Expired".
+ */
+function byteplus_url_time_remaining(string $url): string
+{
+    $expiresAt = byteplus_url_expires_at($url);
+    if (!$expiresAt) return '';
+
+    $diff = $expiresAt->getTimestamp() - time();
+    if ($diff <= 0) return 'Expired';
+
+    $h = (int)floor($diff / 3600);
+    $m = (int)floor(($diff % 3600) / 60);
+
+    if ($h >= 24) return round($h / 24) . 'd remaining';
+    if ($h > 0)   return $h . 'h ' . $m . 'm remaining';
+    return $m . 'm remaining';
+}
+
+/**
  * If the stored CDN URL is expired, re-query BytePlus and update video_outputs.
  * Returns the fresh URL (or the original if still valid / refresh failed).
  */

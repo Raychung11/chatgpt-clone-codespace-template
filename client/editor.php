@@ -52,6 +52,12 @@ unset($v);
     <title>Video Editor — <?= e(setting('site_name','VideoSaaS')) ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/public/assets/css/main.css">
     <style>
+        /* Expiry badge */
+        .expiry-badge { display:inline-flex;align-items:center;gap:3px;font-size:.65rem;font-weight:600;padding:1px 5px;border-radius:8px;white-space:nowrap; }
+        .expiry-ok      { background:rgba(34,197,94,.12);  color:#22c55e; }
+        .expiry-warn    { background:rgba(234,179,8,.15);  color:#eab308; }
+        .expiry-danger  { background:rgba(239,68,68,.15);  color:#ef4444; }
+        .expiry-expired { background:rgba(239,68,68,.2);   color:#ef4444; }
         /* ── Layout ── */
         .editor-wrap {
             display: grid;
@@ -356,6 +362,10 @@ unset($v);
     <!-- ── Sidebar: video library ─────────────────────────────────────────── -->
     <div class="editor-sidebar">
         <div class="sidebar-header">📁 Your Videos</div>
+        <div style="padding:8px 12px;background:rgba(234,179,8,.08);border-bottom:1px solid rgba(234,179,8,.2);font-size:.72rem;color:#eab308;display:flex;align-items:center;gap:6px">
+            <span>⚠️</span>
+            <span>Videos expire in <strong>24h</strong> — <a href="<?= BASE_URL ?>/client/history.php" style="color:#eab308;text-decoration:underline">download from History</a></span>
+        </div>
 
         <!-- Paste any URL for testing -->
         <div style="padding:10px;border-bottom:1px solid var(--color-border)">
@@ -385,6 +395,7 @@ unset($v);
                          data-url="<?= e($v['cdn_url']) ?>"
                          data-label="<?= e(mb_strimwidth($v['prompt'], 0, 40, '…')) ?>"
                          data-thumb="<?= e($v['thumbnail'] ?? '') ?>"
+                         data-prompt="<?= e($v['prompt']) ?>"
                          onclick="addToSequence(this)">
                         <div class="vid-thumb-preview">
                             <video src="<?= e($v['cdn_url']) ?>#t=0.5"
@@ -393,6 +404,36 @@ unset($v);
                         </div>
                         <div class="vid-thumb-info" title="<?= e($v['prompt']) ?>">
                             <?= e(mb_strimwidth($v['prompt'], 0, 45, '…')) ?>
+                        </div>
+                        <?php $timeLeft = byteplus_url_time_remaining($v['cdn_url'] ?? ''); ?>
+                        <?php if ($timeLeft): ?>
+                            <?php
+                                $expiresAt = byteplus_url_expires_at($v['cdn_url']);
+                                $secsLeft  = $expiresAt ? ($expiresAt->getTimestamp() - time()) : PHP_INT_MAX;
+                                $exClass   = $secsLeft < 7200 ? 'expiry-danger' : ($secsLeft < 43200 ? 'expiry-warn' : 'expiry-ok');
+                            ?>
+                            <div style="font-size:.65rem;margin-top:3px;opacity:.8"
+                                 class="expiry-badge <?= $exClass ?>"
+                                 style="font-size:.65rem;padding:1px 5px">
+                                ⏱ <?= e($timeLeft) ?>
+                            </div>
+                        <?php endif; ?>
+                        <!-- Card actions: stop propagation so clicks don't add to sequence -->
+                        <div style="display:flex;gap:4px;margin-top:6px" onclick="event.stopPropagation()">
+                            <a href="<?= BASE_URL ?>/client/generate.php?prompt=<?= urlencode($v['prompt']) ?>"
+                               style="flex:1;text-align:center;font-size:.7rem;padding:3px 0;background:var(--color-surface2);
+                                      border:1px solid var(--color-border);border-radius:4px;color:var(--color-muted);
+                                      text-decoration:none;cursor:pointer"
+                               title="Generate a new video with this prompt">
+                                🔄
+                            </a>
+                            <button onclick="deleteSidebarJob(<?= (int)$v['id'] ?>, this)"
+                                    style="flex:1;font-size:.7rem;padding:3px 0;background:transparent;
+                                           border:1px solid var(--color-border);border-radius:4px;
+                                           color:var(--color-muted);cursor:pointer"
+                                    title="Delete this video">
+                                🗑
+                            </button>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -519,6 +560,44 @@ unset($v);
 </div><!-- /editor-wrap -->
 
 <script>
+const CSRF_TOKEN = <?= json_encode(csrf_token()) ?>;
+const BASE_URL   = <?= json_encode(BASE_URL) ?>;
+
+// ── Delete sidebar video ──────────────────────────────────────────────────────
+async function deleteSidebarJob(jobId, btn) {
+    if (!confirm('Delete this video? This cannot be undone.')) return;
+
+    btn.disabled = true;
+    btn.textContent = '…';
+
+    const fd = new FormData();
+    fd.append('<?= CSRF_TOKEN_NAME ?>', CSRF_TOKEN);
+    fd.append('job_id', jobId);
+
+    try {
+        const res  = await fetch(BASE_URL + '/client/delete_job.php', { method: 'POST', body: fd });
+        const data = await res.json();
+
+        if (data.ok) {
+            // Remove from sequence if it was added
+            for (let i = sequence.length - 1; i >= 0; i--) {
+                if (sequence[i].vidId == jobId) sequence.splice(i, 1);
+            }
+            renderSequenceList();
+            if (!sequence.length) hidePlayer();
+            // Remove sidebar card
+            const card = document.getElementById('card_' + jobId);
+            if (card) { card.style.opacity = '0'; card.style.transition = 'opacity .3s'; setTimeout(() => card.remove(), 300); }
+        } else {
+            btn.disabled = false; btn.textContent = '🗑';
+            alert(data.error || 'Delete failed.');
+        }
+    } catch(e) {
+        btn.disabled = false; btn.textContent = '🗑';
+        alert('Network error. Please try again.');
+    }
+}
+
 // ── State ─────────────────────────────────────────────────────────────────────
 const sequence     = [];  // [{id, url, label, captions:[{text,start,end,pos,size,color}]}]
 let   activeSegIdx = -1;
