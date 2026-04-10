@@ -455,182 +455,6 @@ unset($v);
             <div id="captionOverlay"></div>
         </div>
 
-    <!-- ── INLINE DEBUG PANEL v2 ────────────────────────────────────────────── -->
-    <div id="dbgPanel" style="
-        position:fixed;bottom:10px;right:10px;width:400px;max-height:70vh;overflow-y:auto;
-        background:#0d0d12;border:1px solid #ff6b35;border-radius:8px;
-        font-family:monospace;font-size:.72rem;color:#e2e8f0;
-        z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,.7)">
-        <div style="background:#ff6b35;color:#000;padding:6px 10px;font-weight:700;display:flex;align-items:center;justify-content:space-between;cursor:pointer"
-             onclick="document.getElementById('dbgBody').style.display = document.getElementById('dbgBody').style.display==='none'?'block':'none'">
-            🔧 Debug Panel v2 — BytePlus URL test
-            <span style="font-size:.7rem;opacity:.7">click to toggle</span>
-        </div>
-        <div id="dbgBody" style="padding:10px;display:block">
-
-            <!-- ① BytePlus URLs from sidebar -->
-            <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #333">
-                <div style="color:#ff6b35;font-weight:700;margin-bottom:6px">① Your BytePlus video URLs</div>
-                <?php if (empty($videos)): ?>
-                    <div style="color:#ef4444">No completed videos found in DB.</div>
-                <?php else: ?>
-                    <?php foreach ($videos as $v): ?>
-                        <div style="margin-bottom:6px;padding:6px;background:#1a1a2e;border-radius:4px">
-                            <div style="color:#94a3b8;margin-bottom:3px;word-break:break-all">
-                                #<?= (int)$v['id'] ?> — <?= e(mb_strimwidth($v['prompt'],0,40,'…')) ?>
-                            </div>
-                            <div style="color:#64b5f6;word-break:break-all;font-size:.65rem;margin-bottom:4px">
-                                <?= e($v['cdn_url'] ?? '(no URL)') ?>
-                            </div>
-                            <div style="display:flex;gap:4px;flex-wrap:wrap">
-                                <button onclick="dbgTestBytePlusUrl(<?= htmlspecialchars(json_encode($v['cdn_url']), ENT_QUOTES) ?>)"
-                                        style="background:#1a56db;border:none;color:#fff;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:.7rem">
-                                    ▶ Load into player
-                                </button>
-                                <button onclick="dbgFetchCheck(<?= htmlspecialchars(json_encode($v['cdn_url']), ENT_QUOTES) ?>)"
-                                        style="background:#065f46;border:none;color:#fff;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:.7rem">
-                                    🌐 HTTP check (fetch)
-                                </button>
-                                <button onclick="window.open(<?= htmlspecialchars(json_encode($v['cdn_url']), ENT_QUOTES) ?>,'_blank')"
-                                        style="background:#333;border:none;color:#ccc;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:.7rem">
-                                    Open URL
-                                </button>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-
-            <!-- ② Video state -->
-            <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #333">
-                <div style="color:#ff6b35;font-weight:700;margin-bottom:4px">② Player state</div>
-                <div id="dbgVideoState" style="line-height:1.8"></div>
-                <button onclick="dbgRefreshVideoState()" style="background:#333;border:none;color:#ccc;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:.7rem;margin-top:4px">Refresh</button>
-            </div>
-
-            <!-- ② Simulate card click -->
-            <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #333">
-                <div style="color:#ff6b35;font-weight:700;margin-bottom:4px">② Simulate sidebar card click</div>
-                <div style="color:#94a3b8;margin-bottom:5px;font-size:.68rem">
-                    Calls addToSequence() directly — bypasses DOM click. If video shows → onclick on card is broken. If not → JS error in addToSequence.
-                </div>
-                <button onclick="dbgSimulateCardClick()"
-                        style="background:#7c3aed;border:none;color:#fff;padding:3px 12px;border-radius:4px;cursor:pointer;font-size:.72rem">
-                    ▶ Run addToSequence(firstCard)
-                </button>
-            </div>
-
-            <!-- ③ Event + action log -->
-            <div>
-                <div style="color:#ff6b35;font-weight:700;margin-bottom:4px">③ Live log (video events + actions)</div>
-                <div id="dbgLog" style="line-height:1.7;max-height:200px;overflow-y:auto"></div>
-                <button onclick="document.getElementById('dbgLog').innerHTML=''" style="background:#333;border:none;color:#ccc;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:.7rem;margin-top:4px">Clear</button>
-            </div>
-
-        </div>
-    </div>
-    <script>
-    // ── Debug helpers ────────────────────────────────────────────────────────────
-    const _dbgLog = (msg, color='#a8e063') => {
-        const el = document.getElementById('dbgLog');
-        if (!el) return;
-        const ts = new Date().toTimeString().slice(0,8);
-        el.innerHTML += `<div style="color:${color}">[${ts}] ${msg}</div>`;
-        el.scrollTop = el.scrollHeight;
-    };
-
-    function dbgRefreshVideoState() {
-        const v = document.getElementById('mainVideo');
-        if (!v) { document.getElementById('dbgVideoState').textContent = 'no element'; return; }
-        const srcShort = v.src ? (v.src.length > 70 ? '…' + v.src.slice(-70) : v.src) : '(empty)';
-        const rsLabel  = ['HAVE_NOTHING','HAVE_METADATA','HAVE_CURRENT_DATA','HAVE_FUTURE_DATA','HAVE_ENOUGH_DATA'];
-        const nsLabel  = ['EMPTY','IDLE','LOADING','NO_SOURCE'];
-        const out = [
-            `display: ${getComputedStyle(v).display}   size: ${v.offsetWidth}×${v.offsetHeight}`,
-            `src: ${srcShort}`,
-            `readyState: ${v.readyState} (${rsLabel[v.readyState]||'?'})`,
-            `networkState: ${v.networkState} (${nsLabel[v.networkState]||'?'})`,
-            `error: ${v.error ? 'code='+v.error.code+' '+v.error.message : 'none'}`,
-            `duration: ${isNaN(v.duration) ? 'NaN' : v.duration.toFixed(2)+'s'}   videoSize: ${v.videoWidth}×${v.videoHeight}`,
-        ];
-        document.getElementById('dbgVideoState').innerHTML = out.map(s=>`<div>${s}</div>`).join('');
-    }
-
-    // Load BytePlus URL directly into player (bypasses addToSequence)
-    function dbgTestBytePlusUrl(url) {
-        _dbgLog(`▶ Direct load BytePlus URL: …${url.slice(-50)}`, '#64b5f6');
-        const v = document.getElementById('mainVideo');
-        document.getElementById('previewEmpty').style.display = 'none';
-        v.style.display = 'block';
-        v.src = url;
-        v.load();
-        setTimeout(dbgRefreshVideoState, 300);
-    }
-
-    // HTTP fetch check — shows status code and headers
-    async function dbgFetchCheck(url) {
-        _dbgLog(`🌐 fetch HEAD → …${url.slice(-40)}`, '#94a3b8');
-        try {
-            const r = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
-            _dbgLog(`fetch OK — type=${r.type} status=${r.status || '(opaque, likely 200)'}`, '#a8e063');
-        } catch(e) {
-            _dbgLog(`fetch FAILED: ${e.message}`, '#ef4444');
-        }
-        // Also try GET with range to see if server responds
-        try {
-            const r2 = await fetch(url, { method: 'GET', headers: { Range: 'bytes=0-1023' }, mode: 'cors' });
-            _dbgLog(`fetch GET cors: status=${r2.status} ok=${r2.ok}`, r2.ok ? '#a8e063' : '#ef4444');
-            // Log relevant response headers
-            ['content-type','content-length','accept-ranges','access-control-allow-origin'].forEach(h => {
-                const val = r2.headers.get(h);
-                if (val) _dbgLog(`  header ${h}: ${val}`, '#94a3b8');
-            });
-        } catch(e2) {
-            _dbgLog(`fetch GET cors FAILED: ${e2.message}`, '#f59e0b');
-        }
-    }
-
-    // Wire all video events to the log
-    (() => {
-        const v = document.getElementById('mainVideo');
-        if (!v) return;
-        const events = ['loadstart','progress','suspend','abort','error','emptied','stalled',
-                        'loadedmetadata','loadeddata','canplay','canplaythrough',
-                        'playing','waiting','seeking','seeked','ended','durationchange'];
-        events.forEach(name => {
-            v.addEventListener(name, () => {
-                const col = name === 'error' ? '#ef4444' : name.startsWith('can') ? '#a8e063' : '#e2e8f0';
-                _dbgLog(`video:${name}  rs=${v.readyState}  ns=${v.networkState}  ${v.videoWidth}×${v.videoHeight}  dur=${isNaN(v.duration)?'?':v.duration.toFixed(1)}s`, col);
-                dbgRefreshVideoState();
-            });
-        });
-        v.addEventListener('error', () => {
-            if (v.error) _dbgLog(`  → ERROR detail code=${v.error.code}: ${v.error.message}`, '#ef4444');
-        });
-    })();
-
-    // Simulate sidebar card click — directly call addToSequence() on first card
-    function dbgSimulateCardClick() {
-        const card = document.querySelector('.vid-thumb-card');
-        if (!card) {
-            _dbgLog('No sidebar cards found in DOM.', '#ef4444');
-            return;
-        }
-        _dbgLog(`Simulating click on card id=${card.dataset.id}  url=…${(card.dataset.url||'(empty)').slice(-55)}`, '#a78bfa');
-        try {
-            addToSequence(card);
-            _dbgLog('addToSequence() returned OK', '#a8e063');
-        } catch(err) {
-            _dbgLog(`addToSequence() THREW: ${err}`, '#ef4444');
-            console.error(err);
-        }
-    }
-
-    // Initial state
-    setTimeout(() => { dbgRefreshVideoState(); _dbgLog('Page loaded. Use ① Load buttons or ② Simulate card click.', '#94a3b8'); }, 600);
-    </script>
-    <!-- ── END DEBUG PANEL ───────────────────────────────────────────────────── -->
-
         <!-- Playback bar -->
         <div class="playback-bar">
             <button onclick="togglePlay()" id="playBtn">▶ Play</button>
@@ -785,7 +609,6 @@ const captionOverlay = document.getElementById('captionOverlay');
 
 // ── Sidebar: add video to sequence ───────────────────────────────────────────
 function addToSequence(card) {
-    typeof _dbgLog!=='undefined' && _dbgLog(`addToSequence called  id=${card.dataset.id}  url=…${(card.dataset.url||'').slice(-50)}`, '#facc15');
     const seg = {
         id:       card.dataset.id + '_' + Date.now(),
         vidId:    card.dataset.id,
@@ -888,7 +711,6 @@ function selectSegment(i) {
 
 function loadSegment(i) {
     currentSegIdx = i;
-    typeof _dbgLog!=='undefined' && _dbgLog(`loadSegment(${i})  url=…${(sequence[i].url||'').slice(-60)}`, '#facc15');
     mainVideo.src = sequence[i].url;
     mainVideo.load();
     // Show first frame once enough data is available
@@ -981,10 +803,8 @@ function removeCaption(i) {
 
 // ── Player show/hide ─────────────────────────────────────────────────────────
 function showPlayer() {
-    typeof _dbgLog!=='undefined' && _dbgLog('showPlayer() called', '#facc15');
     document.getElementById('previewEmpty').style.display = 'none';
     mainVideo.style.display = 'block';
-    typeof _dbgLog!=='undefined' && _dbgLog(`  mainVideo.display now=${getComputedStyle(mainVideo).display}  offset=${mainVideo.offsetWidth}×${mainVideo.offsetHeight}`, '#facc15');
 }
 function hidePlayer() {
     document.getElementById('previewEmpty').style.display = 'flex';
