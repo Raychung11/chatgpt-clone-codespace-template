@@ -125,15 +125,26 @@ function lang_label( array $row, string $prefix = 'label' ): string {
 /* ── Language Switcher URL Builder ──────────────────────────────── */
 
 /**
- * Build a URL to switch to the given language,
- * preserving all existing GET params except 'lang'.
+ * Build a fully absolute URL to switch to the given language,
+ * preserving all existing GET params except 'lang' and 'page'.
+ *
+ * Returns an absolute URL (https://host/path?lang=zh) to prevent
+ * browsers misinterpreting relative paths as domain names.
  */
 function lang_switch_url( string $lang ): string {
-    $params        = $_GET;
+    $params         = $_GET;
     $params['lang'] = $lang;
-    $qs            = http_build_query($params);
-    $base          = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
-    return htmlspecialchars($base . '?' . $qs, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    unset($params['page']); // reset pagination on lang change
+
+    $qs     = http_build_query($params);
+    // Strip query string from REQUEST_URI to get the path only
+    $path   = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
+    // Build absolute URL so the browser has no ambiguity
+    $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host   = $_SERVER['HTTP_HOST'] ?? '';
+    $abs    = $scheme . '://' . $host . $path . ($qs ? '?' . $qs : '');
+
+    return htmlspecialchars($abs, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
 
