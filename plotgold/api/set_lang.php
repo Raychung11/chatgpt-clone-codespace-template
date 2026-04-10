@@ -26,4 +26,11 @@ if (!in_array($lang, $supported, true)) {
 $_SESSION['lang'] = $lang;
 setcookie('pg_lang', $lang, time() + (86400 * 365), '/', '', false, false);
 
+// Redirect back to referrer if called directly, otherwise return JSON
+$ref = $_SERVER['HTTP_REFERER'] ?? '';
+if ($ref && !str_contains($ref, 'set_lang.php')) {
+    header('Location: ' . $ref);
+    exit;
+}
+
 echo json_encode(['success' => true, 'lang' => $lang]);

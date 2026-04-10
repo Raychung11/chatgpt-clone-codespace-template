@@ -69,10 +69,10 @@ $year = date('Y');
                 <div class="mt-3 d-flex align-items-center gap-2">
                     <span class="small text-muted">Language:</span>
                     <?php $cl = current_lang(); ?>
-                    <a href="<?= lang_switch_url('en') ?>" onclick="return pgSetLang('en')"
+                    <a href="<?= lang_switch_url('en') ?>"
                        class="lang-pill <?= $cl === 'en' ? 'lang-active' : '' ?>">EN</a>
                     <span class="lang-sep text-muted">|</span>
-                    <a href="<?= lang_switch_url('zh') ?>" onclick="return pgSetLang('zh')"
+                    <a href="<?= lang_switch_url('zh') ?>"
                        class="lang-pill <?= $cl === 'zh' ? 'lang-active' : '' ?>">中文</a>
                 </div>
             </div>

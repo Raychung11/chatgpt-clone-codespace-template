@@ -76,9 +76,9 @@ $_cur_lang    = current_lang();
                         <?php if ($_cur_lang === 'en'): ?>
                             <span class="lang-pill lang-active">EN</span>
                             <span class="lang-sep">|</span>
-                            <a href="<?= lang_switch_url('zh') ?>" class="lang-pill" data-lang="zh" onclick="return pgSetLang('zh')">中文</a>
+                            <a href="<?= lang_switch_url('zh') ?>" class="lang-pill">中文</a>
                         <?php else: ?>
-                            <a href="<?= lang_switch_url('en') ?>" class="lang-pill" data-lang="en" onclick="return pgSetLang('en')">EN</a>
+                            <a href="<?= lang_switch_url('en') ?>" class="lang-pill">EN</a>
                             <span class="lang-sep">|</span>
                             <span class="lang-pill lang-active">中文</span>
                         <?php endif; ?>
@@ -121,16 +121,3 @@ $_cur_lang    = current_lang();
     </div>
 </nav>
 
-<script>
-function pgSetLang(lang) {
-    var form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '<?= pg_url('api/set_lang.php') ?>';
-    var inp = document.createElement('input');
-    inp.type = 'hidden'; inp.name = 'lang'; inp.value = lang;
-    form.appendChild(inp);
-    document.body.appendChild(form);
-    form.submit();
-    return false;
-}
-</script>
