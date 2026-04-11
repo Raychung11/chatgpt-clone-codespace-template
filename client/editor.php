@@ -985,8 +985,59 @@ function startMerge() {
     document.getElementById('mergeLog').innerHTML = '';
     mlog(`startMerge() — ${sequence.length} clip(s) in sequence`, '#facc15');
 
+    setRecordingUI(true, null, 'Preparing videos…');
+
+    // ── Step 1: Convert cross-origin URLs to same-origin blob URLs ────────────
+    // captureStream() throws SecurityError on cross-origin video elements.
+    // We proxy BytePlus CDN videos through PHP so the browser sees same-origin.
+    async function toSameOriginUrl(seg) {
+        // Blob URLs (uploaded files) are already same-origin — use as-is
+        if (seg.url.startsWith('blob:')) {
+            mlog(`  clip "${seg.label}": blob URL — same-origin ✓`, '#a8e063');
+            return seg.url;
+        }
+        // Numeric vidId = generated video → proxy through server
+        const numId = parseInt(seg.vidId, 10);
+        if (!isNaN(numId) && String(numId) === String(seg.vidId).split('_')[0]) {
+            mlog(`  clip "${seg.label}": fetching via proxy (job #${numId})…`, '#94a3b8');
+            try {
+                const resp = await fetch(`<?= BASE_URL ?>/client/video_proxy.php?job_id=${numId}`);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const blob = await resp.blob();
+                mlog(`  proxy OK — ${(blob.size/1048576).toFixed(1)} MB`, '#a8e063');
+                return URL.createObjectURL(blob);
+            } catch(e) {
+                mlog(`  proxy FAILED: ${e.message}`, '#ef4444');
+                return seg.url; // fall back to original (captureStream may still fail)
+            }
+        }
+        // Pasted external URL — attempt direct fetch (works if server sends CORS headers)
+        mlog(`  clip "${seg.label}": external URL — trying direct fetch…`, '#94a3b8');
+        try {
+            const resp = await fetch(seg.url, { mode: 'cors' });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const blob = await resp.blob();
+            mlog(`  direct fetch OK — ${(blob.size/1048576).toFixed(1)} MB`, '#a8e063');
+            return URL.createObjectURL(blob);
+        } catch(e) {
+            mlog(`  direct fetch failed: ${e.message} — will attempt captureStream anyway`, '#f59e0b');
+            return seg.url;
+        }
+    }
+
+    // Resolve all URLs concurrently then start recording
+    Promise.all(sequence.map(seg => toSameOriginUrl(seg))).then(resolvedUrls => {
+        mlog('All URLs resolved — starting recorder', '#facc15');
+        _doMerge(resolvedUrls);
+    }).catch(err => {
+        mlog(`URL resolution error: ${err}`, '#ef4444');
+        setRecordingUI(false);
+    });
+}
+
+function _doMerge(resolvedUrls) {
     // Check captureStream support
-    mlog(`captureStream: ${'captureStream' in mainVideo}  mozCaptureStream: ${'mozCaptureStream' in mainVideo}`, '#94a3b8');
+    mlog(`captureStream: ${'captureStream' in mainVideo}`, '#94a3b8');
 
     let stream;
     try {
@@ -1001,11 +1052,11 @@ function startMerge() {
 
     if (!stream) {
         mlog('ERROR: no stream — cannot record', '#ef4444');
-        alert('Your browser does not support video capture.\nUse Chrome or Edge.');
+        setRecordingUI(false);
+        alert('Cannot capture video stream. Make sure videos are loaded in the player first.');
         return;
     }
 
-    // Pick best supported mimeType
     const mimeType = ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm']
         .find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
     mlog(`mimeType: ${mimeType}`, '#94a3b8');
@@ -1017,6 +1068,7 @@ function startMerge() {
         mlog(`MediaRecorder created  state=${mr.state}`, '#a8e063');
     } catch(e) {
         mlog(`MediaRecorder() threw: ${e}`, '#ef4444');
+        setRecordingUI(false);
         alert('MediaRecorder error: ' + e);
         return;
     }
@@ -1024,62 +1076,62 @@ function startMerge() {
     mr.ondataavailable = e => {
         if (e.data.size > 0) {
             chunks.push(e.data);
-            mlog(`chunk received: ${(e.data.size/1024).toFixed(1)} KB  total chunks: ${chunks.length}`, '#94a3b8');
+            mlog(`chunk: ${(e.data.size/1024).toFixed(1)} KB  total: ${chunks.length}`, '#94a3b8');
         }
     };
     mr.onerror = e => mlog(`MediaRecorder ERROR: ${e.error}`, '#ef4444');
     mr.onstop = () => {
-        const totalKB = chunks.reduce((s,c) => s + c.size, 0) / 1024;
-        mlog(`mr.onstop — ${chunks.length} chunks  total: ${totalKB.toFixed(1)} KB`, '#a8e063');
+        const totalMB = chunks.reduce((s,c) => s + c.size, 0) / 1048576;
+        mlog(`mr.onstop — ${chunks.length} chunks  ${totalMB.toFixed(2)} MB`, '#a8e063');
         if (chunks.length === 0) {
-            mlog('WARNING: no data recorded! File will be empty.', '#ef4444');
+            mlog('WARNING: no data — file will be empty!', '#ef4444');
         }
         const blob = new Blob(chunks, { type: mimeType });
         const a = Object.assign(document.createElement('a'), {
-            href:     URL.createObjectURL(blob),
+            href: URL.createObjectURL(blob),
             download: 'merged_' + Date.now() + '.webm',
         });
         document.body.appendChild(a); a.click(); a.remove();
         mlog('✅ Download triggered', '#a8e063');
         setRecordingUI(false);
         if (sequence.length) selectSegment(0);
+        // Release blob URLs we created
+        resolvedUrls.forEach(u => { if (u.startsWith('blob:')) URL.revokeObjectURL(u); });
     };
 
     _activeRecorder = mr;
-
     try {
         mr.start(200);
         mlog(`mr.start(200) OK  state=${mr.state}`, '#a8e063');
     } catch(e) {
         mlog(`mr.start() threw: ${e}`, '#ef4444');
+        setRecordingUI(false);
         alert('Cannot start recording: ' + e);
         return;
     }
 
     setRecordingUI(true);
 
-    // Play segments one-by-one with { once:true } listeners — no race condition
     let mergeIdx = 0;
-
     function playNextForMerge() {
-        if (mergeIdx >= sequence.length) {
-            mlog(`All ${sequence.length} clip(s) done → stopping recorder`, '#facc15');
+        if (mergeIdx >= resolvedUrls.length) {
+            mlog(`All ${resolvedUrls.length} clip(s) done → stopping recorder`, '#facc15');
             mr.stop();
             return;
         }
-
         const seg = sequence[mergeIdx];
-        mlog(`▶ Clip ${mergeIdx+1}/${sequence.length}: "${seg.label}"  url=…${seg.url.slice(-40)}`, '#64b5f6');
-        setRecordingUI(true, null, `Merging clip ${mergeIdx + 1} / ${sequence.length}…`);
+        const url = resolvedUrls[mergeIdx];
+        mlog(`▶ Clip ${mergeIdx+1}/${resolvedUrls.length}: "${seg.label}"`, '#64b5f6');
+        setRecordingUI(true, null, `Merging clip ${mergeIdx+1} / ${resolvedUrls.length}…`);
 
-        mainVideo.src = seg.url;
+        mainVideo.src = url;
         mainVideo.load();
 
         mainVideo.addEventListener('canplay', function onCan() {
-            mlog(`  canplay — readyState=${mainVideo.readyState}  dur=${mainVideo.duration?.toFixed(1)}s`, '#94a3b8');
+            mlog(`  canplay  dur=${mainVideo.duration?.toFixed(1)}s`, '#94a3b8');
             updateCaptionOverlay(seg, 0);
             mainVideo.play()
-                .then(() => mlog(`  play() started`, '#a8e063'))
+                .then(() => mlog('  playing ▶', '#a8e063'))
                 .catch(err => mlog(`  play() rejected: ${err}`, '#ef4444'));
         }, { once: true });
 
@@ -1088,7 +1140,7 @@ function startMerge() {
         }, { once: true });
 
         mainVideo.addEventListener('ended', function onEnd() {
-            mlog(`  ended — advancing to clip ${mergeIdx+2}`, '#94a3b8');
+            mlog(`  ended → next clip`, '#94a3b8');
             mergeIdx++;
             setTimeout(playNextForMerge, 150);
         }, { once: true });
@@ -1097,7 +1149,7 @@ function startMerge() {
     showPlayer();
     playNextForMerge();
     startCaptionLoop();
-    mlog('Merge started — waiting for clips to play…', '#facc15');
+    mlog('Recording started…', '#facc15');
 }
 
 function stopExport() {
