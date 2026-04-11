@@ -550,6 +550,12 @@ unset($v);
             </div>
         </div>
 
+        <!-- Merge debug log -->
+        <div id="mergeDebugWrap" style="background:#0d0d12;border-top:1px solid #ff6b35;padding:8px 14px;font-family:monospace;font-size:.72rem;display:none">
+            <div style="color:#ff6b35;font-weight:700;margin-bottom:4px">🔧 Merge Debug Log <button onclick="document.getElementById('mergeLog').innerHTML=''" style="background:#333;border:none;color:#ccc;padding:1px 8px;border-radius:3px;cursor:pointer;font-size:.7rem;margin-left:8px">Clear</button></div>
+            <div id="mergeLog" style="max-height:120px;overflow-y:auto;line-height:1.7"></div>
+        </div>
+
         <!-- Export bar -->
         <div class="export-bar">
             <span id="recDot"></span>
@@ -562,6 +568,9 @@ unset($v);
             </button>
             <button class="btn btn-ghost" onclick="stopExport()" id="stopBtn" style="display:none">
                 ⏹ Stop
+            </button>
+            <button class="btn btn-ghost" onclick="toggleMergeDebug()" id="dbgToggleBtn" style="font-size:.75rem;padding:5px 10px">
+                🔧 Debug
             </button>
             <div style="flex:1"></div>
             <div style="font-size:.75rem;color:var(--color-muted)">
@@ -952,84 +961,143 @@ function downloadSRT() {
     a.click();
 }
 
+// ── Merge debug log ───────────────────────────────────────────────────────────
+function mlog(msg, color) {
+    const el = document.getElementById('mergeLog');
+    if (!el) return;
+    const ts = new Date().toTimeString().slice(0,8);
+    el.innerHTML += `<div style="color:${color||'#e2e8f0'}">[${ts}] ${msg}</div>`;
+    el.scrollTop = el.scrollHeight;
+}
+function toggleMergeDebug() {
+    const w = document.getElementById('mergeDebugWrap');
+    w.style.display = w.style.display === 'none' ? 'block' : 'none';
+}
+
 // ── Merge & Download ──────────────────────────────────────────────────────────
-// Plays every segment in order while recording via captureStream().
-// Uses { once:true } event listeners so each segment transitions cleanly.
-// Separate mergeIdx from currentSegIdx so preview state isn't disturbed.
 let _activeRecorder = null;
 
 function startMerge() {
     if (!sequence.length) { alert('Add at least one video to the sequence first.'); return; }
 
-    // captureStream() supported in Chrome, Edge, Firefox (mozCaptureStream)
+    // Show debug panel automatically
+    document.getElementById('mergeDebugWrap').style.display = 'block';
+    document.getElementById('mergeLog').innerHTML = '';
+    mlog(`startMerge() — ${sequence.length} clip(s) in sequence`, '#facc15');
+
+    // Check captureStream support
+    mlog(`captureStream: ${'captureStream' in mainVideo}  mozCaptureStream: ${'mozCaptureStream' in mainVideo}`, '#94a3b8');
+
     let stream;
     try {
         stream = mainVideo.captureStream       ? mainVideo.captureStream(30)
                : mainVideo.mozCaptureStream    ? mainVideo.mozCaptureStream(30)
                : null;
-    } catch(e) { stream = null; }
+        mlog(`stream obtained: ${!!stream}  tracks: ${stream ? stream.getTracks().length : 0}`, stream ? '#a8e063' : '#ef4444');
+    } catch(e) {
+        mlog(`captureStream() threw: ${e}`, '#ef4444');
+        stream = null;
+    }
 
     if (!stream) {
-        alert('Your browser does not support video capture.\nUse Chrome or Edge, or download the SRT file to use with a desktop editor.');
+        mlog('ERROR: no stream — cannot record', '#ef4444');
+        alert('Your browser does not support video capture.\nUse Chrome or Edge.');
         return;
     }
 
+    // Pick best supported mimeType
     const mimeType = ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm']
         .find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+    mlog(`mimeType: ${mimeType}`, '#94a3b8');
 
     const chunks = [];
-    const mr = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
-    mr.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    let mr;
+    try {
+        mr = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
+        mlog(`MediaRecorder created  state=${mr.state}`, '#a8e063');
+    } catch(e) {
+        mlog(`MediaRecorder() threw: ${e}`, '#ef4444');
+        alert('MediaRecorder error: ' + e);
+        return;
+    }
+
+    mr.ondataavailable = e => {
+        if (e.data.size > 0) {
+            chunks.push(e.data);
+            mlog(`chunk received: ${(e.data.size/1024).toFixed(1)} KB  total chunks: ${chunks.length}`, '#94a3b8');
+        }
+    };
+    mr.onerror = e => mlog(`MediaRecorder ERROR: ${e.error}`, '#ef4444');
     mr.onstop = () => {
+        const totalKB = chunks.reduce((s,c) => s + c.size, 0) / 1024;
+        mlog(`mr.onstop — ${chunks.length} chunks  total: ${totalKB.toFixed(1)} KB`, '#a8e063');
+        if (chunks.length === 0) {
+            mlog('WARNING: no data recorded! File will be empty.', '#ef4444');
+        }
         const blob = new Blob(chunks, { type: mimeType });
         const a = Object.assign(document.createElement('a'), {
             href:     URL.createObjectURL(blob),
             download: 'merged_' + Date.now() + '.webm',
         });
         document.body.appendChild(a); a.click(); a.remove();
+        mlog('✅ Download triggered', '#a8e063');
         setRecordingUI(false);
-        // Restore preview to segment 0
         if (sequence.length) selectSegment(0);
     };
 
     _activeRecorder = mr;
-    mr.start(200);
+
+    try {
+        mr.start(200);
+        mlog(`mr.start(200) OK  state=${mr.state}`, '#a8e063');
+    } catch(e) {
+        mlog(`mr.start() threw: ${e}`, '#ef4444');
+        alert('Cannot start recording: ' + e);
+        return;
+    }
+
     setRecordingUI(true);
 
-    // Play segments one by one using { once:true } listeners — no race conditions
+    // Play segments one-by-one with { once:true } listeners — no race condition
     let mergeIdx = 0;
 
     function playNextForMerge() {
         if (mergeIdx >= sequence.length) {
-            // All segments done → stop recorder
+            mlog(`All ${sequence.length} clip(s) done → stopping recorder`, '#facc15');
             mr.stop();
             return;
         }
 
         const seg = sequence[mergeIdx];
+        mlog(`▶ Clip ${mergeIdx+1}/${sequence.length}: "${seg.label}"  url=…${seg.url.slice(-40)}`, '#64b5f6');
         setRecordingUI(true, null, `Merging clip ${mergeIdx + 1} / ${sequence.length}…`);
 
         mainVideo.src = seg.url;
         mainVideo.load();
 
         mainVideo.addEventListener('canplay', function onCan() {
-            mainVideo.removeEventListener('canplay', onCan);
+            mlog(`  canplay — readyState=${mainVideo.readyState}  dur=${mainVideo.duration?.toFixed(1)}s`, '#94a3b8');
             updateCaptionOverlay(seg, 0);
-            mainVideo.play().catch(() => {});
+            mainVideo.play()
+                .then(() => mlog(`  play() started`, '#a8e063'))
+                .catch(err => mlog(`  play() rejected: ${err}`, '#ef4444'));
+        }, { once: true });
+
+        mainVideo.addEventListener('error', function onErr() {
+            mlog(`  video ERROR code=${mainVideo.error?.code}: ${mainVideo.error?.message}`, '#ef4444');
         }, { once: true });
 
         mainVideo.addEventListener('ended', function onEnd() {
-            mainVideo.removeEventListener('ended', onEnd);
+            mlog(`  ended — advancing to clip ${mergeIdx+2}`, '#94a3b8');
             mergeIdx++;
-            // 150 ms gap avoids blank frames between clips
             setTimeout(playNextForMerge, 150);
         }, { once: true });
     }
 
-    // Show player and start
     showPlayer();
     playNextForMerge();
     startCaptionLoop();
+    mlog('Merge started — waiting for clips to play…', '#facc15');
 }
 
 function stopExport() {
