@@ -17,7 +17,7 @@ $listings = Database::fetchAll(
     [$buyer['id']]
 );
 
-$page_title = 'Saved Listings';
+$page_title = __('buyer.saved_title');
 include INC_PATH . '/header.php';
 ?>
 <div class="d-flex">
@@ -25,8 +25,8 @@ include INC_PATH . '/header.php';
 <div class="portal-content">
     <?= render_flash() ?>
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-700 text-navy mb-0"><i class="fas fa-heart me-2 text-danger"></i>Saved Listings</h4>
-        <a href="<?= pg_url('browse_listings.php') ?>" class="btn btn-outline-gold btn-sm">Browse More</a>
+        <h4 class="fw-700 text-navy mb-0"><i class="fas fa-heart me-2 text-danger"></i><?= _e('buyer.saved_title') ?></h4>
+        <a href="<?= pg_url('browse_listings.php') ?>" class="btn btn-outline-gold btn-sm"><?= _e('buyer.browse_more') ?></a>
     </div>
 
     <?php if ($listings): ?>
@@ -40,9 +40,9 @@ include INC_PATH . '/header.php';
     <?php else: ?>
     <div class="text-center py-5">
         <i class="far fa-heart fa-4x text-muted mb-4"></i>
-        <h5 class="text-muted">No saved listings yet</h5>
-        <p class="text-muted small">Browse listings and click the heart icon to save them here for easy access.</p>
-        <a href="<?= pg_url('browse_listings.php') ?>" class="btn btn-gold mt-2">Browse Listings</a>
+        <h5 class="text-muted"><?= _e('buyer.no_saved_title') ?></h5>
+        <p class="text-muted small"><?= _e('buyer.no_saved_desc') ?></p>
+        <a href="<?= pg_url('browse_listings.php') ?>" class="btn btn-gold mt-2"><?= _e('buyer.browse_cta') ?></a>
     </div>
     <?php endif; ?>
 </div>

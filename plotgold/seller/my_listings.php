@@ -19,7 +19,7 @@ $pages = (int)ceil($total / $pp);
 $offset= ($page - 1) * $pp;
 $listings = Database::fetchAll("$sql ORDER BY l.updated_at DESC LIMIT $pp OFFSET $offset", $params);
 
-$page_title = 'My Listings';
+$page_title = __('seller.my_listings');
 include INC_PATH . '/header.php';
 ?>
 <div class="d-flex">
@@ -27,22 +27,22 @@ include INC_PATH . '/header.php';
 <div class="portal-content">
     <?= render_flash() ?>
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-700 text-navy mb-0">My Listings</h4>
-        <a href="<?= pg_url('seller/new_listing.php') ?>" class="btn btn-gold btn-sm"><i class="fas fa-plus me-1"></i>New Listing</a>
+        <h4 class="fw-700 text-navy mb-0"><?= _e('seller.my_listings') ?></h4>
+        <a href="<?= pg_url('seller/new_listing.php') ?>" class="btn btn-gold btn-sm"><i class="fas fa-plus me-1"></i><?= _e('seller.new_listing') ?></a>
     </div>
 
     <!-- Status filter tabs -->
     <div class="d-flex flex-wrap gap-2 mb-3">
-        <a href="<?= pg_url('seller/my_listings.php') ?>" class="btn btn-sm <?= !$statusFilter ? 'btn-navy' : 'btn-outline-secondary' ?>">All (<?= $total ?>)</a>
+        <a href="<?= pg_url('seller/my_listings.php') ?>" class="btn btn-sm <?= !$statusFilter ? 'btn-navy' : 'btn-outline-secondary' ?>"><?= _e('misc.all') ?> (<?= $total ?>)</a>
         <?php foreach (['active','pending_review','draft','sold'] as $s): ?>
-            <a href="?status=<?= $s ?>" class="btn btn-sm <?= $statusFilter === $s ? 'btn-navy' : 'btn-outline-secondary' ?>"><?= ucwords(str_replace('_',' ',$s)) ?></a>
+            <a href="?status=<?= $s ?>" class="btn btn-sm <?= $statusFilter === $s ? 'btn-navy' : 'btn-outline-secondary' ?>"><?= _e('status.' . $s) ?></a>
         <?php endforeach; ?>
     </div>
 
     <div class="pg-card">
         <div class="table-responsive">
             <table class="table admin-table mb-0">
-                <thead><tr><th>Listing</th><th>Status</th><th>Verification</th><th>Price</th><th>Views</th><th>Enquiries</th><th></th></tr></thead>
+                <thead><tr><th><?= _e('seller.listing_col') ?></th><th><?= _e('seller.status_col') ?></th><th><?= _e('seller.verification_col') ?></th><th><?= _e('seller.price_col') ?></th><th><?= _e('seller.views_col') ?></th><th><?= _e('seller.enquiries_col') ?></th><th></th></tr></thead>
                 <tbody>
                 <?php foreach ($listings as $l): ?>
                 <tr>
@@ -69,7 +69,7 @@ include INC_PATH . '/header.php';
                 </tr>
                 <?php endforeach; ?>
                 <?php if (!$listings): ?>
-                    <tr><td colspan="7" class="text-center text-muted py-4">No listings found. <a href="<?= pg_url('seller/new_listing.php') ?>">Create your first</a>.</td></tr>
+                    <tr><td colspan="7" class="text-center text-muted py-4"><?= _e('seller.no_listings_found') ?> <a href="<?= pg_url('seller/new_listing.php') ?>"><?= _e('seller.create_first') ?></a>.</td></tr>
                 <?php endif; ?>
                 </tbody>
             </table>

@@ -33,7 +33,7 @@ $recentEnquiries = Database::fetchAll(
     [$seller['id']]
 );
 
-$page_title = 'Seller Dashboard';
+$page_title = __('seller.dashboard');
 include INC_PATH . '/header.php';
 ?>
 <div class="d-flex">
@@ -44,11 +44,11 @@ include INC_PATH . '/header.php';
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="fw-700 text-navy mb-0">Welcome back, <?= h(auth_user_name()) ?></h4>
-            <p class="text-muted small mb-0">Manage your listings and enquiries</p>
+            <h4 class="fw-700 text-navy mb-0"><?= _e('seller.welcome_back', ['name' => auth_user_name()]) ?></h4>
+            <p class="text-muted small mb-0"><?= _e('seller.manage_desc') ?></p>
         </div>
         <a href="<?= pg_url('seller/new_listing.php') ?>" class="btn btn-gold">
-            <i class="fas fa-plus me-2"></i>New Listing
+            <i class="fas fa-plus me-2"></i><?= _e('seller.new_listing') ?>
         </a>
     </div>
 
@@ -56,10 +56,10 @@ include INC_PATH . '/header.php';
     <div class="row g-3 mb-4">
         <?php
         $statCards = [
-            ['icon' => 'fa-list',         'label' => 'Total Listings',   'value' => $stats['total'],    'color' => '#4299E1'],
-            ['icon' => 'fa-check-circle', 'label' => 'Active',           'value' => $stats['active'],   'color' => 'var(--pg-verified)'],
-            ['icon' => 'fa-clock',        'label' => 'Pending Review',   'value' => $stats['pending'],  'color' => 'var(--pg-warning)'],
-            ['icon' => 'fa-envelope',     'label' => 'New Enquiries',    'value' => $stats['enquiries'],'color' => 'var(--pg-danger)'],
+            ['icon' => 'fa-list',         'label' => __('seller.total_listings'), 'value' => $stats['total'],    'color' => '#4299E1'],
+            ['icon' => 'fa-check-circle', 'label' => __('seller.stats_active'),   'value' => $stats['active'],   'color' => 'var(--pg-verified)'],
+            ['icon' => 'fa-clock',        'label' => __('seller.stats_pending'),  'value' => $stats['pending'],  'color' => 'var(--pg-warning)'],
+            ['icon' => 'fa-envelope',     'label' => __('seller.new_enquiries'),  'value' => $stats['enquiries'],'color' => 'var(--pg-danger)'],
         ];
         foreach ($statCards as $c): ?>
         <div class="col-sm-6 col-lg-3">
@@ -83,9 +83,8 @@ include INC_PATH . '/header.php';
     <div class="alert alert-warning d-flex align-items-center gap-3 mb-4">
         <i class="fas fa-exclamation-triangle fs-4"></i>
         <div>
-            <strong>Seller account not fully verified.</strong>
-            Your listings will display a "Pending" badge until your seller identity is verified.
-            <a href="<?= pg_url('seller/profile.php') ?>" class="fw-500 ms-1">Complete verification →</a>
+            <strong><?= _e('seller.not_verified_alert') ?></strong>
+            <a href="<?= pg_url('seller/profile.php') ?>" class="fw-500 ms-1"><?= _e('seller.complete_verify') ?> →</a>
         </div>
     </div>
     <?php endif; ?>
@@ -95,12 +94,12 @@ include INC_PATH . '/header.php';
         <div class="col-lg-8">
             <div class="pg-card">
                 <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h6 class="fw-600 mb-0">My Listings</h6>
-                    <a href="<?= pg_url('seller/my_listings.php') ?>" class="btn btn-sm btn-outline-secondary">View All</a>
+                    <h6 class="fw-600 mb-0"><?= _e('seller.my_listings') ?></h6>
+                    <a href="<?= pg_url('seller/my_listings.php') ?>" class="btn btn-sm btn-outline-secondary"><?= _e('btn.view_all') ?></a>
                 </div>
                 <div class="table-responsive">
                     <table class="table admin-table mb-0">
-                        <thead><tr><th>Listing</th><th>Status</th><th>Price</th><th>Views</th><th></th></tr></thead>
+                        <thead><tr><th><?= _e('seller.listing_col') ?></th><th><?= _e('seller.status_col') ?></th><th><?= _e('seller.price_col') ?></th><th><?= _e('seller.views_col') ?></th><th></th></tr></thead>
                         <tbody>
                         <?php foreach ($recentListings as $l): ?>
                         <tr>
@@ -122,7 +121,7 @@ include INC_PATH . '/header.php';
                         </tr>
                         <?php endforeach; ?>
                         <?php if (!$recentListings): ?>
-                        <tr><td colspan="5" class="text-center text-muted py-4">No listings yet. <a href="<?= pg_url('seller/new_listing.php') ?>">Create your first listing</a>.</td></tr>
+                        <tr><td colspan="5" class="text-center text-muted py-4"><?= _e('seller.no_listings_msg') ?> <a href="<?= pg_url('seller/new_listing.php') ?>"><?= _e('seller.create_first') ?></a>.</td></tr>
                         <?php endif; ?>
                         </tbody>
                     </table>
@@ -134,8 +133,8 @@ include INC_PATH . '/header.php';
         <div class="col-lg-4">
             <div class="pg-card h-100">
                 <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h6 class="fw-600 mb-0">Recent Enquiries</h6>
-                    <a href="<?= pg_url('seller/enquiries.php') ?>" class="btn btn-sm btn-outline-secondary">View All</a>
+                    <h6 class="fw-600 mb-0"><?= _e('seller.recent_enquiries') ?></h6>
+                    <a href="<?= pg_url('seller/enquiries.php') ?>" class="btn btn-sm btn-outline-secondary"><?= _e('btn.view_all') ?></a>
                 </div>
                 <div class="p-3">
                     <?php foreach ($recentEnquiries as $e): ?>
@@ -152,7 +151,7 @@ include INC_PATH . '/header.php';
                     </div>
                     <?php endforeach; ?>
                     <?php if (!$recentEnquiries): ?>
-                        <p class="text-muted small text-center py-3">No enquiries yet.</p>
+                        <p class="text-muted small text-center py-3"><?= _e('seller.no_enquiries') ?></p>
                     <?php endif; ?>
                 </div>
             </div>

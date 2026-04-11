@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$page_title       = $emergency ? 'Urgent Funeral Help — Get a Quote' : 'Request a Funeral Quote';
+$page_title       = $emergency ? __('quote.urgent_title') : __('quote.title');
 $meta_description = 'Request an itemised funeral service quote from verified providers across Malaysia.';
 include INC_PATH . '/header.php';
 include INC_PATH . '/nav.php';
@@ -90,8 +90,8 @@ include INC_PATH . '/nav.php';
 <?php if ($emergency): ?>
 <div class="emergency-banner">
     <div class="container">
-        <h4><i class="fas fa-hands-helping me-2"></i>We understand — we're here to help immediately.</h4>
-        <p class="mb-0 small opacity-75">Fill this form or <a href="<?= whatsapp_link('I need urgent funeral assistance.') ?>" class="text-white fw-600" target="_blank" rel="noopener">WhatsApp us now</a> for fastest response.</p>
+        <h4><i class="fas fa-hands-helping me-2"></i><?= _e('quote.urgent_banner') ?></h4>
+        <p class="mb-0 small opacity-75"><?= is_lang('zh') ? '填写此表格或' : 'Fill this form or' ?> <a href="<?= whatsapp_link('I need urgent funeral assistance.') ?>" class="text-white fw-600" target="_blank" rel="noopener">WhatsApp</a> <?= is_lang('zh') ? '以获得最快回应。' : 'for fastest response.' ?></p>
     </div>
 </div>
 <?php endif; ?>
@@ -99,9 +99,9 @@ include INC_PATH . '/nav.php';
 <nav class="bg-white border-bottom">
     <div class="container py-2">
         <ol class="breadcrumb pg-breadcrumb mb-0">
-            <li class="breadcrumb-item"><a href="<?= pg_url() ?>">Home</a></li>
-            <li class="breadcrumb-item"><a href="<?= pg_url('diy_funeral_planner.php') ?>">Funeral Planner</a></li>
-            <li class="breadcrumb-item active">Request Quote</li>
+            <li class="breadcrumb-item"><a href="<?= pg_url() ?>"><?= _e('nav.home') ?></a></li>
+            <li class="breadcrumb-item"><a href="<?= pg_url('diy_funeral_planner.php') ?>"><?= _e('nav.planner') ?></a></li>
+            <li class="breadcrumb-item active"><?= _e('quote.title') ?></li>
         </ol>
     </div>
 </nav>
@@ -111,15 +111,15 @@ include INC_PATH . '/nav.php';
     <div class="row justify-content-center">
         <div class="col-md-6 text-center py-5">
             <i class="fas fa-check-circle text-success fa-4x mb-4"></i>
-            <h3 class="fw-700 text-navy">Quote Request Received!</h3>
-            <p class="text-muted">Your quote reference is <strong class="text-navy"><?= h($quoteCodeOut ?? '') ?></strong>.</p>
-            <p class="text-muted small">Our team will review your request and connect you with suitable providers within 1–2 business days. You'll be contacted via WhatsApp and email.</p>
+            <h3 class="fw-700 text-navy"><?= _e('quote.success_title') ?></h3>
+            <p class="text-muted"><?= is_lang('zh') ? '您的报价参考编号为' : 'Your quote reference is' ?> <strong class="text-navy"><?= h($quoteCodeOut ?? '') ?></strong>.</p>
+            <p class="text-muted small"><?= _e('quote.success_body') ?></p>
             <?php if ($emergency): ?>
                 <div class="alert alert-warning mt-3">
-                    <i class="fas fa-clock me-2"></i>For urgent cases, please also <a href="<?= whatsapp_link('I submitted an urgent quote request. Reference: ' . ($quoteCodeOut ?? '')) ?>" class="fw-600" target="_blank" rel="noopener">WhatsApp us</a> so we can respond immediately.
+                    <i class="fas fa-clock me-2"></i><?= is_lang('zh') ? '如属紧急情况，请同时' : 'For urgent cases, please also' ?> <a href="<?= whatsapp_link('I submitted an urgent quote request. Reference: ' . ($quoteCodeOut ?? '')) ?>" class="fw-600" target="_blank" rel="noopener">WhatsApp</a> <?= is_lang('zh') ? '我们，以便即时回应。' : 'us so we can respond immediately.' ?>
                 </div>
             <?php endif; ?>
-            <a href="<?= pg_url() ?>" class="btn btn-outline-gold mt-3">Back to Home</a>
+            <a href="<?= pg_url() ?>" class="btn btn-outline-gold mt-3"><?= _e('quote.back_home') ?></a>
         </div>
     </div>
     <?php else: ?>
@@ -127,8 +127,8 @@ include INC_PATH . '/nav.php';
     <div class="row g-4">
         <div class="col-lg-8">
             <div class="pg-card p-4">
-                <h4 class="fw-600 mb-1"><?= $emergency ? '<i class="fas fa-hands-helping text-danger me-2"></i>Urgent Quote Request' : 'Request a Funeral Quote' ?></h4>
-                <p class="text-muted small mb-4">Complete this form and we'll connect you with verified providers who can meet your needs<?= $emergency ? ' urgently' : '' ?>.</p>
+                <h4 class="fw-600 mb-1"><?= $emergency ? '<i class="fas fa-hands-helping text-danger me-2"></i>' . _e('quote.urgent_title') : _e('quote.title') ?></h4>
+                <p class="text-muted small mb-4"><?= $emergency ? (is_lang('zh') ? '填写此表格，我们将紧急为您匹配合适的服务商。' : 'Complete this form and we\'ll connect you with verified providers urgently.') : _e('quote.subtitle') ?></p>
 
                 <?php if ($error): ?><div class="alert alert-danger"><?= h($error) ?></div><?php endif; ?>
 
@@ -137,22 +137,22 @@ include INC_PATH . '/nav.php';
                     <?php if ($emergency): ?><input type="hidden" name="mode" value="urgent"><?php endif; ?>
                     <?php if ($providerId): ?><input type="hidden" name="provider_id" value="<?= $providerId ?>"><?php endif; ?>
 
-                    <h6 class="fw-600 mb-3 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.08em">Your Contact Details</h6>
+                    <h6 class="fw-600 mb-3 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.08em"><?= _e('quote.section_contact') ?></h6>
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                            <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                            <label class="form-label"><?= _e('quote.contact_name') ?> <span class="text-danger">*</span></label>
                             <input type="text" name="contact_name" class="form-control" required value="<?= auth_check() ? h(auth_user_name()) : '' ?>">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Phone / WhatsApp <span class="text-danger">*</span></label>
+                            <label class="form-label"><?= _e('quote.contact_phone') ?> <span class="text-danger">*</span></label>
                             <input type="tel" name="contact_phone" class="form-control" required placeholder="+60 12-345 6789">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Email Address</label>
+                            <label class="form-label"><?= _e('quote.contact_email') ?></label>
                             <input type="email" name="contact_email" class="form-control" value="<?= auth_check() ? h(auth_user_email()) : '' ?>">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Religion / Tradition</label>
+                            <label class="form-label"><?= _e('quote.religion') ?></label>
                             <select name="religion" class="form-select">
                                 <option value="">— Select if applicable —</option>
                                 <?php foreach (Database::fetchAll('SELECT slug, label_en FROM religion_categories WHERE is_active = 1 ORDER BY sort_order') as $r): ?>
@@ -162,25 +162,25 @@ include INC_PATH . '/nav.php';
                         </div>
                     </div>
 
-                    <h6 class="fw-600 mb-3 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.08em">Service Details</h6>
+                    <h6 class="fw-600 mb-3 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.08em"><?= _e('quote.section_services') ?></h6>
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                            <label class="form-label">Preferred Date <?= $emergency ? '<span class="text-danger">*</span>' : '' ?></label>
+                            <label class="form-label"><?= _e('quote.pref_date') ?> <?= $emergency ? '<span class="text-danger">*</span>' : '' ?></label>
                             <input type="date" name="event_date" class="form-control" min="<?= date('Y-m-d') ?>" <?= $emergency ? 'required' : '' ?>>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Location / Area</label>
+                            <label class="form-label"><?= _e('quote.location') ?></label>
                             <input type="text" name="event_location" class="form-control" placeholder="e.g. Cheras, Kuala Lumpur">
                         </div>
                     </div>
 
                     <?php if ($provider): ?>
                     <div class="alert alert-info mb-4">
-                        <i class="fas fa-briefcase me-2"></i>Quoting specifically from <strong><?= h($provider['business_name']) ?></strong>
+                        <i class="fas fa-briefcase me-2"></i><?= _e('quote.quoting_from') ?> <strong><?= h($provider['business_name']) ?></strong>
                     </div>
                     <?php endif; ?>
 
-                    <h6 class="fw-600 mb-3 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.08em">Services Required</h6>
+                    <h6 class="fw-600 mb-3 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.08em"><?= _e('quote.section_items') ?></h6>
                     <div class="row g-3 mb-4">
                         <?php foreach ($serviceCategories as $cat):
                             $svcs = Database::fetchAll('SELECT id, name, base_price, is_recommended FROM funeral_services WHERE category_id = ? AND is_active = 1 ORDER BY sort_order LIMIT 3', [$cat['id']]);
@@ -207,13 +207,13 @@ include INC_PATH . '/nav.php';
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label">Additional Notes</label>
-                        <textarea name="notes" class="form-control" rows="4" placeholder="Any special requirements, budget range, or additional context…"></textarea>
+                        <label class="form-label"><?= _e('quote.notes') ?></label>
+                        <textarea name="notes" class="form-control" rows="4" placeholder="<?= _e('quote.notes') ?>…"></textarea>
                     </div>
 
                     <button type="submit" class="btn <?= $emergency ? 'btn-danger' : 'btn-gold' ?> w-100 py-3">
                         <i class="fas fa-paper-plane me-2"></i>
-                        <?= $emergency ? 'Submit Urgent Request' : 'Submit Quote Request' ?>
+                        <?= $emergency ? _e('quote.submit_urgent') : _e('quote.submit') ?>
                     </button>
                 </form>
             </div>
@@ -221,27 +221,27 @@ include INC_PATH . '/nav.php';
 
         <div class="col-lg-4">
             <div class="pg-card p-4 mb-3">
-                <h6 class="fw-600 mb-3">What Happens Next?</h6>
+                <h6 class="fw-600 mb-3"><?= _e('quote.next_title') ?></h6>
                 <div class="d-flex gap-3 mb-3">
                     <div class="step-circle" style="width:32px;height:32px;font-size:.85rem;flex-shrink:0">1</div>
-                    <div><p class="small text-muted mb-0">We review your request and match with suitable providers in your area.</p></div>
+                    <div><p class="small text-muted mb-0"><?= _e('quote.next_1') ?></p></div>
                 </div>
                 <div class="d-flex gap-3 mb-3">
                     <div class="step-circle" style="width:32px;height:32px;font-size:.85rem;flex-shrink:0">2</div>
-                    <div><p class="small text-muted mb-0">Providers send you itemised quotes within 1–2 business days (faster for urgent cases).</p></div>
+                    <div><p class="small text-muted mb-0"><?= _e('quote.next_2') ?></p></div>
                 </div>
                 <div class="d-flex gap-3">
                     <div class="step-circle" style="width:32px;height:32px;font-size:.85rem;flex-shrink:0">3</div>
-                    <div><p class="small text-muted mb-0">You choose and confirm. Our team supports the entire process.</p></div>
+                    <div><p class="small text-muted mb-0"><?= _e('quote.next_3') ?></p></div>
                 </div>
             </div>
 
             <?php if ($emergency): ?>
             <div class="pg-card p-4" style="border-left:4px solid var(--pg-danger)">
-                <h6 class="fw-600 text-danger mb-2"><i class="fas fa-phone me-2"></i>Need Immediate Help?</h6>
-                <p class="small text-muted mb-3">For urgent bereavement cases, please reach us directly via WhatsApp for fastest response.</p>
+                <h6 class="fw-600 text-danger mb-2"><i class="fas fa-phone me-2"></i><?= _e('quote.urgent_help_title') ?></h6>
+                <p class="small text-muted mb-3"><?= _e('quote.urgent_help_body') ?></p>
                 <a href="<?= whatsapp_link('I need urgent funeral assistance.') ?>" target="_blank" rel="noopener" class="btn btn-whatsapp w-100">
-                    <i class="fab fa-whatsapp me-2"></i>WhatsApp Now
+                    <i class="fab fa-whatsapp me-2"></i><?= _e('btn.whatsapp') ?>
                 </a>
             </div>
             <?php endif; ?>

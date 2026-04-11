@@ -33,7 +33,7 @@ $recentQuotes = Database::fetchAll(
     [$buyer['id']]
 );
 
-$page_title = 'Buyer Dashboard';
+$page_title = __('buyer.dashboard');
 include INC_PATH . '/header.php';
 ?>
 <div class="d-flex">
@@ -43,11 +43,11 @@ include INC_PATH . '/header.php';
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="fw-700 text-navy mb-0">Hi, <?= h(auth_user_name()) ?></h4>
-            <p class="text-muted small mb-0">Your burial plot journey, all in one place.</p>
+            <h4 class="fw-700 text-navy mb-0"><?= _e('buyer.hi_name', ['name' => auth_user_name()]) ?></h4>
+            <p class="text-muted small mb-0"><?= _e('buyer.journey_subtitle') ?></p>
         </div>
         <a href="<?= pg_url('browse_listings.php') ?>" class="btn btn-gold btn-sm">
-            <i class="fas fa-search me-1"></i>Browse Listings
+            <i class="fas fa-search me-1"></i><?= _e('buyer.browse_cta') ?>
         </a>
     </div>
 
@@ -55,10 +55,10 @@ include INC_PATH . '/header.php';
     <div class="row g-3 mb-4">
         <?php
         $cards = [
-            ['icon' => 'fa-heart',         'label' => 'Saved Listings',  'value' => $savedCount,   'color' => '#E53E3E', 'link' => 'buyer/saved.php'],
-            ['icon' => 'fa-envelope',      'label' => 'Enquiries Sent',  'value' => $enquiryCount, 'color' => '#3182CE', 'link' => 'buyer/enquiries.php'],
-            ['icon' => 'fa-file-invoice',  'label' => 'Quote Requests',  'value' => $quoteCount,   'color' => '#D69E2E', 'link' => 'buyer/quotes.php'],
-            ['icon' => 'fa-clipboard-list','label' => 'Funeral Plans',   'value' => 0,             'color' => '#38A169', 'link' => 'buyer/planner.php'],
+            ['icon' => 'fa-heart',         'label' => __('buyer.saved_listings_label'), 'value' => $savedCount,   'color' => '#E53E3E', 'link' => 'buyer/saved.php'],
+            ['icon' => 'fa-envelope',      'label' => __('buyer.enquiries_sent'),        'value' => $enquiryCount, 'color' => '#3182CE', 'link' => 'buyer/enquiries.php'],
+            ['icon' => 'fa-file-invoice',  'label' => __('buyer.quote_requests'),        'value' => $quoteCount,   'color' => '#D69E2E', 'link' => 'buyer/quotes.php'],
+            ['icon' => 'fa-clipboard-list','label' => __('buyer.funeral_plans'),         'value' => 0,             'color' => '#38A169', 'link' => 'buyer/planner.php'],
         ];
         foreach ($cards as $c):
         ?>
@@ -85,8 +85,8 @@ include INC_PATH . '/header.php';
         <div class="col-lg-7">
             <div class="pg-card mb-4">
                 <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h6 class="fw-600 mb-0"><i class="fas fa-heart me-2 text-danger"></i>Saved Listings</h6>
-                    <a href="<?= pg_url('buyer/saved.php') ?>" class="btn btn-sm btn-outline-secondary">View All</a>
+                    <h6 class="fw-600 mb-0"><i class="fas fa-heart me-2 text-danger"></i><?= _e('buyer.saved_title') ?></h6>
+                    <a href="<?= pg_url('buyer/saved.php') ?>" class="btn btn-sm btn-outline-secondary"><?= _e('btn.view_all') ?></a>
                 </div>
                 <?php if ($savedListings): ?>
                 <div class="row g-2 p-3">
@@ -99,7 +99,7 @@ include INC_PATH . '/header.php';
                 <?php else: ?>
                 <div class="p-4 text-center text-muted small">
                     <i class="far fa-heart fa-2x mb-2"></i>
-                    <p>No saved listings yet. <a href="<?= pg_url('browse_listings.php') ?>">Browse listings</a> and tap the heart icon to save.</p>
+                    <p><?= _e('buyer.no_saved_long') ?></p>
                 </div>
                 <?php endif; ?>
             </div>
@@ -110,8 +110,8 @@ include INC_PATH . '/header.php';
             <!-- Recent Enquiries -->
             <div class="pg-card mb-4">
                 <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h6 class="fw-600 mb-0">Recent Enquiries</h6>
-                    <a href="<?= pg_url('buyer/enquiries.php') ?>" class="btn btn-sm btn-outline-secondary">View All</a>
+                    <h6 class="fw-600 mb-0"><?= _e('buyer.recent_enquiries') ?></h6>
+                    <a href="<?= pg_url('buyer/enquiries.php') ?>" class="btn btn-sm btn-outline-secondary"><?= _e('btn.view_all') ?></a>
                 </div>
                 <div class="p-3">
                     <?php foreach ($recentEnquiries as $e): ?>
@@ -127,7 +127,7 @@ include INC_PATH . '/header.php';
                     </div>
                     <?php endforeach; ?>
                     <?php if (!$recentEnquiries): ?>
-                        <p class="text-muted small text-center py-2">No enquiries yet.</p>
+                        <p class="text-muted small text-center py-2"><?= _e('buyer.no_enquiries') ?></p>
                     <?php endif; ?>
                 </div>
             </div>
@@ -135,9 +135,9 @@ include INC_PATH . '/header.php';
             <!-- Planner CTA -->
             <div class="pg-card p-4" style="border-left:3px solid var(--pg-gold)">
                 <div class="trust-icon mb-2" style="width:36px;height:36px;font-size:.9rem"><i class="fas fa-clipboard-list"></i></div>
-                <h6 class="fw-600 mb-1">Plan Your Funeral</h6>
-                <p class="text-muted small mb-3">Build a personalised plan with itemised services. Request quotes from verified providers.</p>
-                <a href="<?= pg_url('diy_funeral_planner.php') ?>" class="btn btn-outline-gold btn-sm">Open Planner</a>
+                <h6 class="fw-600 mb-1"><?= _e('buyer.plan_cta_title') ?></h6>
+                <p class="text-muted small mb-3"><?= _e('buyer.plan_cta_desc') ?></p>
+                <a href="<?= pg_url('diy_funeral_planner.php') ?>" class="btn btn-outline-gold btn-sm"><?= _e('buyer.open_planner') ?></a>
             </div>
         </div>
     </div>

@@ -112,12 +112,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         Database::query('UPDATE sellers SET total_listings = total_listings + 1 WHERE id = ?', [$seller['id']]);
         activity_log(auth_user_id(), 'listing_submitted', 'listings', $listingId, "New listing: $title");
 
-        flash_set(FLASH_SUCCESS, 'Listing submitted for review! Our team will verify it within 3–5 business days.');
+        flash_set(FLASH_SUCCESS, __('seller.listing_submitted'));
         redirect('seller/dashboard.php');
     }
 }
 
-$page_title = 'Submit New Listing';
+$page_title = __('seller.submit_new');
 include INC_PATH . '/header.php';
 ?>
 <div class="d-flex">
@@ -126,7 +126,7 @@ include INC_PATH . '/header.php';
     <?= render_flash() ?>
     <div class="d-flex align-items-center gap-3 mb-4">
         <a href="<?= pg_url('seller/dashboard.php') ?>" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left"></i></a>
-        <h4 class="fw-700 text-navy mb-0">Submit New Listing</h4>
+        <h4 class="fw-700 text-navy mb-0"><?= _e('seller.submit_new') ?></h4>
     </div>
 
     <?php if ($error): ?><div class="alert alert-danger"><?= h($error) ?></div><?php endif; ?>
@@ -138,70 +138,70 @@ include INC_PATH . '/header.php';
             <!-- BASIC INFO -->
             <div class="col-lg-8">
                 <div class="pg-card p-4 mb-4">
-                    <h6 class="fw-600 text-muted text-uppercase mb-3" style="font-size:.75rem;letter-spacing:.08em">Listing Details</h6>
+                    <h6 class="fw-600 text-muted text-uppercase mb-3" style="font-size:.75rem;letter-spacing:.08em"><?= _e('seller.listing_details_section') ?></h6>
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label">Listing Title <span class="text-danger">*</span></label>
+                            <label class="form-label"><?= _e('seller.listing_title') ?> <span class="text-danger">*</span></label>
                             <input type="text" name="title" class="form-control" required placeholder="e.g. Nirvana Semenyih — Block A Row 5 Lot 12 (Buddhist)">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Listing Type <span class="text-danger">*</span></label>
+                            <label class="form-label"><?= _e('seller.plot_type') ?> <span class="text-danger">*</span></label>
                             <select name="listing_type_id" class="form-select" required>
-                                <option value="">— Select Type —</option>
+                                <option value="">— <?= _e('browse.all_types') ?> —</option>
                                 <?php foreach ($listingTypes as $t): ?>
                                     <option value="<?= (int)$t['id'] ?>"><?= h($t['label_en']) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Religion / Category</label>
+                            <label class="form-label"><?= _e('seller.religion') ?></label>
                             <select name="religion_id" class="form-select">
-                                <option value="">— Select —</option>
+                                <option value="">— <?= _e('misc.all') ?> —</option>
                                 <?php foreach ($religions as $r): ?>
                                     <option value="<?= (int)$r['id'] ?>"><?= h($r['label_en']) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Memorial Park</label>
+                            <label class="form-label"><?= _e('seller.park') ?></label>
                             <select name="park_id" class="form-select">
-                                <option value="">— Not listed / Unknown —</option>
+                                <option value="">— <?= is_lang('zh') ? '未列出 / 未知' : 'Not listed / Unknown' ?> —</option>
                                 <?php foreach ($parks as $p): ?>
                                     <option value="<?= (int)$p['id'] ?>"><?= h($p['name']) ?> (<?= h($p['city']) ?>)</option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Block No.</label>
+                            <label class="form-label"><?= _e('seller.block') ?></label>
                             <input type="text" name="block_no" class="form-control" placeholder="e.g. A">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Row No.</label>
+                            <label class="form-label"><?= _e('seller.row') ?></label>
                             <input type="text" name="row_no" class="form-control" placeholder="e.g. 5">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Lot No.</label>
+                            <label class="form-label"><?= _e('seller.lot') ?></label>
                             <input type="text" name="lot_no" class="form-control" placeholder="e.g. 12">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">City</label>
+                            <label class="form-label"><?= _e('seller.city') ?></label>
                             <input type="text" name="city" class="form-control" placeholder="e.g. Semenyih">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">State <span class="text-danger">*</span></label>
+                            <label class="form-label"><?= _e('seller.state') ?> <span class="text-danger">*</span></label>
                             <select name="state" class="form-select" required>
-                                <option value="">— Select State —</option>
+                                <option value="">— <?= is_lang('zh') ? '选择州属' : 'Select State' ?> —</option>
                                 <?php foreach (MY_STATES as $s): ?>
                                     <option value="<?= h($s) ?>"><?= h($s) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Public Description</label>
-                            <textarea name="public_description" class="form-control" rows="4" placeholder="Describe the plot — location, orientation, surroundings, reason for selling…"></textarea>
+                            <label class="form-label"><?= _e('seller.description') ?></label>
+                            <textarea name="public_description" class="form-control" rows="4" placeholder="<?= is_lang('zh') ? '请描述墓地——位置、朝向、周边环境、出售原因…' : 'Describe the plot — location, orientation, surroundings, reason for selling…' ?>"></textarea>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Orientation / Feng Shui Notes <span class="text-muted small">(optional)</span></label>
+                            <label class="form-label"><?= _e('seller.feng_shui') ?></label>
                             <input type="text" name="fengshui_notes" class="form-control" placeholder="e.g. South-facing, good feng shui, near water feature…">
                         </div>
                     </div>
@@ -209,60 +209,60 @@ include INC_PATH . '/header.php';
 
                 <!-- Pricing -->
                 <div class="pg-card p-4 mb-4">
-                    <h6 class="fw-600 text-muted text-uppercase mb-3" style="font-size:.75rem;letter-spacing:.08em">Pricing & Fees</h6>
+                    <h6 class="fw-600 text-muted text-uppercase mb-3" style="font-size:.75rem;letter-spacing:.08em"><?= _e('seller.pricing_section') ?></h6>
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label class="form-label">Asking Price (RM)</label>
+                            <label class="form-label"><?= _e('seller.asking_price') ?></label>
                             <input type="number" name="asking_price" class="form-control" min="0" step="100" placeholder="e.g. 15000">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Transfer Fee (RM)</label>
+                            <label class="form-label"><?= _e('seller.transfer_fee') ?></label>
                             <input type="number" name="transfer_fee" class="form-control" min="0" step="100">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Annual Maintenance (RM)</label>
+                            <label class="form-label"><?= _e('seller.maintenance_fee') ?></label>
                             <input type="number" name="annual_maintenance_fee" class="form-control" min="0" step="10">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Maintenance Status</label>
+                            <label class="form-label"><?= _e('seller.maintenance') ?></label>
                             <select name="maintenance_status" class="form-select">
-                                <option value="unknown">Unknown</option>
-                                <option value="paid">Paid / Up to date</option>
-                                <option value="overdue">Overdue</option>
-                                <option value="na">N/A</option>
+                                <option value="unknown"><?= _e('misc.unknown') ?></option>
+                                <option value="paid"><?= is_lang('zh') ? '已缴清' : 'Paid / Up to date' ?></option>
+                                <option value="overdue"><?= is_lang('zh') ? '逾期未缴' : 'Overdue' ?></option>
+                                <option value="na"><?= _e('misc.na') ?></option>
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Ownership Type</label>
+                            <label class="form-label"><?= _e('seller.ownership') ?></label>
                             <select name="ownership_type" class="form-select">
-                                <option value="unknown">Unknown</option>
-                                <option value="freehold">Freehold</option>
-                                <option value="perpetual">Perpetual</option>
-                                <option value="leasehold">Leasehold</option>
-                                <option value="renewable">Renewable</option>
+                                <option value="unknown"><?= _e('misc.unknown') ?></option>
+                                <option value="freehold"><?= is_lang('zh') ? '永久地契' : 'Freehold' ?></option>
+                                <option value="perpetual"><?= is_lang('zh') ? '永久使用权' : 'Perpetual' ?></option>
+                                <option value="leasehold"><?= is_lang('zh') ? '租赁地契' : 'Leasehold' ?></option>
+                                <option value="renewable"><?= is_lang('zh') ? '可续期' : 'Renewable' ?></option>
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Seller Intent</label>
+                            <label class="form-label"><?= _e('seller.intent') ?></label>
                             <select name="seller_intent" class="form-select">
-                                <option value="direct_sale">Direct Sale</option>
-                                <option value="open_to_offers">Open to Offers</option>
-                                <option value="inquiry_only">Inquiry Only</option>
+                                <option value="direct_sale"><?= is_lang('zh') ? '直接出售' : 'Direct Sale' ?></option>
+                                <option value="open_to_offers"><?= is_lang('zh') ? '接受议价' : 'Open to Offers' ?></option>
+                                <option value="inquiry_only"><?= is_lang('zh') ? '仅接受询价' : 'Inquiry Only' ?></option>
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Urgency</label>
+                            <label class="form-label"><?= _e('seller.urgency') ?></label>
                             <select name="urgency_level" class="form-select">
-                                <option value="standard">Standard</option>
-                                <option value="moderate">Moderate</option>
-                                <option value="urgent">Urgent</option>
-                                <option value="immediate">Immediate / ASAP</option>
+                                <option value="standard"><?= is_lang('zh') ? '普通' : 'Standard' ?></option>
+                                <option value="moderate"><?= is_lang('zh') ? '较急' : 'Moderate' ?></option>
+                                <option value="urgent"><?= _e('urgency.urgent') ?></option>
+                                <option value="immediate"><?= is_lang('zh') ? '立即 / 尽快' : 'Immediate / ASAP' ?></option>
                             </select>
                         </div>
                         <div class="col-12">
                             <div class="form-check">
                                 <input type="checkbox" name="is_transferable" value="1" id="transferable" class="form-check-input">
-                                <label for="transferable" class="form-check-label small">Plot is transferable (subject to park approval)</label>
+                                <label for="transferable" class="form-check-label small"><?= is_lang('zh') ? '墓地可过户（须经园区批准）' : 'Plot is transferable (subject to park approval)' ?></label>
                             </div>
                         </div>
                     </div>
@@ -270,31 +270,31 @@ include INC_PATH . '/header.php';
 
                 <!-- Photos -->
                 <div class="pg-card p-4 mb-4">
-                    <h6 class="fw-600 text-muted text-uppercase mb-3" style="font-size:.75rem;letter-spacing:.08em">Photos</h6>
-                    <p class="text-muted small mb-3">Upload clear photos of the plot, surrounding area, and any signage. Max <?= MAX_LISTING_IMAGES ?> images, up to <?= MAX_UPLOAD_SIZE / 1048576 ?>MB each.</p>
+                    <h6 class="fw-600 text-muted text-uppercase mb-3" style="font-size:.75rem;letter-spacing:.08em"><?= _e('seller.photos_section') ?></h6>
+                    <p class="text-muted small mb-3"><?= is_lang('zh') ? '请上传墓地、周边环境及标识牌的清晰照片。最多 ' . MAX_LISTING_IMAGES . ' 张，每张不超过 ' . (MAX_UPLOAD_SIZE / 1048576) . 'MB。' : 'Upload clear photos of the plot, surrounding area, and any signage. Max ' . MAX_LISTING_IMAGES . ' images, up to ' . (MAX_UPLOAD_SIZE / 1048576) . 'MB each.' ?></p>
                     <input type="file" name="images[]" id="listingImages" class="form-control" multiple accept="image/jpeg,image/png,image/webp" onchange="previewImages(this, 'imgPreview')">
                     <div id="imgPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
                 </div>
 
                 <!-- Documents -->
                 <div class="pg-card p-4">
-                    <h6 class="fw-600 text-muted text-uppercase mb-3" style="font-size:.75rem;letter-spacing:.08em">Ownership Documents <span class="text-muted fw-400">(for verification)</span></h6>
-                    <p class="text-muted small mb-3">Uploading documents speeds up verification. Documents are kept private and only accessible to our verification team.</p>
+                    <h6 class="fw-600 text-muted text-uppercase mb-3" style="font-size:.75rem;letter-spacing:.08em"><?= _e('seller.docs_section') ?> <span class="text-muted fw-400">(<?= is_lang('zh') ? '用于认证' : 'for verification' ?>)</span></h6>
+                    <p class="text-muted small mb-3"><?= is_lang('zh') ? '上传文件可加快认证速度。文件将严格保密，仅供我们的认证团队查阅。' : 'Uploading documents speeds up verification. Documents are kept private and only accessible to our verification team.' ?></p>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label small">Ownership Certificate / Receipt</label>
+                            <label class="form-label small"><?= _e('seller.doc_ownership') ?></label>
                             <input type="file" name="ownership_cert" class="form-control form-control-sm" accept="image/jpeg,image/png,application/pdf">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small">IC Copy (Identity)</label>
+                            <label class="form-label small"><?= _e('seller.doc_ic') ?></label>
                             <input type="file" name="ic_copy" class="form-control form-control-sm" accept="image/jpeg,image/png,application/pdf">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small">Park Payment Receipt</label>
+                            <label class="form-label small"><?= _e('seller.doc_receipt') ?></label>
                             <input type="file" name="park_receipt" class="form-control form-control-sm" accept="image/jpeg,image/png,application/pdf">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small">Maintenance Fee Receipt</label>
+                            <label class="form-label small"><?= _e('seller.doc_maintenance') ?></label>
                             <input type="file" name="maintenance_receipt" class="form-control form-control-sm" accept="image/jpeg,image/png,application/pdf">
                         </div>
                     </div>
@@ -304,19 +304,19 @@ include INC_PATH . '/header.php';
             <!-- Sidebar info -->
             <div class="col-lg-4">
                 <div class="pg-card p-4 mb-3" style="background:var(--pg-gold-pale)">
-                    <h6 class="fw-600 mb-2"><i class="fas fa-info-circle me-2 text-gold"></i>What Happens Next?</h6>
+                    <h6 class="fw-600 mb-2"><i class="fas fa-info-circle me-2 text-gold"></i><?= _e('seller.what_next') ?></h6>
                     <ol class="small text-muted ps-3">
-                        <li class="mb-1">Your listing is submitted for review.</li>
-                        <li class="mb-1">Our team verifies your documents (3–5 business days).</li>
-                        <li class="mb-1">Listing goes live with a verification badge.</li>
-                        <li class="mb-1">Enquiries arrive in your dashboard.</li>
+                        <li class="mb-1"><?= _e('seller.what_next_1') ?></li>
+                        <li class="mb-1"><?= _e('seller.what_next_2') ?></li>
+                        <li class="mb-1"><?= _e('seller.what_next_3') ?></li>
+                        <li class="mb-1"><?= _e('seller.what_next_4') ?></li>
                     </ol>
                 </div>
                 <div class="pg-card p-4">
                     <button type="submit" class="btn btn-gold w-100 mb-2">
-                        <i class="fas fa-paper-plane me-2"></i>Submit for Review
+                        <i class="fas fa-paper-plane me-2"></i><?= _e('seller.submit_review_btn') ?>
                     </button>
-                    <a href="<?= pg_url('seller/dashboard.php') ?>" class="btn btn-outline-secondary w-100 btn-sm">Cancel</a>
+                    <a href="<?= pg_url('seller/dashboard.php') ?>" class="btn btn-outline-secondary w-100 btn-sm"><?= _e('btn.cancel') ?></a>
                 </div>
             </div>
         </div>
