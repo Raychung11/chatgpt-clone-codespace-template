@@ -56,11 +56,14 @@ define('CRON_SECRET', getenv('CRON_SECRET') ?: '');
 // API URL: Asia Pacific (Jakarta) endpoint — change region if needed
 define('BYTEPLUS_API_URL',     getenv('BYTEPLUS_API_URL')     ?: 'https://ark.ap-southeast.bytepluses.com/api/v3');
 define('BYTEPLUS_API_KEY',     getenv('BYTEPLUS_API_KEY')     ?: '');
-// Video model endpoint ID (ModelArk → Online inference)
-define('BYTEPLUS_ENDPOINT_ID', getenv('BYTEPLUS_ENDPOINT_ID') ?: '');
+// 5-second video endpoint (Seedance Lite or Pro — ModelArk → Online inference)
+define('BYTEPLUS_ENDPOINT_ID',     getenv('BYTEPLUS_ENDPOINT_ID')     ?: '');
+// 10-second video endpoint — MUST be a Pro model endpoint (Lite only supports 5s).
+// If left empty, the 5s endpoint is used as fallback (video will still be 5s).
+define('BYTEPLUS_ENDPOINT_ID_10S', getenv('BYTEPLUS_ENDPOINT_ID_10S') ?: '');
 // Text LLM endpoint for prompt enhancement (e.g. doubao-1-5-pro-32k or ep-XXXXX-doubao)
 // Create a text model endpoint in ModelArk → Model activation → select a Doubao/chat model
-define('LLM_ENDPOINT_ID',      getenv('LLM_ENDPOINT_ID')      ?: '');
+define('LLM_ENDPOINT_ID',          getenv('LLM_ENDPOINT_ID')          ?: '');
 
 // ── BytePlus Vision AI — OmniHuman (AK/SK auth, separate from ModelArk) ──────
 // Console: https://console.byteplus.com/ai/overview  (Vision AI → Model Plaza → OmniHuman)

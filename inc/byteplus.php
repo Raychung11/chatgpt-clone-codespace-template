@@ -37,7 +37,19 @@ function byteplus_create_task(
 ): array {
     $apiKey     = setting('byteplus_api_key',     BYTEPLUS_API_KEY)     ?: BYTEPLUS_API_KEY;
     $apiBase    = rtrim(setting('byteplus_api_url', BYTEPLUS_API_URL)   ?: BYTEPLUS_API_URL, '/');
-    $endpointId = setting('byteplus_endpoint_id', BYTEPLUS_ENDPOINT_ID) ?: BYTEPLUS_ENDPOINT_ID;
+
+    // For 10-second videos a Pro model endpoint is required — Seedance Lite only
+    // supports 5 seconds and silently produces a 5s video when duration=10 is sent.
+    // Use byteplus_endpoint_id_10s for 10s jobs; fall back to the default if unset.
+    if ($duration >= 10) {
+        $endpointId = setting('byteplus_endpoint_id_10s', BYTEPLUS_ENDPOINT_ID_10S) ?: BYTEPLUS_ENDPOINT_ID_10S;
+        if (!$endpointId) {
+            // Fall back to default endpoint but warn (video may still be 5s on Lite model)
+            $endpointId = setting('byteplus_endpoint_id', BYTEPLUS_ENDPOINT_ID) ?: BYTEPLUS_ENDPOINT_ID;
+        }
+    } else {
+        $endpointId = setting('byteplus_endpoint_id', BYTEPLUS_ENDPOINT_ID) ?: BYTEPLUS_ENDPOINT_ID;
+    }
 
     if (!$apiKey) {
         return ['ok' => false, 'error' => 'BytePlus API key is not configured.', 'raw' => []];
