@@ -63,12 +63,23 @@ foreach ($jobIds as $jid) {
 }
 
 // ── Check FFmpeg is available ─────────────────────────────────────────────────
-$ffmpeg = trim((string)shell_exec('which ffmpeg 2>/dev/null'));
-if (!$ffmpeg) {
-    $ffmpeg = trim((string)shell_exec('command -v ffmpeg 2>/dev/null'));
+// Check local project bin/ first (static binary, no root needed),
+// then fall back to system PATH.
+$localBin = BASE_PATH . '/bin/ffmpeg';
+if (is_executable($localBin)) {
+    $ffmpeg = $localBin;
+} else {
+    $ffmpeg = trim((string)shell_exec('which ffmpeg 2>/dev/null'));
+    if (!$ffmpeg) {
+        $ffmpeg = trim((string)shell_exec('command -v ffmpeg 2>/dev/null'));
+    }
 }
 if (!$ffmpeg || !file_exists($ffmpeg)) {
-    json_response(['error' => 'FFmpeg is not installed on this server. Please contact support.'], 501);
+    json_response([
+        'error' => 'FFmpeg is not installed. '
+            . 'Run: sudo apt-get install ffmpeg  '
+            . 'OR place a static binary at ' . BASE_PATH . '/bin/ffmpeg',
+    ], 501);
 }
 
 // ── Download clips + merge ────────────────────────────────────────────────────
