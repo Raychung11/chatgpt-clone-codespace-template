@@ -1036,24 +1036,45 @@ function startMerge() {
 }
 
 function _doMerge(resolvedUrls) {
-    // A fresh <video> is required — mainVideo is permanently tainted by
-    // cross-origin loads; captureStream() throws SecurityError on it.
+    // Off-screen video element — never tainted by cross-origin URLs
     const mergeVid = document.createElement('video');
     mergeVid.setAttribute('playsinline', '');
-    mergeVid.muted  = false;
-    mergeVid.volume = 1;
-    // Off-screen but real dimensions so Chrome actually renders frames
-    mergeVid.style.cssText = 'position:fixed;left:-9999px;top:0;width:640px;height:360px;';
+    mergeVid.crossOrigin = 'anonymous'; // needed for AudioContext
+    mergeVid.style.cssText = 'position:fixed;left:-9999px;top:0;width:1280px;height:720px;';
     document.body.appendChild(mergeVid);
 
+    // Canvas to draw frames into — its stream tracks never change, so
+    // MediaRecorder never gets InvalidModificationError when video src changes.
+    const canvas = document.createElement('canvas');
+    canvas.width  = 1280;
+    canvas.height = 720;
+    const ctx = canvas.getContext('2d');
+
+    let animId    = null;
+    let audioCtx  = null;
+    let audioSrc  = null;
+
     const cleanup = () => {
+        if (animId) { cancelAnimationFrame(animId); animId = null; }
         mergeVid.pause();
         mergeVid.src = '';
         mergeVid.remove();
+        if (audioSrc) { try { audioSrc.disconnect(); } catch(_){} }
+        if (audioCtx) { try { audioCtx.close();      } catch(_){} }
         resolvedUrls.forEach(u => { try { URL.revokeObjectURL(u); } catch(_) {} });
     };
 
-    // Play a single clip through mergeVid; resolves when 'ended' fires
+    function startDrawing() {
+        function frame() {
+            if (mergeVid.readyState >= 2 && !mergeVid.paused && !mergeVid.ended) {
+                ctx.drawImage(mergeVid, 0, 0, canvas.width, canvas.height);
+            }
+            animId = requestAnimationFrame(frame);
+        }
+        frame();
+    }
+
+    // Play a clip; resolves when ended fires
     function playClip(url) {
         return new Promise((resolve, reject) => {
             mergeVid.src = url;
@@ -1071,7 +1092,6 @@ function _doMerge(resolvedUrls) {
         });
     }
 
-    // Await loadedmetadata on mergeVid (already loaded resolvedUrls[0])
     function waitMeta() {
         return new Promise((resolve, reject) => {
             if (mergeVid.readyState >= 1) { resolve(); return; }
@@ -1083,46 +1103,55 @@ function _doMerge(resolvedUrls) {
     }
 
     (async () => {
-        // ── Step 1: prime captureStream() by loading clip 0 ──────────────────
-        mlog('Loading first clip to prime captureStream()…', '#94a3b8');
+        // ── Step 1: load first clip to get dimensions ─────────────────────────
+        mlog('Loading first clip for dimensions…', '#94a3b8');
         mergeVid.src = resolvedUrls[0];
         mergeVid.load();
         try {
             await waitMeta();
-            mlog(`first clip metadata  dur=${mergeVid.duration?.toFixed(1)}s`, '#94a3b8');
+            if (mergeVid.videoWidth && mergeVid.videoHeight) {
+                canvas.width  = mergeVid.videoWidth;
+                canvas.height = mergeVid.videoHeight;
+            }
+            mlog(`canvas ${canvas.width}×${canvas.height}  dur=${mergeVid.duration?.toFixed(1)}s`, '#94a3b8');
         } catch(e) {
             mlog(`metadata load failed: ${e.message}`, '#ef4444');
             cleanup(); setRecordingUI(false); return;
         }
 
-        // ── Step 2: captureStream ─────────────────────────────────────────────
-        mlog(`captureStream available: ${'captureStream' in mergeVid}`, '#94a3b8');
-        let stream;
+        // ── Step 2: canvas stream (stable tracks — no InvalidModificationError) ─
+        const canvasStream = canvas.captureStream(30);
+        mlog(`canvas stream tracks: ${canvasStream.getTracks().length}`, '#94a3b8');
+
+        // ── Step 3: audio via AudioContext (follows video src changes) ────────
+        let audioStream = null;
         try {
-            stream = mergeVid.captureStream      ? mergeVid.captureStream(30)
-                   : mergeVid.mozCaptureStream   ? mergeVid.mozCaptureStream(30)
-                   : null;
-            mlog(`stream: ${!!stream}  tracks: ${stream ? stream.getTracks().length : 0}`,
-                 stream?.getTracks().length ? '#a8e063' : '#ef4444');
+            audioCtx = new AudioContext();
+            audioSrc = audioCtx.createMediaElementSource(mergeVid);
+            const dest = audioCtx.createMediaStreamDestination();
+            audioSrc.connect(dest);
+            audioSrc.connect(audioCtx.destination); // monitor audio
+            audioStream = dest.stream;
+            audioStream.getAudioTracks().forEach(t => canvasStream.addTrack(t));
+            mlog(`audio tracks added: ${audioStream.getAudioTracks().length}`, '#94a3b8');
         } catch(e) {
-            mlog(`captureStream() threw: ${e}`, '#ef4444');
-            cleanup(); setRecordingUI(false);
-            alert('Cannot capture video stream: ' + e.message); return;
-        }
-        if (!stream || !stream.getTracks().length) {
-            mlog('ERROR: stream has no tracks', '#ef4444');
-            cleanup(); setRecordingUI(false);
-            alert('captureStream() returned no tracks. Use Chrome.'); return;
+            mlog(`AudioContext unavailable (${e.message}) — video-only`, '#f59e0b');
         }
 
-        // ── Step 3: set up MediaRecorder ──────────────────────────────────────
-        const mimeType = ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm']
-            .find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+        mlog(`total stream tracks: ${canvasStream.getTracks().length}`, '#a8e063');
+
+        // ── Step 4: MediaRecorder ─────────────────────────────────────────────
+        const mimeType = [
+            'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus',
+            'video/webm;codecs=vp9',      'video/webm;codecs=vp8',
+            'video/webm',
+        ].find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
         mlog(`mimeType: ${mimeType}`, '#94a3b8');
+
         const chunks = [];
         let mr;
         try {
-            mr = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
+            mr = new MediaRecorder(canvasStream, { mimeType, videoBitsPerSecond: 8_000_000 });
             mlog(`MediaRecorder created  state=${mr.state}`, '#a8e063');
         } catch(e) {
             mlog(`MediaRecorder() threw: ${e}`, '#ef4444');
@@ -1135,7 +1164,7 @@ function _doMerge(resolvedUrls) {
                 mlog(`chunk: ${(e.data.size/1024).toFixed(1)} KB  total: ${chunks.length}`, '#94a3b8');
             }
         };
-        mr.onerror = e => mlog(`MediaRecorder ERROR: ${e.error}`, '#ef4444');
+        mr.onerror = e => mlog(`MediaRecorder ERROR: ${e.error || e}`, '#ef4444');
 
         _activeRecorder = mr;
         try {
@@ -1147,12 +1176,14 @@ function _doMerge(resolvedUrls) {
             alert('Cannot start recording: ' + e); return;
         }
 
+        // Start rendering video frames to canvas
+        startDrawing();
         setRecordingUI(true);
         showPlayer();
         startCaptionLoop();
-        mlog('Recording started — playing clips sequentially…', '#facc15');
+        mlog('Recording started (canvas capture)…', '#facc15');
 
-        // ── Step 4: play all clips in order ───────────────────────────────────
+        // ── Step 5: play all clips ─────────────────────────────────────────────
         for (let i = 0; i < resolvedUrls.length; i++) {
             const seg = sequence[i];
             mlog(`▶ Clip ${i+1}/${resolvedUrls.length}: "${seg.label}"`, '#64b5f6');
@@ -1164,17 +1195,19 @@ function _doMerge(resolvedUrls) {
             } catch(e) {
                 mlog(`  clip ${i+1} error: ${e.message}`, '#ef4444');
             }
-            // Brief gap between clips so MediaRecorder captures the boundary
             if (i < resolvedUrls.length - 1) {
                 await new Promise(r => setTimeout(r, 300));
             }
         }
 
-        // ── Step 5: stop recorder and download ────────────────────────────────
+        // ── Step 6: stop recorder and save ────────────────────────────────────
         mlog(`All ${resolvedUrls.length} clip(s) done → stopping recorder`, '#facc15');
+        if (animId) { cancelAnimationFrame(animId); animId = null; }
+
         await new Promise(resolve => {
             mr.addEventListener('stop', resolve, { once: true });
-            mr.stop();
+            if (mr.state !== 'inactive') mr.stop();
+            else resolve();
         });
 
         const totalMB = chunks.reduce((s,c) => s + c.size, 0) / 1048576;
@@ -1182,7 +1215,7 @@ function _doMerge(resolvedUrls) {
 
         if (!chunks.length) {
             mlog('WARNING: no data recorded', '#ef4444');
-            alert('Merge produced an empty file. Try again.');
+            alert('Merge produced an empty file. Check debug log.');
         } else {
             const blob = new Blob(chunks, { type: mimeType });
             const a = Object.assign(document.createElement('a'), {
