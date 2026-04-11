@@ -122,14 +122,14 @@ include INC_PATH . '/nav.php';
                             <?php if ($svc['description']): ?>
                                 <p class="text-muted mb-2" style="font-size:.8rem"><?= h($svc['description']) ?></p>
                             <?php endif; ?>
-                            <button class="btn btn-outline-gold btn-sm w-100 mt-auto" aria-label="<?= _e('btn.add_to_plan') ?>"
-                                    onclick="PlannerCart.add({
-                                        id: 'svc_<?= (int)$svc['id'] ?>',
-                                        name: <?= json_encode($svc['name']) ?>,
-                                        price: <?= (float)($svc['base_price'] ?? 0) ?>,
-                                        category: <?= json_encode($svc['category_label']) ?>
-                                    })">
-                                <i class="fas fa-plus me-1"></i>Add to Plan
+                            <button class="btn btn-outline-gold btn-sm w-100 mt-auto"
+                                    aria-label="<?= _e('btn.add_to_plan') ?>"
+                                    data-id="svc_<?= (int)$svc['id'] ?>"
+                                    data-name="<?= h($svc['name']) ?>"
+                                    data-price="<?= (float)($svc['base_price'] ?? 0) ?>"
+                                    data-category="<?= h($svc['category_label']) ?>"
+                                    onclick="PlannerCart.add({id:this.dataset.id,name:this.dataset.name,price:parseFloat(this.dataset.price)||0,category:this.dataset.category})">
+                                <i class="fas fa-plus me-1"></i><?= _e('btn.add_to_plan') ?>
                             </button>
                         </div>
                     </div>
