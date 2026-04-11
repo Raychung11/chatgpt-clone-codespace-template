@@ -367,7 +367,21 @@ unset($v);
             <span>Videos expire in <strong>24h</strong> — <a href="<?= BASE_URL ?>/client/history.php" style="color:#eab308;text-decoration:underline">download from History</a></span>
         </div>
 
-        <!-- Paste any URL for testing -->
+        <!-- Upload local video -->
+        <div style="padding:10px;border-bottom:1px solid var(--color-border)">
+            <div style="font-size:.72rem;color:var(--color-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">⬆ Upload from device</div>
+            <label id="uploadZone" style="
+                display:flex;align-items:center;justify-content:center;gap:8px;
+                border:2px dashed var(--color-border);border-radius:6px;
+                padding:10px;cursor:pointer;transition:border-color .2s;
+                font-size:.8rem;color:var(--color-muted)">
+                <span style="font-size:1.2rem">🎬</span>
+                <span id="uploadLabel">Click or drag a video here</span>
+                <input type="file" id="uploadInput" accept="video/*" style="display:none" onchange="handleUploadFile(this.files[0])">
+            </label>
+        </div>
+
+        <!-- Paste any URL -->
         <div style="padding:10px;border-bottom:1px solid var(--color-border)">
             <div style="font-size:.72rem;color:var(--color-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Or paste a video URL</div>
             <div style="display:flex;gap:6px">
@@ -621,6 +635,57 @@ function addToSequence(card) {
     selectSegment(sequence.length - 1);
     showPlayer();
 }
+
+// ── Upload local video file ───────────────────────────────────────────────────
+function handleUploadFile(file) {
+    if (!file) return;
+    if (!file.type.startsWith('video/')) {
+        alert('Please select a video file (MP4, MOV, WebM, etc.)');
+        return;
+    }
+    const blobUrl = URL.createObjectURL(file);
+    const label   = file.name.replace(/\.[^.]+$/, ''); // filename without extension
+    const seg = {
+        id:       'upload_' + Date.now(),
+        vidId:    'upload_' + Date.now(),
+        url:      blobUrl,
+        label:    label,
+        captions: [],
+        _isUpload: true,
+    };
+    sequence.push(seg);
+    renderSequenceList();
+    selectSegment(sequence.length - 1);
+    showPlayer();
+
+    // Show filename in the upload zone label
+    const lbl = document.getElementById('uploadLabel');
+    if (lbl) lbl.textContent = '✓ ' + file.name + ' (' + (file.size / 1048576).toFixed(1) + ' MB)';
+    // Reset input so same file can be re-selected
+    document.getElementById('uploadInput').value = '';
+}
+
+// Drag-and-drop on the upload zone
+document.addEventListener('DOMContentLoaded', () => {
+    const zone = document.getElementById('uploadZone');
+    if (!zone) return;
+    zone.addEventListener('dragover', e => {
+        e.preventDefault();
+        zone.style.borderColor = 'var(--color-primary)';
+        zone.style.background  = 'rgba(99,102,241,.08)';
+    });
+    zone.addEventListener('dragleave', () => {
+        zone.style.borderColor = '';
+        zone.style.background  = '';
+    });
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.style.borderColor = '';
+        zone.style.background  = '';
+        const file = e.dataTransfer.files[0];
+        if (file) handleUploadFile(file);
+    });
+});
 
 // Add any video URL directly (for testing or external videos)
 function addUrlToSequence() {
