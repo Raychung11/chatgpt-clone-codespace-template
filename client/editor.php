@@ -553,15 +553,15 @@ unset($v);
         <!-- Export bar -->
         <div class="export-bar">
             <span id="recDot"></span>
-            <span id="recStatus">Ready to export</span>
-            <button class="btn btn-primary" onclick="startExport()" id="exportBtn">
-                ⬇ Export with Captions
+            <span id="recStatus">Ready</span>
+            <button class="btn btn-primary" onclick="startMerge()" id="mergeBtn">
+                🔗 Merge &amp; Download
             </button>
             <button class="btn btn-ghost" onclick="downloadSRT()" id="srtBtn">
                 📄 Download SRT
             </button>
             <button class="btn btn-ghost" onclick="stopExport()" id="stopBtn" style="display:none">
-                ⏹ Stop Recording
+                ⏹ Stop
             </button>
             <div style="flex:1"></div>
             <div style="font-size:.75rem;color:var(--color-muted)">
@@ -952,20 +952,25 @@ function downloadSRT() {
     a.click();
 }
 
-// ── Export: record screen via captureStream (best-effort, no CORS needed) ────
-function startExport() {
-    if (!sequence.length) { alert('Add at least one video first.'); return; }
+// ── Merge & Download ──────────────────────────────────────────────────────────
+// Plays every segment in order while recording via captureStream().
+// Uses { once:true } event listeners so each segment transitions cleanly.
+// Separate mergeIdx from currentSegIdx so preview state isn't disturbed.
+let _activeRecorder = null;
 
-    // Use the visible <video> element's stream — no canvas, no CORS issues
+function startMerge() {
+    if (!sequence.length) { alert('Add at least one video to the sequence first.'); return; }
+
+    // captureStream() supported in Chrome, Edge, Firefox (mozCaptureStream)
     let stream;
     try {
-        stream = mainVideo.captureStream ? mainVideo.captureStream(30)
-               : mainVideo.mozCaptureStream ? mainVideo.mozCaptureStream(30)
+        stream = mainVideo.captureStream       ? mainVideo.captureStream(30)
+               : mainVideo.mozCaptureStream    ? mainVideo.mozCaptureStream(30)
                : null;
     } catch(e) { stream = null; }
 
     if (!stream) {
-        alert('Your browser does not support video capture. Download the SRT file and use it with the original video in VLC or any editor.');
+        alert('Your browser does not support video capture.\nUse Chrome or Edge, or download the SRT file to use with a desktop editor.');
         return;
     }
 
@@ -973,37 +978,60 @@ function startExport() {
         .find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
 
     const chunks = [];
-    const mr = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 5_000_000 });
+    const mr = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
     mr.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
     mr.onstop = () => {
+        const blob = new Blob(chunks, { type: mimeType });
         const a = Object.assign(document.createElement('a'), {
-            href: URL.createObjectURL(new Blob(chunks, { type: mimeType })),
-            download: 'video_with_captions_' + Date.now() + '.webm',
+            href:     URL.createObjectURL(blob),
+            download: 'merged_' + Date.now() + '.webm',
         });
         document.body.appendChild(a); a.click(); a.remove();
         setRecordingUI(false);
+        // Restore preview to segment 0
+        if (sequence.length) selectSegment(0);
     };
 
-    mr.start(500);
-    setRecordingUI(true, mr);
+    _activeRecorder = mr;
+    mr.start(200);
+    setRecordingUI(true);
 
-    // Restart and play from beginning so the whole video is captured
-    currentSegIdx = 0;
-    loadSegment(0);
-    mainVideo.play().catch(() => {});
-    document.getElementById('playBtn').textContent = '⏸ Pause';
-    startCaptionLoop();
+    // Play segments one by one using { once:true } listeners — no race conditions
+    let mergeIdx = 0;
 
-    // Auto-stop when last segment ends (listen once)
-    mainVideo.addEventListener('ended', function autoStop() {
-        if (currentSegIdx >= sequence.length - 1) {
+    function playNextForMerge() {
+        if (mergeIdx >= sequence.length) {
+            // All segments done → stop recorder
             mr.stop();
-            mainVideo.removeEventListener('ended', autoStop);
+            return;
         }
-    });
+
+        const seg = sequence[mergeIdx];
+        setRecordingUI(true, null, `Merging clip ${mergeIdx + 1} / ${sequence.length}…`);
+
+        mainVideo.src = seg.url;
+        mainVideo.load();
+
+        mainVideo.addEventListener('canplay', function onCan() {
+            mainVideo.removeEventListener('canplay', onCan);
+            updateCaptionOverlay(seg, 0);
+            mainVideo.play().catch(() => {});
+        }, { once: true });
+
+        mainVideo.addEventListener('ended', function onEnd() {
+            mainVideo.removeEventListener('ended', onEnd);
+            mergeIdx++;
+            // 150 ms gap avoids blank frames between clips
+            setTimeout(playNextForMerge, 150);
+        }, { once: true });
+    }
+
+    // Show player and start
+    showPlayer();
+    playNextForMerge();
+    startCaptionLoop();
 }
 
-let _activeRecorder = null;
 function stopExport() {
     mainVideo.pause();
     document.getElementById('playBtn').textContent = '▶ Play';
@@ -1011,14 +1039,14 @@ function stopExport() {
     else setRecordingUI(false);
 }
 
-function setRecordingUI(active, mr) {
+function setRecordingUI(active, mr, statusText) {
     if (mr) _activeRecorder = mr;
-    document.getElementById('exportBtn').style.display = active ? 'none' : 'inline-block';
+    document.getElementById('mergeBtn').style.display  = active ? 'none'         : 'inline-block';
     document.getElementById('stopBtn').style.display   = active ? 'inline-block' : 'none';
+    document.getElementById('srtBtn').style.display    = active ? 'none'         : 'inline-block';
     document.getElementById('recDot').style.display    = active ? 'inline-block' : 'none';
-    document.getElementById('recStatus').textContent   = active
-        ? 'Recording… video will download when done'
-        : 'Ready to export';
+    document.getElementById('recStatus').textContent   = statusText
+        || (active ? 'Recording…' : 'Ready');
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
