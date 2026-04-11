@@ -22,19 +22,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $agree = !empty($_POST['agree']);
 
     // Validation
-    if (!$data['full_name'])                        $error = 'Full name is required.';
-    elseif (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) $error = 'Please enter a valid email address.';
-    elseif ($data['phone'] && !validate_phone($data['phone'])) $error = 'Please enter a valid phone number.';
-    elseif (strlen($data['password']) < 8)          $error = 'Password must be at least 8 characters.';
-    elseif ($data['password'] !== $data['password2'])$error = 'Passwords do not match.';
-    elseif (!$agree)                                $error = 'You must agree to the terms to proceed.';
-    elseif ($type === 'provider' && !$data['business_name']) $error = 'Business name is required for providers.';
+    if (!$data['full_name'])                        $error = __('auth.full_name') . ' ' . __('misc.required');
+    elseif (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) $error = __('auth.error_invalid');
+    elseif ($data['phone'] && !validate_phone($data['phone'])) $error = __('auth.phone') . ' is invalid.';
+    elseif (strlen($data['password']) < 8)          $error = __('auth.password') . ' must be at least 8 characters.';
+    elseif ($data['password'] !== $data['password2'])$error = __('auth.error_pw_mismatch');
+    elseif (!$agree)                                $error = __('auth.error_terms');
+    elseif ($type === 'provider' && !$data['business_name']) $error = __('auth.business_name') . ' is required.';
     else {
         $roleMap = ['buyer' => ROLE_BUYER, 'seller' => ROLE_SELLER, 'provider' => ROLE_PROVIDER];
         $result  = auth_register($data, $roleMap[$type]);
         if ($result['success']) {
             $loginResult = auth_login($data['email'], $data['password']);
-            flash_set(FLASH_SUCCESS, 'Welcome to PlotGold Malaysia! Your account is ready.');
+            flash_set(FLASH_SUCCESS, __('auth.welcome_back') . '! Your account is ready.');
             if ($type === 'seller')        redirect('seller/dashboard.php');
             elseif ($type === 'provider')  redirect('provider/dashboard.php');
             else                           redirect('buyer/dashboard.php');
@@ -64,10 +64,10 @@ include INC_PATH . '/header.php';
 
                 <!-- Account Type Selector -->
                 <div class="d-flex gap-2 mb-4">
-                    <?php foreach (['buyer' => ['icon' => 'fa-user', 'label' => 'Buyer'], 'seller' => ['icon' => 'fa-tag', 'label' => 'Seller'], 'provider' => ['icon' => 'fa-briefcase', 'label' => 'Provider']] as $t => $cfg): ?>
+                    <?php foreach (['buyer' => ['icon' => 'fa-user', 'key' => 'auth.role_buyer'], 'seller' => ['icon' => 'fa-tag', 'key' => 'auth.role_seller'], 'provider' => ['icon' => 'fa-briefcase', 'key' => 'auth.role_provider']] as $t => $cfg): ?>
                         <a href="?type=<?= $t ?>" class="flex-fill btn <?= $type === $t ? 'btn-gold' : 'btn-outline-light' ?> btn-sm text-center py-2">
                             <i class="fas <?= $cfg['icon'] ?> d-block mb-1"></i>
-                            <span style="font-size:.8rem"><?= $cfg['label'] ?></span>
+                            <span style="font-size:.8rem"><?= _e($cfg['key']) ?></span>
                         </a>
                     <?php endforeach; ?>
                 </div>
@@ -75,10 +75,10 @@ include INC_PATH . '/header.php';
                 <div class="pg-card p-4">
                     <h4 class="fw-600 mb-1"><?= h($page_title) ?></h4>
                     <p class="text-muted small mb-4">
-                        <?php if ($type === 'seller'):  ?>Create a seller account to list your burial plot or niche for resale.
-                        <?php elseif ($type === 'provider'): ?>Join our verified provider network and receive quote requests.
-                        <?php else: ?>Create a free account to browse, save, and enquire about listings.
-                        <?php endif; ?>
+                        <?php if ($type === 'seller'): echo _e('auth.seller_subtitle');
+                        elseif ($type === 'provider'): echo _e('auth.provider_subtitle');
+                        else: echo _e('auth.buyer_subtitle');
+                        endif; ?>
                     </p>
 
                     <?php if ($error): ?>
@@ -91,7 +91,7 @@ include INC_PATH . '/header.php';
 
                         <div class="row g-3">
                             <div class="col-12">
-                                <label for="full_name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                                <label for="full_name" class="form-label"><?= _e('auth.full_name') ?> <span class="text-danger">*</span></label>
                                 <input type="text" id="full_name" name="full_name" class="form-control"
                                        value="<?= h($data['full_name'] ?? '') ?>"
                                        placeholder="As per IC" required>
@@ -99,7 +99,7 @@ include INC_PATH . '/header.php';
 
                             <?php if ($type === 'provider'): ?>
                             <div class="col-12">
-                                <label for="business_name" class="form-label">Business Name <span class="text-danger">*</span></label>
+                                <label for="business_name" class="form-label"><?= _e('auth.business_name') ?> <span class="text-danger">*</span></label>
                                 <input type="text" id="business_name" name="business_name" class="form-control"
                                        value="<?= h($data['business_name'] ?? '') ?>"
                                        placeholder="Registered business name" required>
@@ -107,25 +107,25 @@ include INC_PATH . '/header.php';
                             <?php endif; ?>
 
                             <div class="col-md-6">
-                                <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                                <label for="email" class="form-label"><?= _e('auth.email') ?> <span class="text-danger">*</span></label>
                                 <input type="email" id="email" name="email" class="form-control"
                                        value="<?= h($data['email'] ?? '') ?>"
                                        placeholder="you@example.com" required autocomplete="email">
                             </div>
                             <div class="col-md-6">
-                                <label for="phone" class="form-label">Phone / WhatsApp</label>
+                                <label for="phone" class="form-label"><?= _e('auth.phone') ?></label>
                                 <input type="tel" id="phone" name="phone" class="form-control"
                                        value="<?= h($data['phone'] ?? '') ?>"
                                        placeholder="+60 12-345 6789">
                             </div>
 
                             <div class="col-md-6">
-                                <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+                                <label for="password" class="form-label"><?= _e('auth.password') ?> <span class="text-danger">*</span></label>
                                 <input type="password" id="password" name="password" class="form-control"
                                        placeholder="Min. 8 characters" required minlength="8" autocomplete="new-password">
                             </div>
                             <div class="col-md-6">
-                                <label for="password2" class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                                <label for="password2" class="form-label"><?= _e('auth.password_confirm') ?> <span class="text-danger">*</span></label>
                                 <input type="password" id="password2" name="password2" class="form-control"
                                        placeholder="Repeat password" required autocomplete="new-password">
                             </div>
@@ -134,22 +134,22 @@ include INC_PATH . '/header.php';
                                 <div class="form-check">
                                     <input type="checkbox" id="agree" name="agree" class="form-check-input" value="1" required>
                                     <label for="agree" class="form-check-label small text-muted">
-                                        I agree to the <a href="<?= pg_url('terms.php') ?>" target="_blank">Terms of Use</a> and
-                                        <a href="<?= pg_url('privacy.php') ?>" target="_blank">Privacy Policy</a>
+                                        <?= _e('auth.agree_terms') ?> <a href="<?= pg_url('terms.php') ?>" target="_blank"><?= _e('footer.terms') ?></a> <?= _e('misc.and') ?>
+                                        <a href="<?= pg_url('privacy.php') ?>" target="_blank"><?= _e('footer.privacy') ?></a>
                                     </label>
                                 </div>
                             </div>
 
                             <div class="col-12">
                                 <button type="submit" class="btn btn-gold w-100">
-                                    <i class="fas fa-user-plus me-2"></i>Create Account
+                                    <i class="fas fa-user-plus me-2"></i><?= _e('auth.register_btn') ?>
                                 </button>
                             </div>
                         </div>
                     </form>
 
                     <p class="text-center small text-muted mt-4 mb-0">
-                        Already have an account? <a href="<?= pg_url('login.php') ?>">Log in</a>
+                        <?= _e('auth.have_account') ?> <a href="<?= pg_url('login.php') ?>"><?= _e('auth.login_link') ?></a>
                     </p>
                 </div>
             </div>

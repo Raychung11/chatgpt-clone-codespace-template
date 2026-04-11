@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $remember = !empty($_POST['remember']);
 
     if (!$email || !$password) {
-        $error = 'Please enter your email and password.';
+        $error = __('auth.error_invalid');
     } else {
         $result = auth_login($email, $password, $remember);
         if ($result['success']) {
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$page_title       = 'Login';
+$page_title       = __('auth.login_title');
 $meta_description = 'Log in to your PlotGold Malaysia account.';
 $body_class       = 'auth-page';
 include INC_PATH . '/header.php';
@@ -62,8 +62,8 @@ include INC_PATH . '/header.php';
                 </div>
 
                 <div class="pg-card p-4">
-                    <h4 class="fw-600 mb-1">Welcome back</h4>
-                    <p class="text-muted small mb-4">Log in to your account to continue.</p>
+                    <h4 class="fw-600 mb-1"><?= _e('auth.welcome_back') ?></h4>
+                    <p class="text-muted small mb-4"><?= _e('auth.login_subtitle') ?></p>
 
                     <?= render_flash() ?>
 
@@ -76,17 +76,16 @@ include INC_PATH . '/header.php';
                         <input type="hidden" name="redirect" value="<?= h($_GET['redirect'] ?? '') ?>">
 
                         <div class="mb-3">
-                            <label for="email" class="form-label">Email address</label>
+                            <label for="email" class="form-label"><?= _e('auth.email') ?></label>
                             <input type="email" id="email" name="email" class="form-control"
                                    value="<?= h($_POST['email'] ?? '') ?>"
                                    placeholder="you@example.com" required autofocus autocomplete="email">
-                            <div class="invalid-feedback">Please enter a valid email address.</div>
                         </div>
 
                         <div class="mb-3">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <label for="password" class="form-label mb-0">Password</label>
-                                <a href="<?= pg_url('forgot_password.php') ?>" class="small text-muted">Forgot password?</a>
+                                <label for="password" class="form-label mb-0"><?= _e('auth.password') ?></label>
+                                <a href="<?= pg_url('forgot_password.php') ?>" class="small text-muted"><?= _e('auth.forgot') ?></a>
                             </div>
                             <div class="input-group">
                                 <input type="password" id="password" name="password" class="form-control"
@@ -101,33 +100,33 @@ include INC_PATH . '/header.php';
 
                         <div class="mb-4 d-flex align-items-center gap-2">
                             <input type="checkbox" id="remember" name="remember" class="form-check-input mt-0" value="1">
-                            <label for="remember" class="form-check-label small text-muted">Remember me for 30 days</label>
+                            <label for="remember" class="form-check-label small text-muted"><?= _e('auth.remember') ?></label>
                         </div>
 
                         <button type="submit" class="btn btn-gold w-100">
-                            <i class="fas fa-sign-in-alt me-2"></i>Log In
+                            <i class="fas fa-sign-in-alt me-2"></i><?= _e('auth.login_btn') ?>
                         </button>
                     </form>
 
                     <hr class="my-4">
 
-                    <p class="text-center small text-muted mb-2">Don't have an account?</p>
+                    <p class="text-center small text-muted mb-2"><?= _e('auth.no_account') ?></p>
                     <div class="row g-2">
                         <div class="col-6">
                             <a href="<?= pg_url('register.php?type=buyer') ?>" class="btn btn-outline-secondary w-100 btn-sm">
-                                <i class="fas fa-user me-1"></i>Register as Buyer
+                                <i class="fas fa-user me-1"></i><?= _e('auth.register_buyer') ?>
                             </a>
                         </div>
                         <div class="col-6">
                             <a href="<?= pg_url('register.php?type=seller') ?>" class="btn btn-outline-gold w-100 btn-sm">
-                                <i class="fas fa-tag me-1"></i>List My Plot
+                                <i class="fas fa-tag me-1"></i><?= _e('auth.register_seller') ?>
                             </a>
                         </div>
                     </div>
                 </div>
 
                 <p class="text-center text-white-50 small mt-4">
-                    Need urgent help? <a href="<?= whatsapp_link('Hi, I need urgent assistance.') ?>" class="text-warning" target="_blank" rel="noopener">WhatsApp us now</a>
+                    <?= _e('auth.urgent_help') ?> <a href="<?= whatsapp_link(__('nav.urgent')) ?>" class="text-warning" target="_blank" rel="noopener">WhatsApp</a>
                 </p>
             </div>
         </div>

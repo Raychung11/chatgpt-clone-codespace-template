@@ -23,17 +23,17 @@ $providers = Database::fetchAll(
 );
 
 $providerTypes = [
-    'funeral_home'   => 'Funeral Home',
-    'transport'      => 'Transport / Hearse',
-    'florist'        => 'Florist',
-    'memorial_park'  => 'Memorial Park',
-    'catering'       => 'Catering',
-    'clergy'         => 'Clergy / Ritual',
-    'admin_support'  => 'Admin Support',
-    'multipurpose'   => 'Multipurpose',
+    'funeral_home'   => __('provider_type.funeral_home'),
+    'transport'      => __('provider_type.transport'),
+    'florist'        => __('provider_type.florist'),
+    'memorial_park'  => __('provider_type.memorial_park'),
+    'catering'       => __('provider_type.catering'),
+    'clergy'         => __('provider_type.clergy'),
+    'admin_support'  => __('provider_type.admin_support'),
+    'multipurpose'   => __('provider_type.multipurpose'),
 ];
 
-$page_title       = 'Funeral Service Providers';
+$page_title       = __('provider.title');
 $meta_description = 'Find verified funeral service providers in Malaysia — funeral homes, transport, florists, clergy, and more. Compare and request quotes.';
 include INC_PATH . '/header.php';
 include INC_PATH . '/nav.php';
@@ -42,32 +42,32 @@ include INC_PATH . '/nav.php';
 <nav class="bg-white border-bottom">
     <div class="container py-2">
         <ol class="breadcrumb pg-breadcrumb mb-0">
-            <li class="breadcrumb-item"><a href="<?= pg_url() ?>">Home</a></li>
-            <li class="breadcrumb-item active">Service Providers</li>
+            <li class="breadcrumb-item"><a href="<?= pg_url() ?>"><?= _e('nav.home') ?></a></li>
+            <li class="breadcrumb-item active"><?= _e('provider.title') ?></li>
         </ol>
     </div>
 </nav>
 
 <div class="bg-white border-bottom py-4">
     <div class="container">
-        <h1 class="h3 fw-700 text-navy mb-1">Funeral Service Providers</h1>
-        <p class="text-muted mb-3">Verified service providers across Malaysia</p>
+        <h1 class="h3 fw-700 text-navy mb-1"><?= _e('provider.title') ?></h1>
+        <p class="text-muted mb-3"><?= _e('provider.subtitle') ?></p>
 
         <form method="GET" action="" class="d-flex flex-wrap gap-2">
-            <input type="text" name="q" class="form-control form-control-sm" style="max-width:220px" placeholder="Search providers…" value="<?= h($q) ?>">
+            <input type="text" name="q" class="form-control form-control-sm" style="max-width:220px" placeholder="<?= _e('provider.search_placeholder') ?>" value="<?= h($q) ?>">
             <select name="type" class="form-select form-select-sm" style="max-width:180px">
-                <option value="">All Types</option>
+                <option value=""><?= _e('misc.all') ?></option>
                 <?php foreach ($providerTypes as $val => $label): ?>
                     <option value="<?= h($val) ?>" <?= $typeFilter === $val ? 'selected' : '' ?>><?= h($label) ?></option>
                 <?php endforeach; ?>
             </select>
             <select name="state" class="form-select form-select-sm" style="max-width:160px">
-                <option value="">Any State</option>
+                <option value=""><?= _e('browse.any_state') ?></option>
                 <?php foreach (MY_STATES as $s): ?>
                     <option value="<?= h($s) ?>" <?= $stateFilter === $s ? 'selected' : '' ?>><?= h($s) ?></option>
                 <?php endforeach; ?>
             </select>
-            <button type="submit" class="btn btn-gold btn-sm">Search</button>
+            <button type="submit" class="btn btn-gold btn-sm"><?= _e('btn.search') ?></button>
         </form>
     </div>
 </div>
@@ -75,7 +75,7 @@ include INC_PATH . '/nav.php';
 <div class="container py-4">
     <!-- Type quick filters -->
     <div class="d-flex flex-wrap gap-2 mb-4">
-        <a href="<?= pg_url('providers.php') ?>" class="btn btn-sm <?= !$typeFilter ? 'btn-gold' : 'btn-outline-secondary' ?>">All</a>
+        <a href="<?= pg_url('providers.php') ?>" class="btn btn-sm <?= !$typeFilter ? 'btn-gold' : 'btn-outline-secondary' ?>"><?= _e('misc.all') ?></a>
         <?php foreach ($providerTypes as $val => $label): ?>
             <a href="<?= pg_url('providers.php') ?>?type=<?= $val ?>" class="btn btn-sm <?= $typeFilter === $val ? 'btn-gold' : 'btn-outline-secondary' ?>"><?= $label ?></a>
         <?php endforeach; ?>
@@ -117,7 +117,7 @@ include INC_PATH . '/nav.php';
                 <?php endif; ?>
 
                 <div class="d-flex gap-2 mt-auto pt-2">
-                    <a href="<?= pg_url('request_quote.php?provider=' . (int)$prov['id']) ?>" class="btn btn-outline-gold btn-sm flex-fill">Request Quote</a>
+                    <a href="<?= pg_url('request_quote.php?provider=' . (int)$prov['id']) ?>" class="btn btn-outline-gold btn-sm flex-fill"><?= _e('btn.get_quote') ?></a>
                     <?php if ($prov['phone'] || $prov['whatsapp']): ?>
                         <a href="<?= whatsapp_link('Hi, I found you on PlotGold Malaysia. Can I enquire about your services?', preg_replace('/[^0-9]/', '', $prov['whatsapp'] ?: $prov['phone'])) ?>"
                            class="btn btn-whatsapp btn-sm" target="_blank" rel="noopener" title="WhatsApp">
@@ -132,17 +132,17 @@ include INC_PATH . '/nav.php';
     <?php else: ?>
     <div class="text-center py-5">
         <i class="fas fa-briefcase fa-3x text-muted mb-3"></i>
-        <h5 class="text-muted">No providers found</h5>
-        <p class="text-muted small">Try adjusting your filters.</p>
-        <a href="<?= pg_url('register.php?type=provider') ?>" class="btn btn-outline-gold mt-2">Join as a Provider</a>
+        <h5 class="text-muted"><?= _e('provider.no_results') ?></h5>
+        <p class="text-muted small"><?= _e('provider.no_results_hint') ?></p>
+        <a href="<?= pg_url('register.php?type=provider') ?>" class="btn btn-outline-gold mt-2"><?= _e('provider.join_btn') ?></a>
     </div>
     <?php endif; ?>
 
     <!-- CTA to join as provider -->
     <div class="mt-5 p-4 pg-card text-center" style="border-left:4px solid var(--pg-gold)">
-        <h5 class="fw-600">Are you a funeral service provider?</h5>
-        <p class="text-muted small">Join our verified network and receive quote requests from families across Malaysia.</p>
-        <a href="<?= pg_url('register.php?type=provider') ?>" class="btn btn-gold">Join as a Provider</a>
+        <h5 class="fw-600"><?= _e('provider.cta_title') ?></h5>
+        <p class="text-muted small"><?= _e('provider.cta_body') ?></p>
+        <a href="<?= pg_url('register.php?type=provider') ?>" class="btn btn-gold"><?= _e('provider.join_btn') ?></a>
     </div>
 </div>
 
