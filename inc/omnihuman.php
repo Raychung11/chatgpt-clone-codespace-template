@@ -155,16 +155,20 @@ function _omnihuman_url(string $apiBase, string $type): string
     $base = rtrim($apiBase, '/');
 
     if (_is_volcengine_host($apiBase)) {
-        $version = '2022-08-31';
+        // cv.byteplusapi.com uses Version=2024-06-06; visual.volcengineapi.com uses 2022-08-31
+        $host    = parse_url($apiBase, PHP_URL_HOST) ?? '';
+        $version = str_contains($host, 'byteplusapi.com') ? '2024-06-06' : '2022-08-31';
+
         if ($type === 'generate') {
             $action = setting('omnihuman_action_generate', 'CVSubmitTask') ?: 'CVSubmitTask';
         } else {
             $action = setting('omnihuman_action_query', 'CVGetResult') ?: 'CVGetResult';
         }
-        return $base . '?Action=' . $action . '&Version=' . $version;
+        // Docs show: https://cv.byteplusapi.com/?Action=CVSubmitTask&Version=2024-06-06
+        return $base . '/?Action=' . $action . '&Version=' . $version;
     }
 
-    // BytePlus REST paths
+    // BytePlus legacy REST paths
     return $type === 'generate'
         ? $base . '/api/v1/ai_video_generate'
         : $base . '/api/v1/ai_video_query';

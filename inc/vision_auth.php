@@ -135,7 +135,8 @@ function volcengine_v4_headers(
 function _is_volcengine_host(string $url): bool
 {
     $host = parse_url($url, PHP_URL_HOST) ?? '';
-    return str_contains($host, 'volcengineapi.com');
+    // Both volcengineapi.com and byteplusapi.com use Volcengine V4 HMAC-SHA256 signing
+    return str_contains($host, 'volcengineapi.com') || str_contains($host, 'byteplusapi.com');
 }
 
 /**

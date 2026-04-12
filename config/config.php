@@ -68,8 +68,8 @@ define('LLM_ENDPOINT_ID',          getenv('LLM_ENDPOINT_ID')          ?: '');
 // ── BytePlus Vision AI — OmniHuman (AK/SK auth, separate from ModelArk) ──────
 // Console: https://console.byteplus.com/ai/overview  (Vision AI → Model Plaza → OmniHuman)
 // AK/SK:   https://console.byteplus.com/iam/keymanage
-// API URL: Vision AI endpoint (Asia Pacific)
-define('VISION_AI_URL', getenv('VISION_AI_URL') ?: 'https://visual.volcengineapi.com');
+// API URL: BytePlus CV endpoint — Service=cv, Region=ap-singapore-1, Version=2024-06-06
+define('VISION_AI_URL', getenv('VISION_AI_URL') ?: 'https://cv.byteplusapi.com');
 define('VISION_AI_AK',  getenv('VISION_AI_AK')  ?: '');   // Access Key ID
 define('VISION_AI_SK',  getenv('VISION_AI_SK')  ?: '');   // Secret Access Key
 // req_key for OmniHuman models:
