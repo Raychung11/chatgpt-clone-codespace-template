@@ -358,6 +358,54 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
                 default                                                                 => $curlErr ? "cURL: $curlErr" : "HTTP $code",
             },
         ];
+
+        // ── 5b. Multi req_key scan (only for Volcengine, only when req_key is unsupported) ─
+        $reqKeyUnsupported = isset($decoded['code']) && $decoded['code'] == 50200
+            && str_contains($decoded['message'] ?? '', 'not supported');
+
+        if (_is_volcengine_host($apiBase) && $reqKeyUnsupported) {
+            $region  = setting('vision_ai_region',  'ap-southeast-1') ?: 'ap-southeast-1';
+            $service = setting('vision_ai_service',  'cv')             ?: 'cv';
+            $host    = parse_url($apiBase, PHP_URL_HOST);
+
+            // Try candidate action+req_key combinations
+            $candidates = [
+                ['action' => 'CVSubmitTask',             'req_key' => 'omni_human_v1_5'],
+                ['action' => 'CVSubmitTask',             'req_key' => 'omni_human'],
+                ['action' => 'CVSubmitTask',             'req_key' => 'omni_human_v1'],
+                ['action' => 'OmniHumanVideoGenerate',   'req_key' => 'dreamina_omni_human_v1_5'],
+                ['action' => 'OmniHumanVideoGenerate',   'req_key' => 'omni_human_v1_5'],
+                ['action' => 'CVAsyncSubmitTask',        'req_key' => 'dreamina_omni_human_v1_5'],
+                ['action' => 'CVAsyncSubmitTask',        'req_key' => 'omni_human_v1_5'],
+            ];
+            $scanResults = [];
+            foreach ($candidates as $c) {
+                $scanUrl  = rtrim($apiBase, '/') . '?Action=' . $c['action'] . '&Version=2022-08-31';
+                $scanBody = json_encode(['req_key' => $c['req_key'], 'image_base64' => 'dGVzdA==', 'text' => 'test'], JSON_UNESCAPED_SLASHES);
+                $scanQ    = parse_url($scanUrl, PHP_URL_QUERY) ?? '';
+                $scanHdrs = volcengine_v4_headers('POST', $host, '/', $scanQ, $scanBody, $ak, $sk, $region, $service);
+                $scanLines = array_map(fn($k,$v) => "$k: $v", array_keys($scanHdrs), array_values($scanHdrs));
+
+                $ch2 = curl_init($scanUrl);
+                curl_setopt_array($ch2, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_TIMEOUT=>8,
+                    CURLOPT_POST=>true, CURLOPT_POSTFIELDS=>$scanBody, CURLOPT_HTTPHEADER=>$scanLines,
+                    CURLOPT_SSL_VERIFYPEER=>true]);
+                $sResp = curl_exec($ch2);
+                $sCode = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
+                curl_close($ch2);
+
+                $sDecoded = json_decode($sResp ?: '', true) ?? [];
+                $sMsg     = $sDecoded['message'] ?? ($sDecoded['ResponseMetadata']['Error']['Message'] ?? '');
+                $notSupp  = str_contains($sMsg, 'not supported');
+                $sLabel   = $notSupp ? '✗ req_key not supported'
+                          : (isset($sDecoded['ResponseMetadata']['Error']) ? '✗ ' . ($sDecoded['ResponseMetadata']['Error']['Code'] ?? 'error')
+                          : ($sCode === 400 ? '✓ ACCEPTED (req_key works!)' : "HTTP $sCode"));
+
+                $scanResults[] = "Action={$c['action']} req_key={$c['req_key']} → $sLabel";
+                if (!$notSupp && !isset($sDecoded['ResponseMetadata']['Error'])) break; // found it
+            }
+            $results['req_key_scan'] = $scanResults;
+        }
     } else {
         $results['api_probe'] = 'SKIPPED — AK, SK or URL not configured in DB settings';
     }
@@ -1003,12 +1051,14 @@ async function runAvatarDebug() {
         if (typeof d.api_probe === 'string') {
             alog('  ' + d.api_probe, '#f59e0b');
         } else {
+            alog(`  Signing: ${d.api_probe.signing}`, '#64b5f6');
             alog(`  URL: ${d.api_probe.url}`, '#94a3b8');
             const httpOk = d.api_probe.http_code > 0;
             alog(`  HTTP: ${d.api_probe.http_code || 'N/A (cURL failed)'}`, httpOk ? '#a8e063' : '#ef4444');
-            alog(`  Diagnosis: ${d.api_probe.diagnosis}`,
-                d.api_probe.diagnosis.startsWith('DNS') || d.api_probe.diagnosis.startsWith('FAILED') ? '#ef4444' :
-                d.api_probe.diagnosis.startsWith('Auth') ? '#f59e0b' : '#a8e063');
+            const diagColor = (d.api_probe.diagnosis.startsWith('DNS') || d.api_probe.diagnosis.startsWith('WRONG') ||
+                               d.api_probe.diagnosis.startsWith('AUTH') || d.api_probe.diagnosis.startsWith('TIMEOUT'))
+                ? '#ef4444' : d.api_probe.diagnosis.startsWith('BAD') ? '#fbbf24' : '#a8e063';
+            alog(`  Diagnosis: ${d.api_probe.diagnosis}`, diagColor);
             if (d.api_probe.curl_error !== 'none') {
                 alog(`  cURL error: ${d.api_probe.curl_error}`, '#ef4444');
             }
@@ -1016,6 +1066,17 @@ async function runAvatarDebug() {
                 alog('  Response:', '#94a3b8');
                 JSON.stringify(d.api_probe.response, null, 2).split('\n').forEach(l => alog('    ' + l, '#475569'));
             }
+        }
+
+        // ── req_key scan ──────────────────────────────────────────────────────
+        if (d.req_key_scan) {
+            alog('── req_key / Action Scan ─────────────', '#facc15');
+            alog('  (scanning for working action+req_key combination…)', '#94a3b8');
+            d.req_key_scan.forEach(line => {
+                const ok = line.includes('ACCEPTED');
+                alog('  ' + line, ok ? '#a8e063' : '#475569');
+                if (ok) alog('  ↑ Update omnihuman_req_key + omnihuman_action_generate in Admin→Settings', '#fbbf24');
+            });
         }
 
         // ── Last job ──────────────────────────────────────────────────────────
