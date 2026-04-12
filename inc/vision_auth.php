@@ -164,7 +164,7 @@ function vision_post(string $url, array $payload, string $ak, string $sk): array
     $headerLines = array_map(fn($k, $v) => "$k: $v", array_keys($hdrs), array_values($hdrs));
 
     $ch = curl_init($url);
-    curl_setopt_array($ch, [
+    $curlOpts = [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT        => 120,
         CURLOPT_POST           => true,
@@ -172,7 +172,17 @@ function vision_post(string $url, array $payload, string $ak, string $sk): array
         CURLOPT_HTTPHEADER     => $headerLines,
         CURLOPT_SSL_VERIFYPEER => true,
         CURLOPT_FOLLOWLOCATION => false,
-    ]);
+    ];
+    // DNS override: if vision_ai_dns_override is set (an IP), bypass server DNS
+    // Useful when the server can't resolve byteplus.com but the IP is known.
+    $dnsOverrideIp = function_exists('setting') ? (setting('vision_ai_dns_override', '') ?: '') : '';
+    if ($dnsOverrideIp && !_is_volcengine_host($url)) {
+        $host = parse_url($url, PHP_URL_HOST) ?? '';
+        if ($host) {
+            $curlOpts[CURLOPT_RESOLVE] = ["$host:443:$dnsOverrideIp"];
+        }
+    }
+    curl_setopt_array($ch, $curlOpts);
 
     $resp    = curl_exec($ch);
     $code    = curl_getinfo($ch, CURLINFO_HTTP_CODE);

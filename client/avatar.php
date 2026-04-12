@@ -277,6 +277,69 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
     }
     $results['dns_alternatives'] = $dnsAlts;
 
+    // ── 2b. Try resolving BytePlus target via Google DNS (DoH) ──────────────────
+    // This tests if Google 8.8.8.8 can see the hostname, even if server DNS can't.
+    $byteplusHost = 'visual.ap-southeast-1.byteplus.com';
+    $dohUrl = 'https://dns.google/resolve?name=' . urlencode($byteplusHost) . '&type=A';
+    $dohCh  = curl_init($dohUrl);
+    curl_setopt_array($dohCh, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_TIMEOUT=>6,
+        CURLOPT_HTTPHEADER=>['accept: application/dns-json'], CURLOPT_SSL_VERIFYPEER=>true]);
+    $dohResp = curl_exec($dohCh);
+    curl_close($dohCh);
+    $dohData = json_decode($dohResp ?: '', true);
+    $dohIps  = [];
+    foreach (($dohData['Answer'] ?? []) as $rec) {
+        if (($rec['type'] ?? 0) === 1) $dohIps[] = $rec['data'];
+    }
+    if ($dohIps) {
+        $results['byteplus_via_google_dns'] = [
+            'hostname' => $byteplusHost,
+            'ips'      => $dohIps,
+            'status'   => 'RESOLVED by Google DNS → your server DNS is blocking it',
+            'fix'      => 'Add to the scan below: curl --resolve visual.ap-southeast-1.byteplus.com:443:' . $dohIps[0],
+        ];
+        // Try a direct connection using the resolved IP (CURLOPT_RESOLVE bypass)
+        $byteUrl   = 'https://visual.ap-southeast-1.byteplus.com/api/v1/ai_video_generate';
+        $byteBody  = json_encode(['req_key' => $reqKey, 'image_base64' => 'dGVzdA==', 'text' => 'test'], JSON_UNESCAPED_SLASHES);
+        $bytePath  = '/api/v1/ai_video_generate';
+        $byteHdrs  = vision_signed_headers('POST', $bytePath, $byteBody, $ak, $sk);
+        $byteLines = array_map(fn($k,$v) => "$k: $v", array_keys($byteHdrs), array_values($byteHdrs));
+        $bCh = curl_init($byteUrl);
+        curl_setopt_array($bCh, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 10,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $byteBody,
+            CURLOPT_HTTPHEADER     => $byteLines,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_RESOLVE        => ["visual.ap-southeast-1.byteplus.com:443:{$dohIps[0]}"],
+        ]);
+        $bResp = curl_exec($bCh);
+        $bCode = curl_getinfo($bCh, CURLINFO_HTTP_CODE);
+        $bErr  = curl_error($bCh);
+        curl_close($bCh);
+        $bDecoded = json_decode($bResp ?: '', true) ?? [];
+        $results['byteplus_direct_ip_test'] = [
+            'url'       => $byteUrl,
+            'resolved_to' => $dohIps[0],
+            'http_code' => $bCode ?: 0,
+            'curl_error'=> $bErr ?: 'none',
+            'response'  => $bDecoded ?: ($bResp ? substr($bResp, 0, 200) : '(empty)'),
+            'diagnosis' => match(true) {
+                (bool)$bErr => "FAILED: $bErr",
+                $bCode === 400 => '✓ BytePlus endpoint REACHABLE via IP — auth+endpoint OK',
+                $bCode === 401 || $bCode === 403 => 'Reachable but auth rejected',
+                $bCode === 200 => '✓ Fully working via IP bypass',
+                default        => "HTTP $bCode",
+            },
+        ];
+    } else {
+        $results['byteplus_via_google_dns'] = [
+            'hostname' => $byteplusHost,
+            'status'   => 'NOT in Google DNS either — hostname may not exist or is geo-restricted',
+        ];
+    }
+
     // ── 3. Upload directories ────────────────────────────────────────────────────
     $avatarDir = BASE_PATH . '/uploads/avatars';
     $audioDir  = BASE_PATH . '/uploads/avatar_audio';
@@ -1033,6 +1096,34 @@ async function runAvatarDebug() {
             alog(`    ${h}: ${r}`, ok ? '#a8e063' : '#475569');
             if (ok) alog(`    ↑ USE THIS URL in Admin → Settings → vision_ai_url`, '#fbbf24');
         });
+
+        // ── BytePlus via Google DNS ───────────────────────────────────────────
+        if (d.byteplus_via_google_dns) {
+            alog('── BytePlus DNS via Google 8.8.8.8 ──', '#facc15');
+            const gdns = d.byteplus_via_google_dns;
+            const gok  = gdns.ips && gdns.ips.length > 0;
+            alog(`  ${gdns.hostname}: ${gdns.status}`, gok ? '#fbbf24' : '#ef4444');
+            if (gok) {
+                alog(`  IPs: ${gdns.ips.join(', ')}`, '#a8e063');
+            }
+        }
+        if (d.byteplus_direct_ip_test) {
+            alog('── BytePlus Direct IP Test ───────────', '#facc15');
+            const t = d.byteplus_direct_ip_test;
+            const tok = t.diagnosis.startsWith('✓');
+            alog(`  IP used: ${t.resolved_to}`, '#64b5f6');
+            alog(`  HTTP: ${t.http_code || 'failed'}  ${t.diagnosis}`, tok ? '#a8e063' : '#ef4444');
+            if (t.curl_error !== 'none') alog(`  cURL: ${t.curl_error}`, '#ef4444');
+            if (tok) {
+                alog('  ✓ BytePlus is reachable via IP! Adding DNS override to config will fix avatar.', '#a8e063');
+                alog('  → Set vision_ai_url = https://visual.ap-southeast-1.byteplus.com in Admin→Settings', '#fbbf24');
+                alog('  → Set vision_ai_dns_override = ' + t.resolved_to + ' in Admin→Settings', '#fbbf24');
+            }
+            if (t.response && typeof t.response === 'object') {
+                alog('  Response:', '#94a3b8');
+                JSON.stringify(t.response, null, 2).split('\n').forEach(l => alog('    ' + l, '#475569'));
+            }
+        }
 
         // ── TCP connect ───────────────────────────────────────────────────────
         if (d.tcp_connect) {
