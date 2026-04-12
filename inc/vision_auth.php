@@ -82,7 +82,7 @@ function volcengine_v4_headers(
     string $body,
     string $ak,
     string $sk,
-    string $region  = 'ap-southeast-1',
+    string $region  = 'ap-singapore-1',
     string $service = 'cv'
 ): array {
     $xDate     = gmdate('Ymd\THis\Z');
@@ -153,7 +153,7 @@ function vision_post(string $url, array $payload, string $ak, string $sk): array
         $host    = parse_url($url, PHP_URL_HOST);
         $path    = parse_url($url, PHP_URL_PATH) ?? '/';
         $query   = parse_url($url, PHP_URL_QUERY) ?? '';
-        $region  = setting('vision_ai_region',  'ap-southeast-1') ?: 'ap-southeast-1';
+        $region  = setting('vision_ai_region',  'ap-singapore-1') ?: 'ap-singapore-1';
         $service = setting('vision_ai_service',  'cv')             ?: 'cv';
         $hdrs    = volcengine_v4_headers('POST', $host, $path, $query, $body, $ak, $sk, $region, $service);
     } else {

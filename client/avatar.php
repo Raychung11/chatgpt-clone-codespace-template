@@ -264,11 +264,11 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
     ];
 
     $altHosts = [
-        'visual.ap-southeast-1.byteplus.com',
+        'visual.ap-singapore-1.byteplus.com',
         'visual.byteplus.com',
         'open.byteplus.com',
         'visual.volcengineapi.com',
-        'visual.ap-southeast-1.volcengineapi.com',
+        'visual.ap-singapore-1.volcengineapi.com',
     ];
     $dnsAlts = [];
     foreach ($altHosts as $h) {
@@ -279,7 +279,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
 
     // ── 2b. Try resolving BytePlus target via Google DNS (DoH) ──────────────────
     // This tests if Google 8.8.8.8 can see the hostname, even if server DNS can't.
-    $byteplusHost = 'visual.ap-southeast-1.byteplus.com';
+    $byteplusHost = 'visual.ap-singapore-1.byteplus.com';
     $dohUrl = 'https://dns.google/resolve?name=' . urlencode($byteplusHost) . '&type=A';
     $dohCh  = curl_init($dohUrl);
     curl_setopt_array($dohCh, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_TIMEOUT=>6,
@@ -296,10 +296,10 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
             'hostname' => $byteplusHost,
             'ips'      => $dohIps,
             'status'   => 'RESOLVED by Google DNS → your server DNS is blocking it',
-            'fix'      => 'Add to the scan below: curl --resolve visual.ap-southeast-1.byteplus.com:443:' . $dohIps[0],
+            'fix'      => 'Add to the scan below: curl --resolve visual.ap-singapore-1.byteplus.com:443:' . $dohIps[0],
         ];
         // Try a direct connection using the resolved IP (CURLOPT_RESOLVE bypass)
-        $byteUrl   = 'https://visual.ap-southeast-1.byteplus.com/api/v1/ai_video_generate';
+        $byteUrl   = 'https://visual.ap-singapore-1.byteplus.com/api/v1/ai_video_generate';
         $byteBody  = json_encode(['req_key' => $reqKey, 'image_base64' => 'dGVzdA==', 'text' => 'test'], JSON_UNESCAPED_SLASHES);
         $bytePath  = '/api/v1/ai_video_generate';
         $byteHdrs  = vision_signed_headers('POST', $bytePath, $byteBody, $ak, $sk);
@@ -312,7 +312,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
             CURLOPT_POSTFIELDS     => $byteBody,
             CURLOPT_HTTPHEADER     => $byteLines,
             CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_RESOLVE        => ["visual.ap-southeast-1.byteplus.com:443:{$dohIps[0]}"],
+            CURLOPT_RESOLVE        => ["visual.ap-singapore-1.byteplus.com:443:{$dohIps[0]}"],
         ]);
         $bResp = curl_exec($bCh);
         $bCode = curl_getinfo($bCh, CURLINFO_HTTP_CODE);
@@ -371,7 +371,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
             $host    = parse_url($probeUrl, PHP_URL_HOST);
             $path    = parse_url($probeUrl, PHP_URL_PATH) ?? '/';
             $query   = parse_url($probeUrl, PHP_URL_QUERY) ?? '';
-            $region  = setting('vision_ai_region',  'ap-southeast-1') ?: 'ap-southeast-1';
+            $region  = setting('vision_ai_region',  'ap-singapore-1') ?: 'ap-singapore-1';
             $service = setting('vision_ai_service',  'cv')             ?: 'cv';
             $hdrs    = volcengine_v4_headers('POST', $host, $path, $query, $body, $ak, $sk, $region, $service);
             $signing = "Volcengine V4 (service=$service, region=$region)";
@@ -427,7 +427,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
             && str_contains($decoded['message'] ?? '', 'not supported');
 
         if (_is_volcengine_host($apiBase) && $reqKeyUnsupported) {
-            $region  = setting('vision_ai_region',  'ap-southeast-1') ?: 'ap-southeast-1';
+            $region  = setting('vision_ai_region',  'ap-singapore-1') ?: 'ap-singapore-1';
             $service = setting('vision_ai_service',  'cv')             ?: 'cv';
             $host    = parse_url($apiBase, PHP_URL_HOST);
 
@@ -1116,7 +1116,7 @@ async function runAvatarDebug() {
             if (t.curl_error !== 'none') alog(`  cURL: ${t.curl_error}`, '#ef4444');
             if (tok) {
                 alog('  ✓ BytePlus is reachable via IP! Adding DNS override to config will fix avatar.', '#a8e063');
-                alog('  → Set vision_ai_url = https://visual.ap-southeast-1.byteplus.com in Admin→Settings', '#fbbf24');
+                alog('  → Set vision_ai_url = https://visual.ap-singapore-1.byteplus.com in Admin→Settings', '#fbbf24');
                 alog('  → Set vision_ai_dns_override = ' + t.resolved_to + ' in Admin→Settings', '#fbbf24');
             }
             if (t.response && typeof t.response === 'object') {
