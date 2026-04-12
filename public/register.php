@@ -129,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group">
                     <label class="form-label" for="ref_code">Referral Code <span class="text-muted">(optional)</span></label>
                     <input type="text" id="ref_code" name="ref_code" class="form-control"
-                           value="<?= e($old['ref_code'] ?? '') ?>"
+                           value="<?= e($old['ref_code'] ?? strtoupper(trim($_GET['ref'] ?? ''))) ?>"
                            placeholder="ENTER CODE" maxlength="20" style="text-transform:uppercase">
                     <div class="form-hint">Have a referral code? Enter it to give your inviter a reward.</div>
                 </div>
@@ -144,5 +144,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 </div>
+<script>
+// If referral code came from URL, lock the field so it can't be accidentally cleared
+(function() {
+    const urlRef = new URLSearchParams(location.search).get('ref');
+    if (urlRef) {
+        const field = document.getElementById('ref_code');
+        if (field && !field.value) field.value = urlRef.toUpperCase();
+    }
+})();
+</script>
 </body>
 </html>

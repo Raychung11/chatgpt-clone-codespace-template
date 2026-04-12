@@ -58,6 +58,7 @@ function render_client_navbar(array $user, string $active = ''): void
         <a href="<?= BASE_URL ?>/client/profile.php">Profile</a>
         <a href="<?= BASE_URL ?>/public/logout.php" style="color:var(--color-danger)">Sign Out</a>
     </div>
+    <script src="<?= BASE_URL ?>/public/assets/js/app.js" defer></script>
     <?php
 }
 
