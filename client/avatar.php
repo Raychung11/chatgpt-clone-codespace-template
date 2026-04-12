@@ -234,72 +234,9 @@ try {
 }
 
 $balance = wallet_balance($uid);
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Avatar — <?= e(setting('site_name','VideoSaaS')) ?></title>
-    <link rel="stylesheet" href="<?= BASE_URL ?>/public/assets/css/main.css">
-    <style>
-        .upload-zone {
-            border: 2px dashed var(--color-border);
-            border-radius: var(--radius);
-            padding: 28px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: border-color .2s, background .2s;
-            position: relative;
-        }
-        .upload-zone:hover, .upload-zone.dragover {
-            border-color: var(--color-primary);
-            background: rgba(108,71,255,.05);
-        }
-        .upload-zone input[type=file] {
-            position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-        }
-        .upload-zone .icon { font-size: 2.2rem; margin-bottom: 6px; }
-        .upload-preview {
-            max-width: 160px;
-            max-height: 160px;
-            border-radius: 8px;
-            margin: 10px auto 0;
-            display: block;
-            box-shadow: 0 2px 12px rgba(0,0,0,.3);
-        }
-        .audio-preview { width: 100%; margin-top: 10px; }
-        .mode-tabs { display: flex; gap: 0; border: 1px solid var(--color-border); border-radius: var(--radius); overflow: hidden; margin-bottom: 14px; }
-        .mode-tab { flex: 1; padding: 9px; text-align: center; cursor: pointer; font-size: .85rem; font-weight: 600; border: none; background: transparent; color: var(--color-muted); transition: all .15s; }
-        .mode-tab.active { background: var(--color-primary); color: #fff; }
-        .job-card { display: flex; gap: 14px; align-items: flex-start; }
-        .job-portrait { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--color-surface2); }
-        .job-info { flex: 1; min-width: 0; }
-        .status-badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: .72rem; font-weight: 700; text-transform: uppercase; }
-        .status-badge.queued     { background: rgba(255,193,7,.15); color: #ffc107; }
-        .status-badge.processing { background: rgba(108,71,255,.15); color: var(--color-primary); }
-        .status-badge.completed  { background: rgba(34,197,94,.15);  color: #22c55e; }
-        .status-badge.failed,
-        .status-badge.refunded   { background: rgba(239,68,68,.15);  color: #ef4444; }
-        .prog-bar { height: 6px; background: var(--color-border); border-radius: 3px; margin: 8px 0 4px; overflow: hidden; }
-        .prog-fill { height: 100%; background: linear-gradient(90deg,var(--color-primary),var(--color-accent)); width: 20%; border-radius: 3px; transition: width .6s ease; }
-        .prog-steps { display:flex; gap:0; margin: 6px 0 2px; }
-        .prog-step { flex:1; text-align:center; font-size:.68rem; font-weight:600; padding:4px 2px; border-radius:4px; opacity:.35; transition: opacity .3s; }
-        .prog-step.done  { opacity:1; color:#22c55e; }
-        .prog-step.active{ opacity:1; color:var(--color-primary); }
-        .prog-elapsed { font-size:.72rem; color:var(--color-muted); margin-top:2px; }
-        .video-thumb-wrap { position: relative; cursor: pointer; display: inline-block; }
-        .video-thumb-wrap video { width: 120px; height: 68px; object-fit: cover; border-radius: 6px; display: block; }
-        .play-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.35); border-radius: 6px; font-size: 1.5rem; }
-        /* Modal */
-        .vmodal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:9999; align-items:center; justify-content:center; }
-        .vmodal.open { display:flex; }
-        .vmodal video { max-width:90vw; max-height:85vh; border-radius:8px; }
-        .vmodal-close { position:absolute; top:18px; right:24px; font-size:2rem; color:#fff; cursor:pointer; line-height:1; }
-    </style>
-</head>
-<?php
+
 // ── Debug action: comprehensive connectivity diagnostics ─────────────────────
+// Must run BEFORE any HTML is output so json_response() can set headers cleanly.
 if (($_GET['_action'] ?? '') === 'debug_test') {
     csrf_verify();
     [$ak, $sk, $apiBase, $reqKey] = _omnihuman_creds();
@@ -307,10 +244,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
     $results = [];
 
     // ── 1. Config: what is actually being used (DB vs constant fallback) ────────
-    $dbAk      = setting('vision_ai_ak',      '');
-    $dbSk      = setting('vision_ai_sk',      '');
-    $dbUrl     = setting('vision_ai_url',     '');
-    $dbReqKey  = setting('omnihuman_req_key', '');
+    $dbUrl    = setting('vision_ai_url', '');
     $results['config'] = [
         'source_url'         => $dbUrl ? "DB: $dbUrl" : ('constant: ' . VISION_AI_URL),
         'active_url'         => $apiBase ?: 'NOT SET',
@@ -329,7 +263,6 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
         'resolved'  => ($ip !== $host) ? "OK → $ip" : 'FAILED (no DNS record or blocked)',
     ];
 
-    // Also probe alternative known BytePlus Visual AI hostnames
     $altHosts = [
         'visual.ap-southeast-1.byteplus.com',
         'visual.byteplus.com',
@@ -429,6 +362,69 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
     json_response(['ok' => true, 'debug' => $results]);
 }
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Avatar — <?= e(setting('site_name','VideoSaaS')) ?></title>
+    <link rel="stylesheet" href="<?= BASE_URL ?>/public/assets/css/main.css">
+    <style>
+        .upload-zone {
+            border: 2px dashed var(--color-border);
+            border-radius: var(--radius);
+            padding: 28px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color .2s, background .2s;
+            position: relative;
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--color-primary);
+            background: rgba(108,71,255,.05);
+        }
+        .upload-zone input[type=file] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+        }
+        .upload-zone .icon { font-size: 2.2rem; margin-bottom: 6px; }
+        .upload-preview {
+            max-width: 160px;
+            max-height: 160px;
+            border-radius: 8px;
+            margin: 10px auto 0;
+            display: block;
+            box-shadow: 0 2px 12px rgba(0,0,0,.3);
+        }
+        .audio-preview { width: 100%; margin-top: 10px; }
+        .mode-tabs { display: flex; gap: 0; border: 1px solid var(--color-border); border-radius: var(--radius); overflow: hidden; margin-bottom: 14px; }
+        .mode-tab { flex: 1; padding: 9px; text-align: center; cursor: pointer; font-size: .85rem; font-weight: 600; border: none; background: transparent; color: var(--color-muted); transition: all .15s; }
+        .mode-tab.active { background: var(--color-primary); color: #fff; }
+        .job-card { display: flex; gap: 14px; align-items: flex-start; }
+        .job-portrait { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--color-surface2); }
+        .job-info { flex: 1; min-width: 0; }
+        .status-badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: .72rem; font-weight: 700; text-transform: uppercase; }
+        .status-badge.queued     { background: rgba(255,193,7,.15); color: #ffc107; }
+        .status-badge.processing { background: rgba(108,71,255,.15); color: var(--color-primary); }
+        .status-badge.completed  { background: rgba(34,197,94,.15);  color: #22c55e; }
+        .status-badge.failed,
+        .status-badge.refunded   { background: rgba(239,68,68,.15);  color: #ef4444; }
+        .prog-bar { height: 6px; background: var(--color-border); border-radius: 3px; margin: 8px 0 4px; overflow: hidden; }
+        .prog-fill { height: 100%; background: linear-gradient(90deg,var(--color-primary),var(--color-accent)); width: 20%; border-radius: 3px; transition: width .6s ease; }
+        .prog-steps { display:flex; gap:0; margin: 6px 0 2px; }
+        .prog-step { flex:1; text-align:center; font-size:.68rem; font-weight:600; padding:4px 2px; border-radius:4px; opacity:.35; transition: opacity .3s; }
+        .prog-step.done  { opacity:1; color:#22c55e; }
+        .prog-step.active{ opacity:1; color:var(--color-primary); }
+        .prog-elapsed { font-size:.72rem; color:var(--color-muted); margin-top:2px; }
+        .video-thumb-wrap { position: relative; cursor: pointer; display: inline-block; }
+        .video-thumb-wrap video { width: 120px; height: 68px; object-fit: cover; border-radius: 6px; display: block; }
+        .play-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.35); border-radius: 6px; font-size: 1.5rem; }
+        /* Modal */
+        .vmodal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:9999; align-items:center; justify-content:center; }
+        .vmodal.open { display:flex; }
+        .vmodal video { max-width:90vw; max-height:85vh; border-radius:8px; }
+        .vmodal-close { position:absolute; top:18px; right:24px; font-size:2rem; color:#fff; cursor:pointer; line-height:1; }
+    </style>
+</head>
 <body>
 <?php render_client_navbar($user, 'avatar'); ?>
 
