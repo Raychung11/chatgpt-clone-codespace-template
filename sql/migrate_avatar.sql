@@ -42,9 +42,9 @@ CREATE TABLE IF NOT EXISTS `avatar_jobs` (
 -- Settings rows for Vision AI credentials
 INSERT INTO `settings` (`key`, `value`, `label`, `type`, `group`)
 VALUES
-    ('vision_ai_ak',       '', 'Vision AI Access Key (AK)',   'text',     'byteplus'),
-    ('vision_ai_sk',       '', 'Vision AI Secret Key (SK)',   'password', 'byteplus'),
-    ('vision_ai_url',      'https://visual.ap-southeast-1.bytepluses.com', 'Vision AI Base URL', 'text', 'byteplus'),
-    ('omnihuman_req_key',  'dreamina_omni_human_v1_5', 'OmniHuman req_key', 'text', 'byteplus'),
-    ('avatar_credit_cost', '5.00', 'Avatar job credit cost', 'text', 'pricing')
+    ('vision_ai_ak',       '', 'Vision AI Access Key (AK)',   'string', 'byteplus'),
+    ('vision_ai_sk',       '', 'Vision AI Secret Key (SK)',   'string', 'byteplus'),
+    ('vision_ai_url',      'https://visual.ap-southeast-1.bytepluses.com', 'Vision AI Base URL', 'string', 'byteplus'),
+    ('omnihuman_req_key',  'dreamina_omni_human_v1_5', 'OmniHuman req_key', 'string', 'byteplus'),
+    ('avatar_credit_cost', '5.00', 'Avatar job credit cost', 'string', 'pricing')
 ON DUPLICATE KEY UPDATE `label` = VALUES(`label`);
