@@ -286,8 +286,88 @@ $balance = wallet_balance($uid);
         .vmodal-close { position:absolute; top:18px; right:24px; font-size:2rem; color:#fff; cursor:pointer; line-height:1; }
     </style>
 </head>
-<body>
-<?php render_client_navbar($user, 'avatar'); ?>
+<?php
+// ── Debug action: test config + API connectivity ──────────────────────────────
+if (($_GET['_action'] ?? '') === 'debug_test') {
+    csrf_verify();
+    [$ak, $sk, $apiBase, $reqKey] = _omnihuman_creds();
+
+    $results = [];
+
+    // 1. Config check
+    $results['config'] = [
+        'vision_ai_ak'       => $ak  ? ('set (' . substr($ak, 0, 4) . '…)') : 'NOT SET',
+        'vision_ai_sk'       => $sk  ? 'set (***)' : 'NOT SET',
+        'vision_ai_url'      => $apiBase ?: 'NOT SET',
+        'omnihuman_req_key'  => $reqKey  ?: 'NOT SET',
+    ];
+
+    // 2. Upload directory check
+    $avatarDir = BASE_PATH . '/uploads/avatars';
+    $audioDir  = BASE_PATH . '/uploads/avatar_audio';
+    $results['dirs'] = [
+        'uploads/avatars'       => is_dir($avatarDir) ? (is_writable($avatarDir) ? 'OK (writable)' : 'EXISTS but not writable') : 'MISSING',
+        'uploads/avatar_audio'  => is_dir($audioDir)  ? (is_writable($audioDir)  ? 'OK (writable)' : 'EXISTS but not writable') : 'MISSING',
+    ];
+
+    // Auto-create missing dirs
+    if (!is_dir($avatarDir)) { @mkdir($avatarDir, 0755, true); $results['dirs']['uploads/avatars'] .= ' → created'; }
+    if (!is_dir($audioDir))  { @mkdir($audioDir,  0755, true); $results['dirs']['uploads/avatar_audio'] .= ' → created'; }
+
+    // 3. Live API connectivity test (submit a minimal dummy payload to see the error)
+    if ($ak && $sk && $apiBase) {
+        $url = rtrim($apiBase, '/') . '/api/v1/ai_video_generate';
+        // Send a minimal (intentionally invalid) payload — we just want to see
+        // if the server responds at all and what auth error looks like
+        $testPayload = ['req_key' => $reqKey, 'image_base64' => 'test', 'text' => 'test'];
+        $path   = '/api/v1/ai_video_generate';
+        $body   = json_encode($testPayload, JSON_UNESCAPED_SLASHES);
+        $headers = vision_signed_headers('POST', $path, $body, $ak, $sk);
+        $headerLines = array_map(fn($k,$v) => "$k: $v", array_keys($headers), array_values($headers));
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $body,
+            CURLOPT_HTTPHEADER     => $headerLines,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ]);
+        $resp    = curl_exec($ch);
+        $code    = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr = curl_error($ch);
+        curl_close($ch);
+
+        $results['api_test'] = [
+            'url'        => $url,
+            'http_code'  => $code,
+            'curl_error' => $curlErr ?: 'none',
+            'raw_response' => $resp ?: '(empty)',
+        ];
+    } else {
+        $results['api_test'] = 'SKIPPED — AK/SK or URL not configured';
+    }
+
+    // 4. Last job API response (most recent job for this user)
+    $lastJob = $pdo->prepare('SELECT id,status,api_response,error_message FROM avatar_jobs WHERE user_id=? ORDER BY id DESC LIMIT 1');
+    $lastJob->execute([$uid]);
+    $last = $lastJob->fetch();
+    if ($last) {
+        $results['last_job'] = [
+            'id'            => $last['id'],
+            'status'        => $last['status'],
+            'error_message' => $last['error_message'] ?: '(none)',
+            'api_response'  => $last['api_response'] ? json_decode($last['api_response'], true) : null,
+        ];
+    } else {
+        $results['last_job'] = 'No jobs yet';
+    }
+
+    json_response(['ok' => true, 'debug' => $results]);
+}
+?>
+
 
 <div class="container main-content">
     <?= render_flash() ?>
@@ -297,7 +377,29 @@ $balance = wallet_balance($uid);
             <h1 class="page-title">AI Avatar</h1>
             <p class="page-sub">Upload a portrait + audio to generate a talking-head video (OmniHuman 1.5)</p>
         </div>
-        <span class="navbar-wallet">⚡ <?= e(format_credits($balance)) ?> credits</span>
+        <div style="display:flex;gap:10px;align-items:center">
+            <button onclick="toggleAvatarDebug()" class="btn btn-ghost btn-sm" style="font-size:.75rem;opacity:.7">🔧 Debug</button>
+            <span class="navbar-wallet">⚡ <?= e(format_credits($balance)) ?> credits</span>
+        </div>
+    </div>
+
+    <!-- ── Debug panel ──────────────────────────────────────────────────────── -->
+    <div id="avatarDebugWrap" style="display:none;margin-bottom:20px">
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <span style="color:#facc15;font-weight:700;font-size:.85rem">🔧 Avatar Debug Console</span>
+                <div style="display:flex;gap:8px">
+                    <button onclick="runAvatarDebug()" class="btn btn-sm"
+                            style="background:#1e40af;color:#fff;font-size:.75rem">▶ Run Diagnostics</button>
+                    <button onclick="document.getElementById('avatarDebugLog').innerHTML=''"
+                            class="btn btn-ghost btn-sm" style="font-size:.75rem">Clear</button>
+                </div>
+            </div>
+            <div id="avatarDebugLog"
+                 style="font-family:monospace;font-size:.75rem;line-height:1.7;max-height:420px;overflow-y:auto;color:#94a3b8">
+                Click "Run Diagnostics" to test configuration and API connectivity.
+            </div>
+        </div>
     </div>
 
     <?php if (!empty($errors['general'])): ?>
@@ -663,6 +765,120 @@ if (pendingJobs.length) {
     setInterval(() => pollJobs([...pendingJobs]), 8000);
     pollJobs([...pendingJobs]);
 }
+
+// ── Debug panel ────────────────────────────────────────────────────────────────
+function toggleAvatarDebug() {
+    const wrap = document.getElementById('avatarDebugWrap');
+    wrap.style.display = wrap.style.display === 'none' ? 'block' : 'none';
+}
+
+function alog(msg, color) {
+    const log = document.getElementById('avatarDebugLog');
+    const line = document.createElement('div');
+    line.style.color = color || '#94a3b8';
+    const ts = new Date().toLocaleTimeString();
+    line.textContent = `[${ts}] ${msg}`;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+}
+
+function alogJson(label, obj, color) {
+    alog(label, color || '#64b5f6');
+    const lines = JSON.stringify(obj, null, 2).split('\n');
+    lines.forEach(l => alog('  ' + l, '#475569'));
+}
+
+async function runAvatarDebug() {
+    const log = document.getElementById('avatarDebugLog');
+    log.innerHTML = '';
+    alog('Running diagnostics…', '#facc15');
+
+    try {
+        const resp = await fetch('<?= BASE_URL ?>/client/avatar.php?_action=debug_test', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRF-Token': csrfToken,
+            },
+            body: '<?= CSRF_TOKEN_NAME ?>=<?= csrf_token() ?>',
+        });
+
+        if (!resp.ok) {
+            const txt = await resp.text();
+            alog(`HTTP ${resp.status}: ${txt.slice(0,200)}`, '#ef4444');
+            return;
+        }
+
+        const data = await resp.json();
+        const d = data.debug;
+
+        // Config
+        alog('── Configuration ─────────────────────', '#facc15');
+        Object.entries(d.config).forEach(([k, v]) => {
+            const ok = !v.includes('NOT SET');
+            alog(`  ${k}: ${v}`, ok ? '#a8e063' : '#ef4444');
+        });
+
+        // Directories
+        alog('── Upload Directories ────────────────', '#facc15');
+        Object.entries(d.dirs).forEach(([k, v]) => {
+            alog(`  ${k}: ${v}`, v.includes('OK') ? '#a8e063' : '#ef4444');
+        });
+
+        // API test
+        alog('── API Connectivity Test ─────────────', '#facc15');
+        if (typeof d.api_test === 'string') {
+            alog('  ' + d.api_test, '#f59e0b');
+        } else {
+            alog(`  URL: ${d.api_test.url}`, '#94a3b8');
+            alog(`  HTTP code: ${d.api_test.http_code}`, d.api_test.http_code === 0 ? '#ef4444' : '#a8e063');
+            if (d.api_test.curl_error !== 'none') {
+                alog(`  cURL error: ${d.api_test.curl_error}`, '#ef4444');
+            }
+            alog('  Raw response:', '#94a3b8');
+            try {
+                const parsed = JSON.parse(d.api_test.raw_response);
+                JSON.stringify(parsed, null, 2).split('\n').forEach(l => alog('    ' + l, '#475569'));
+            } catch(_) {
+                alog('    ' + d.api_test.raw_response.slice(0, 500), '#475569');
+            }
+        }
+
+        // Last job
+        alog('── Last Job ──────────────────────────', '#facc15');
+        if (typeof d.last_job === 'string') {
+            alog('  ' + d.last_job, '#94a3b8');
+        } else {
+            alog(`  Job #${d.last_job.id}  status: ${d.last_job.status}`, '#94a3b8');
+            alog(`  error_message: ${d.last_job.error_message}`,
+                 d.last_job.error_message === '(none)' ? '#a8e063' : '#ef4444');
+            if (d.last_job.api_response) {
+                alog('  api_response:', '#94a3b8');
+                JSON.stringify(d.last_job.api_response, null, 2)
+                    .split('\n').forEach(l => alog('    ' + l, '#475569'));
+            }
+        }
+
+        alog('── Done ──────────────────────────────', '#facc15');
+
+    } catch(e) {
+        alog('Fetch error: ' + e.message, '#ef4444');
+    }
+}
+
+// Also intercept form submission to show what's happening
+document.getElementById('avatarForm').addEventListener('submit', function(e) {
+    const wrap = document.getElementById('avatarDebugWrap');
+    if (wrap.style.display !== 'none') {
+        alog('Form submitted — waiting for server response…', '#facc15');
+        const fd = new FormData(this);
+        alog(`  audio_mode: ${fd.get('audio_mode')}`, '#94a3b8');
+        alog(`  duration: ${fd.get('duration')}s`, '#94a3b8');
+        alog(`  portrait: ${fd.get('portrait')?.name || 'none'}  (${((fd.get('portrait')?.size||0)/1024).toFixed(0)} KB)`, '#94a3b8');
+        alog(`  audio: ${fd.get('audio')?.name || 'none'}  (${((fd.get('audio')?.size||0)/1024).toFixed(0)} KB)`, '#94a3b8');
+        alog(`  tts_text: ${(fd.get('tts_text')||'').slice(0,60)}`, '#94a3b8');
+    }
+});
 </script>
 </body>
 </html>
