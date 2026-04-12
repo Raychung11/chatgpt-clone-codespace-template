@@ -298,16 +298,26 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
         if ($fp) fclose($fp);
     }
 
-    // ── 5. Live API probe (intentionally invalid payload to check auth/endpoint) ─
+    // ── 5. API probe — test generate URL with correct signing ────────────────────
     if ($ak && $sk && $apiBase) {
-        $url = rtrim($apiBase, '/') . '/api/v1/ai_video_generate';
         $testPayload = ['req_key' => $reqKey, 'image_base64' => 'dGVzdA==', 'text' => 'test'];
-        $path   = '/api/v1/ai_video_generate';
-        $body   = json_encode($testPayload, JSON_UNESCAPED_SLASHES);
-        $hdrs   = vision_signed_headers('POST', $path, $body, $ak, $sk);
+        $probeUrl    = _omnihuman_url($apiBase, 'generate');
+        $body        = json_encode($testPayload, JSON_UNESCAPED_SLASHES);
+
+        if (_is_volcengine_host($apiBase)) {
+            $host   = parse_url($probeUrl, PHP_URL_HOST);
+            $path   = parse_url($probeUrl, PHP_URL_PATH) ?? '/';
+            $query  = parse_url($probeUrl, PHP_URL_QUERY) ?? '';
+            $region = setting('vision_ai_region', 'ap-southeast-1') ?: 'ap-southeast-1';
+            $hdrs   = volcengine_v4_headers('POST', $host, $path, $query, $body, $ak, $sk, $region);
+            $signing = 'Volcengine V4';
+        } else {
+            $hdrs    = vision_signed_headers('POST', parse_url($probeUrl, PHP_URL_PATH) ?? '/', $body, $ak, $sk);
+            $signing = 'BytePlus HMAC256';
+        }
         $hLines = array_map(fn($k,$v) => "$k: $v", array_keys($hdrs), array_values($hdrs));
 
-        $ch = curl_init($url);
+        $ch = curl_init($probeUrl);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT        => 12,
@@ -322,21 +332,27 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
         $curlNo  = curl_errno($ch);
         curl_close($ch);
 
+        $decoded = $resp ? (json_decode($resp, true) ?? $resp) : '(empty)';
+        $volErr  = is_array($decoded) ? ($decoded['ResponseMetadata']['Error'] ?? null) : null;
+
         $results['api_probe'] = [
-            'url'          => $url,
+            'url'          => $probeUrl,
+            'signing'      => $signing,
             'http_code'    => $code ?: 0,
-            'curl_errno'   => $curlNo,
             'curl_error'   => $curlErr ?: 'none',
-            'response'     => $resp ? (json_decode($resp, true) ?? $resp) : '(empty)',
+            'response'     => $decoded,
             'diagnosis'    => match(true) {
-                (bool)$curlErr && str_contains($curlErr, 'resolve') => 'DNS FAILURE — hostname cannot be resolved. Check dns_alternatives above for a working host.',
-                (bool)$curlErr && str_contains($curlErr, 'Connection refused') => 'Server refused connection — firewall or wrong port.',
-                (bool)$curlErr && str_contains($curlErr, 'timed out') => 'Timeout — server unreachable or blocking outbound.',
-                $code === 401 || $code === 403 => 'Auth error — AK/SK wrong or not yet active.',
-                $code === 400 => 'Bad request (expected) — endpoint is reachable, auth accepted.',
-                $code === 200 => 'Success response — fully working.',
-                $code >= 500  => "Server error $code — endpoint exists but internal error.",
-                default       => $curlErr ? "cURL error $curlNo: $curlErr" : "HTTP $code",
+                (bool)$curlErr && str_contains($curlErr, 'resolve')           => 'DNS FAILURE',
+                (bool)$curlErr && str_contains($curlErr, 'timed out')         => 'TIMEOUT — server unreachable',
+                $volErr && str_contains($volErr['Code'] ?? '', 'Auth')         => 'AUTH ERROR — check AK/SK',
+                $volErr && ($volErr['Code'] ?? '') === 'InvalidAction'         => 'WRONG ACTION NAME — update omnihuman_action_generate in settings',
+                $volErr && ($volErr['Code'] ?? '') === 'MissingParameter'      => 'FORMAT ERROR — action or parameter missing',
+                $volErr                                                         => 'API ERROR: ' . ($volErr['Message'] ?? $volErr['Code'] ?? '?'),
+                $code === 401 || $code === 403                                  => 'AUTH ERROR — AK/SK rejected',
+                $code === 400                                                   => 'BAD REQUEST (may be expected for dummy payload)',
+                $code === 200                                                   => 'OK — endpoint working',
+                $code >= 500                                                    => "SERVER ERROR $code",
+                default                                                         => $curlErr ? "cURL $curlNo: $curlErr" : "HTTP $code",
             },
         ];
     } else {

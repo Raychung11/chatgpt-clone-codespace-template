@@ -51,7 +51,7 @@ function omnihuman_create_task(
         return ['ok' => false, 'error' => 'Provide either an audio file or TTS text.', 'raw' => []];
     }
 
-    $url    = rtrim($apiBase, '/') . '/api/v1/ai_video_generate';
+    $url    = _omnihuman_url($apiBase, 'generate');
     $result = vision_post($url, $payload, $ak, $sk);
 
     if (!$result['ok']) {
@@ -59,9 +59,12 @@ function omnihuman_create_task(
     }
 
     $raw    = $result['raw'];
-    // Response: {"code":10000,"data":{"task_id":"xxx",...}}
-    $taskId = $raw['data']['task_id']
+    // BytePlus:    {"code":10000,"data":{"task_id":"xxx"}}
+    // Volcengine:  {"Result":{"task_id":"xxx"}} or {"data":{"task_id":"xxx"}}
+    $taskId = $raw['Result']['task_id']
+           ?? $raw['data']['task_id']
            ?? $raw['task_id']
+           ?? $raw['Result']['id']
            ?? $raw['data']['id']
            ?? null;
 
@@ -86,7 +89,7 @@ function omnihuman_query_task(string $taskId): array
         return ['ok' => false, 'status' => 'failed', 'error' => 'AK/SK not configured.', 'raw' => []];
     }
 
-    $url    = rtrim($apiBase, '/') . '/api/v1/ai_video_query';
+    $url    = _omnihuman_url($apiBase, 'query');
     $result = vision_post($url, ['req_key' => $reqKey, 'task_id' => $taskId], $ak, $sk);
 
     if (!$result['ok']) {
@@ -94,10 +97,11 @@ function omnihuman_query_task(string $taskId): array
     }
 
     $raw  = $result['raw'];
-    $data = $raw['data'] ?? $raw;
+    // Volcengine wraps in Result, BytePlus in data
+    $data = $raw['Result'] ?? $raw['data'] ?? $raw;
 
     // Normalise status
-    $providerStatus = strtolower($data['status'] ?? 'unknown');
+    $providerStatus = strtolower($data['status'] ?? $data['Status'] ?? 'unknown');
     $status = match (true) {
         in_array($providerStatus, ['done', 'succeed', 'succeeded', 'success', 'completed'], true) => 'completed',
         in_array($providerStatus, ['failed', 'error', 'cancelled', 'fail'],                 true) => 'failed',
@@ -105,14 +109,15 @@ function omnihuman_query_task(string $taskId): array
         default                                                                                    => 'queued',
     };
 
-    // Extract video URL from various possible response shapes
+    // Extract video URL — covers both BytePlus and Volcengine response shapes
     $videoUrl = $data['video_url']
+             ?? $data['VideoUrl']
              ?? $data['url']
              ?? $data['result']['video_url']
              ?? $data['output']['video_url']
              ?? null;
 
-    $errorMsg = $data['error_detail'] ?? $data['error'] ?? $data['message'] ?? '';
+    $errorMsg = $data['error_detail'] ?? $data['error'] ?? $data['message'] ?? $data['ErrorMessage'] ?? '';
 
     return [
         'ok'        => true,
@@ -133,6 +138,36 @@ function _omnihuman_creds(): array
     $apiBase = (setting('vision_ai_url', VISION_AI_URL) ?: VISION_AI_URL) ?: VISION_AI_URL;
     $reqKey  = (setting('omnihuman_req_key', OMNIHUMAN_REQ_KEY) ?: OMNIHUMAN_REQ_KEY) ?: OMNIHUMAN_REQ_KEY;
     return [$ak, $sk, $apiBase, $reqKey];
+}
+
+/**
+ * Build the correct request URL for generate or query.
+ *
+ * BytePlus REST:   https://visual.ap-southeast-1.byteplus.com/api/v1/ai_video_{generate|query}
+ * Volcengine V4:   https://visual.volcengineapi.com?Action=CVSubmitTask&Version=2022-08-31
+ *                  https://visual.volcengineapi.com?Action=CVGetResult&Version=2022-08-31
+ *
+ * Action names are configurable via settings (omnihuman_action_generate / omnihuman_action_query)
+ * so the user can correct them if Volcengine changes the API.
+ */
+function _omnihuman_url(string $apiBase, string $type): string
+{
+    $base = rtrim($apiBase, '/');
+
+    if (_is_volcengine_host($apiBase)) {
+        $version = '2022-08-31';
+        if ($type === 'generate') {
+            $action = setting('omnihuman_action_generate', 'CVSubmitTask') ?: 'CVSubmitTask';
+        } else {
+            $action = setting('omnihuman_action_query', 'CVGetResult') ?: 'CVGetResult';
+        }
+        return $base . '?Action=' . $action . '&Version=' . $version;
+    }
+
+    // BytePlus REST paths
+    return $type === 'generate'
+        ? $base . '/api/v1/ai_video_generate'
+        : $base . '/api/v1/ai_video_query';
 }
 
 /**
