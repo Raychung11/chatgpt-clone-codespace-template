@@ -217,13 +217,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['_action'])) {
 }
 
 // ── Load job history ──────────────────────────────────────────────────────────
-$stmt = $pdo->prepare(
-    'SELECT id, status, duration, credit_cost, tts_text, audio_path, portrait_path,
-            video_url, error_message, created_at, completed_at
-     FROM avatar_jobs WHERE user_id=? ORDER BY created_at DESC LIMIT 20'
-);
-$stmt->execute([$uid]);
-$jobs = $stmt->fetchAll();
+// Wrap in try/catch in case migrate_avatar.sql hasn't been run yet
+$avatarTableMissing = false;
+try {
+    $stmt = $pdo->prepare(
+        'SELECT id, status, duration, credit_cost, tts_text, audio_path, portrait_path,
+                video_url, error_message, created_at, completed_at
+         FROM avatar_jobs WHERE user_id=? ORDER BY created_at DESC LIMIT 20'
+    );
+    $stmt->execute([$uid]);
+    $jobs = $stmt->fetchAll();
+} catch (\PDOException $e) {
+    $jobs = [];
+    $avatarTableMissing = true;
+    error_log('[avatar] avatar_jobs table missing — run sql/migrate_avatar.sql: ' . $e->getMessage());
+}
 
 $balance = wallet_balance($uid);
 ?>
@@ -367,10 +375,18 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
     json_response(['ok' => true, 'debug' => $results]);
 }
 ?>
-
+<body>
+<?php render_client_navbar($user, 'avatar'); ?>
 
 <div class="container main-content">
     <?= render_flash() ?>
+    <?php if ($avatarTableMissing): ?>
+    <div class="alert alert--error">
+        ⚠️ <strong>Database setup required.</strong>
+        The <code>avatar_jobs</code> table is missing.
+        Please run <code>sql/migrate_avatar.sql</code> in phpMyAdmin, then refresh this page.
+    </div>
+    <?php endif; ?>
 
     <div class="page-header">
         <div>
