@@ -8,6 +8,7 @@ $navItems = [
     ['icon' => 'fa-envelope',  'label' => 'Enquiries',      'file' => 'enquiries.php', 'url' => 'buyer/enquiries.php'],
     ['icon' => 'fa-file-invoice','label' => 'My Quotes',   'file' => 'quotes.php',    'url' => 'buyer/quotes.php'],
     ['icon' => 'fa-clipboard-list','label' => 'My Plan',   'file' => 'planner.php',   'url' => 'buyer/planner.php'],
+    ['icon' => 'fa-gift',      'label' => is_lang('zh') ? '推荐好友' : 'Refer a Friend', 'file' => 'referral.php', 'url' => 'buyer/referral.php'],
     ['icon' => 'fa-user-cog',  'label' => 'Profile',        'file' => 'profile.php',   'url' => 'buyer/profile.php'],
 ];
 ?>

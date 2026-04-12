@@ -7,6 +7,12 @@ $type  = in_array($_GET['type'] ?? '', ['buyer','seller','provider']) ? $_GET['t
 $error = '';
 $data  = [];
 
+// Capture referral code from URL and store in session
+if (!empty($_GET['ref'])) {
+    $_SESSION['pg_referral'] = strtoupper(clean($_GET['ref']));
+}
+$referralCode = $_SESSION['pg_referral'] ?? '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_enforce();
 
@@ -18,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'password'      => $_POST['password']            ?? '',
         'password2'     => $_POST['password2']           ?? '',
         'business_name' => clean($_POST['business_name'] ?? ''),
+        'referral_code' => strtoupper(clean($_POST['referral_code'] ?? $referralCode)),
     ];
     $agree = !empty($_POST['agree']);
 
@@ -33,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $roleMap = ['buyer' => ROLE_BUYER, 'seller' => ROLE_SELLER, 'provider' => ROLE_PROVIDER];
         $result  = auth_register($data, $roleMap[$type]);
         if ($result['success']) {
+            unset($_SESSION['pg_referral']);
             $loginResult = auth_login($data['email'], $data['password']);
             flash_set(FLASH_SUCCESS, __('auth.welcome_back') . '! Your account is ready.');
             if ($type === 'seller')        redirect('seller/dashboard.php');
@@ -88,6 +96,12 @@ include INC_PATH . '/header.php';
                     <form method="POST" action="" class="needs-validation" novalidate>
                         <?= csrf_field() ?>
                         <input type="hidden" name="type" value="<?= h($type) ?>">
+                        <?php if ($referralCode): ?>
+                            <input type="hidden" name="referral_code" value="<?= h($referralCode) ?>">
+                            <div class="alert alert-success py-2 small mb-3">
+                                <i class="fas fa-gift me-2"></i><?= is_lang('zh') ? '您通过推荐链接注册。推荐码：' : 'Referred by a friend. Code: ' ?><strong><?= h($referralCode) ?></strong>
+                            </div>
+                        <?php endif; ?>
 
                         <div class="row g-3">
                             <div class="col-12">
@@ -129,6 +143,15 @@ include INC_PATH . '/header.php';
                                 <input type="password" id="password2" name="password2" class="form-control"
                                        placeholder="Repeat password" required autocomplete="new-password">
                             </div>
+
+                            <?php if (!$referralCode): ?>
+                            <div class="col-12">
+                                <label for="referral_code" class="form-label small text-muted"><?= is_lang('zh') ? '推荐码（选填）' : 'Referral Code (optional)' ?></label>
+                                <input type="text" id="referral_code" name="referral_code" class="form-control form-control-sm"
+                                       value="<?= h($data['referral_code'] ?? '') ?>"
+                                       placeholder="e.g. PGAB3F91" maxlength="20" style="text-transform:uppercase">
+                            </div>
+                            <?php endif; ?>
 
                             <div class="col-12">
                                 <div class="form-check">

@@ -260,6 +260,21 @@ function auth_register(array $data, string $roleName = ROLE_BUYER): array
         );
     }
 
+    // Assign a unique referral code to the new user
+    $refCode = generate_referral_code();
+    Database::query('UPDATE users SET referral_code = ? WHERE id = ?', [$refCode, $userId]);
+
+    // Process referral if a valid code was provided
+    if (!empty($data['referral_code'])) {
+        $referrer = Database::fetchOne(
+            "SELECT id FROM users WHERE referral_code = ? AND status = 'active'",
+            [strtoupper(trim($data['referral_code']))]
+        );
+        if ($referrer && (int)$referrer['id'] !== $userId) {
+            referral_record((int)$referrer['id'], $userId);
+        }
+    }
+
     activity_log($userId, 'user_registered', 'users', $userId, 'New user registered as ' . $roleName);
 
     return ['success' => true, 'user_id' => $userId];
