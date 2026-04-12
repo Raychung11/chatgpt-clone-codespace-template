@@ -281,9 +281,13 @@ $balance = wallet_balance($uid);
         .status-badge.completed  { background: rgba(34,197,94,.15);  color: #22c55e; }
         .status-badge.failed,
         .status-badge.refunded   { background: rgba(239,68,68,.15);  color: #ef4444; }
-        .prog-bar { height: 4px; background: var(--color-border); border-radius: 2px; margin: 6px 0 0; overflow: hidden; }
-        .prog-fill { height: 100%; background: linear-gradient(90deg,var(--color-primary),var(--color-accent)); width: 60%; animation: progAnim 2s ease-in-out infinite alternate; }
-        @keyframes progAnim { from{width:20%} to{width:90%} }
+        .prog-bar { height: 6px; background: var(--color-border); border-radius: 3px; margin: 8px 0 4px; overflow: hidden; }
+        .prog-fill { height: 100%; background: linear-gradient(90deg,var(--color-primary),var(--color-accent)); width: 20%; border-radius: 3px; transition: width .6s ease; }
+        .prog-steps { display:flex; gap:0; margin: 6px 0 2px; }
+        .prog-step { flex:1; text-align:center; font-size:.68rem; font-weight:600; padding:4px 2px; border-radius:4px; opacity:.35; transition: opacity .3s; }
+        .prog-step.done  { opacity:1; color:#22c55e; }
+        .prog-step.active{ opacity:1; color:var(--color-primary); }
+        .prog-elapsed { font-size:.72rem; color:var(--color-muted); margin-top:2px; }
         .video-thumb-wrap { position: relative; cursor: pointer; display: inline-block; }
         .video-thumb-wrap video { width: 120px; height: 68px; object-fit: cover; border-radius: 6px; display: block; }
         .play-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.35); border-radius: 6px; font-size: 1.5rem; }
@@ -614,8 +618,18 @@ Example: Welcome to our platform! We help businesses create stunning AI marketin
                             </div>
 
                             <?php if ($inProgress): ?>
-                                <div class="prog-bar"><div class="prog-fill"></div></div>
-                                <div class="text-muted text-sm" style="margin-top:4px">Processing…</div>
+                                <div class="prog-steps">
+                                    <div class="prog-step <?= $job['status'] === 'queued' ? 'active' : 'done' ?>">✓ Submitted</div>
+                                    <div class="prog-step <?= $job['status'] === 'processing' ? 'active' : ($job['status'] === 'queued' ? '' : 'done') ?>">⚙ Rendering</div>
+                                    <div class="prog-step">✓ Done</div>
+                                </div>
+                                <div class="prog-bar">
+                                    <div class="prog-fill" id="ajob_bar_<?= (int)$job['id'] ?>"
+                                         style="width:<?= $job['status'] === 'processing' ? '55' : '15' ?>%"></div>
+                                </div>
+                                <div class="prog-elapsed" id="ajob_elapsed_<?= (int)$job['id'] ?>">
+                                    Elapsed: <span>0s</span> · typically 30–90s
+                                </div>
                             <?php elseif ($job['status'] === 'completed' && $job['video_url']): ?>
                                 <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
                                     <div class="video-thumb-wrap" onclick="openVideo(<?= htmlspecialchars(json_encode($job['video_url'])) ?>)">
@@ -726,15 +740,44 @@ document.getElementById('avatarForm').addEventListener('submit', function() {
 // ── Poll in-progress jobs ─────────────────────────────────────────────────────
 const pendingJobs = <?= json_encode(
     array_values(array_map(
-        fn($j) => (int)$j['id'],
+        fn($j) => ['id' => (int)$j['id'], 'created_at' => $j['created_at']],
         array_filter($jobs, fn($j) => in_array($j['status'], ['queued','processing']))
     ))
 ) ?>;
 const csrfToken = <?= json_encode($_SESSION[CSRF_TOKEN_NAME] ?? '') ?>;
 
-function pollJobs(ids) {
-    if (!ids.length) return;
-    ids.forEach(id => {
+// Elapsed time counters
+const jobStartTimes = {};
+pendingJobs.forEach(j => {
+    jobStartTimes[j.id] = new Date(j.created_at.replace(' ', 'T') + 'Z').getTime();
+});
+
+function fmtElapsed(ms) {
+    const s = Math.floor(ms / 1000);
+    if (s < 60) return s + 's';
+    return Math.floor(s / 60) + 'm ' + (s % 60) + 's';
+}
+
+// Tick elapsed timers every second
+setInterval(() => {
+    pendingJobs.forEach(j => {
+        const el = document.getElementById('ajob_elapsed_' + j.id);
+        if (!el) return;
+        const elapsed = Date.now() - (jobStartTimes[j.id] || Date.now());
+        el.querySelector('span').textContent = fmtElapsed(elapsed);
+        // Slowly advance the bar (max 88% before complete)
+        const bar = document.getElementById('ajob_bar_' + j.id);
+        if (bar) {
+            const pct = Math.min(88, 15 + Math.floor(elapsed / 1000) * 0.6);
+            bar.style.width = pct + '%';
+        }
+    });
+}, 1000);
+
+function pollJobs(jobs) {
+    if (!jobs.length) return;
+    jobs.forEach(job => {
+        const id = job.id;
         fetch(`<?= BASE_URL ?>/client/avatar.php?_action=poll&job_id=${id}`, {
             headers: { 'X-CSRF-Token': csrfToken }
         })
@@ -745,32 +788,61 @@ function pollJobs(ids) {
                 badge.textContent = data.status;
                 badge.className   = 'status-badge ' + data.status;
             }
+
+            // Update step indicators
+            const card = document.getElementById('ajob_' + id);
+            if (card && data.status === 'processing') {
+                const steps = card.querySelectorAll('.prog-step');
+                if (steps.length >= 2) {
+                    steps[0].className = 'prog-step done';
+                    steps[1].className = 'prog-step active';
+                }
+            }
+
             if (data.status === 'completed' && data.video_url) {
-                // Inject video preview
-                const card = document.getElementById('ajob_' + id);
                 if (card) {
                     const info = card.querySelector('.job-info');
-                    const progBar = info.querySelector('.prog-bar');
-                    if (progBar) progBar.remove();
-                    const procText = Array.from(info.querySelectorAll('div')).find(d => d.textContent.trim() === 'Processing…');
-                    if (procText) procText.remove();
-                    const url = data.video_url;
-                    const div = document.createElement('div');
-                    div.style.cssText = 'display:flex;align-items:center;gap:10px;margin-top:6px';
-                    div.innerHTML = `
-                        <div class="video-thumb-wrap" onclick="openVideo(${JSON.stringify(url)})">
-                            <video src="${url}#t=0.5" preload="metadata" muted playsinline style="pointer-events:none;width:120px;height:68px;object-fit:cover;border-radius:6px"></video>
-                            <div class="play-overlay">▶</div>
-                        </div>
-                        <div style="display:flex;flex-direction:column;gap:6px">
-                            <button class="btn btn-primary btn-sm" onclick="openVideo(${JSON.stringify(url)})">▶ Preview</button>
-                            <a href="${url}" download class="btn btn-ghost btn-sm">⬇ Download</a>
-                        </div>`;
-                    info.appendChild(div);
+                    // Fill bar to 100%
+                    const bar = document.getElementById('ajob_bar_' + id);
+                    if (bar) bar.style.width = '100%';
+                    // Mark all steps done
+                    card.querySelectorAll('.prog-step').forEach(s => s.className = 'prog-step done');
+
+                    setTimeout(() => {
+                        // Remove progress UI
+                        card.querySelectorAll('.prog-steps,.prog-bar,.prog-elapsed').forEach(e => e.remove());
+                        const url = data.video_url;
+                        const div = document.createElement('div');
+                        div.style.cssText = 'display:flex;align-items:center;gap:10px;margin-top:6px';
+                        div.innerHTML = `
+                            <div class="video-thumb-wrap" onclick="openVideo(${JSON.stringify(url)})">
+                                <video src="${url}#t=0.5" preload="metadata" muted playsinline style="pointer-events:none;width:120px;height:68px;object-fit:cover;border-radius:6px"></video>
+                                <div class="play-overlay">▶</div>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:6px">
+                                <button class="btn btn-primary btn-sm" onclick="openVideo(${JSON.stringify(url)})">▶ Preview</button>
+                                <a href="${url}" download class="btn btn-ghost btn-sm">⬇ Download</a>
+                            </div>`;
+                        info.appendChild(div);
+                    }, 600);
                 }
-                pendingJobs.splice(pendingJobs.indexOf(id), 1);
+                const idx = pendingJobs.findIndex(j => j.id === id);
+                if (idx !== -1) pendingJobs.splice(idx, 1);
             } else if (['failed','refunded'].includes(data.status)) {
-                pendingJobs.splice(pendingJobs.indexOf(id), 1);
+                if (card) card.querySelectorAll('.prog-steps,.prog-bar,.prog-elapsed').forEach(e => e.remove());
+                if (data.error) {
+                    const info = card?.querySelector('.job-info');
+                    if (info) {
+                        const errDiv = document.createElement('div');
+                        errDiv.className = 'text-sm';
+                        errDiv.style.color = 'var(--color-danger)';
+                        errDiv.style.marginTop = '4px';
+                        errDiv.textContent = data.error;
+                        info.appendChild(errDiv);
+                    }
+                }
+                const idx = pendingJobs.findIndex(j => j.id === id);
+                if (idx !== -1) pendingJobs.splice(idx, 1);
             }
         })
         .catch(() => {});

@@ -54,7 +54,7 @@ define('CRON_SECRET', getenv('CRON_SECRET') ?: '');
 
 // ── BytePlus ModelArk API (also configurable via settings table) ─────────────
 // API URL: Asia Pacific (Jakarta) endpoint — change region if needed
-define('BYTEPLUS_API_URL',     getenv('BYTEPLUS_API_URL')     ?: 'https://ark.ap-southeast.bytepluses.com/api/v3');
+define('BYTEPLUS_API_URL',     getenv('BYTEPLUS_API_URL')     ?: 'https://ark.ap-southeast.byteplus.com/api/v3');
 define('BYTEPLUS_API_KEY',     getenv('BYTEPLUS_API_KEY')     ?: '');
 // 5-second video endpoint (Seedance Lite or Pro — ModelArk → Online inference)
 define('BYTEPLUS_ENDPOINT_ID',     getenv('BYTEPLUS_ENDPOINT_ID')     ?: '');
@@ -69,7 +69,7 @@ define('LLM_ENDPOINT_ID',          getenv('LLM_ENDPOINT_ID')          ?: '');
 // Console: https://console.byteplus.com/ai/overview  (Vision AI → Model Plaza → OmniHuman)
 // AK/SK:   https://console.byteplus.com/iam/keymanage
 // API URL: Vision AI endpoint (Asia Pacific)
-define('VISION_AI_URL', getenv('VISION_AI_URL') ?: 'https://visual.ap-southeast-1.bytepluses.com');
+define('VISION_AI_URL', getenv('VISION_AI_URL') ?: 'https://visual.ap-southeast-1.byteplus.com');
 define('VISION_AI_AK',  getenv('VISION_AI_AK')  ?: '');   // Access Key ID
 define('VISION_AI_SK',  getenv('VISION_AI_SK')  ?: '');   // Secret Access Key
 // req_key for OmniHuman models:

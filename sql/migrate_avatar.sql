@@ -44,7 +44,7 @@ INSERT INTO `settings` (`key`, `value`, `label`, `type`, `group`)
 VALUES
     ('vision_ai_ak',       '', 'Vision AI Access Key (AK)',   'string', 'byteplus'),
     ('vision_ai_sk',       '', 'Vision AI Secret Key (SK)',   'string', 'byteplus'),
-    ('vision_ai_url',      'https://visual.ap-southeast-1.bytepluses.com', 'Vision AI Base URL', 'string', 'byteplus'),
+    ('vision_ai_url',      'https://visual.ap-southeast-1.byteplus.com', 'Vision AI Base URL', 'string', 'byteplus'),
     ('omnihuman_req_key',  'dreamina_omni_human_v1_5', 'OmniHuman req_key', 'string', 'byteplus'),
     ('avatar_credit_cost', '5.00', 'Avatar job credit cost', 'string', 'pricing')
 ON DUPLICATE KEY UPDATE `label` = VALUES(`label`);
