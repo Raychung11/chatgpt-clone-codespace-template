@@ -103,7 +103,7 @@ function omnihuman_query_task(string $taskId): array
         in_array($providerStatus, ['failed', 'error', 'cancelled', 'fail'],                 true) => 'failed',
         in_array($providerStatus, ['running', 'processing', 'in_progress', 'generating'],   true) => 'processing',
         default                                                                                    => 'queued',
-    ];
+    };
 
     // Extract video URL from various possible response shapes
     $videoUrl = $data['video_url']
