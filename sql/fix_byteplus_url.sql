@@ -1,13 +1,8 @@
 -- fix_byteplus_url.sql
--- Run once in phpMyAdmin to correct the typo in the stored Vision AI URL.
--- 'bytepluses.com' → 'byteplus.com'
+-- Run once in phpMyAdmin to set the correct Vision AI base URL.
+-- visual.volcengineapi.com is the Volcano Engine international endpoint
+-- (byteplus.com subdomains may not resolve on all hosting providers).
 
 UPDATE `settings`
-SET `value` = 'https://visual.ap-southeast-1.byteplus.com'
-WHERE `key` = 'vision_ai_url'
-  AND `value` LIKE '%bytepluses%';
-
--- Also fix BytePlus Ark URL if stored incorrectly
-UPDATE `settings`
-SET `value` = REPLACE(`value`, 'bytepluses.com', 'byteplus.com')
-WHERE `value` LIKE '%bytepluses.com%';
+SET `value` = 'https://visual.volcengineapi.com'
+WHERE `key` = 'vision_ai_url';
