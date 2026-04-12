@@ -305,12 +305,13 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
         $body        = json_encode($testPayload, JSON_UNESCAPED_SLASHES);
 
         if (_is_volcengine_host($apiBase)) {
-            $host   = parse_url($probeUrl, PHP_URL_HOST);
-            $path   = parse_url($probeUrl, PHP_URL_PATH) ?? '/';
-            $query  = parse_url($probeUrl, PHP_URL_QUERY) ?? '';
-            $region = setting('vision_ai_region', 'ap-southeast-1') ?: 'ap-southeast-1';
-            $hdrs   = volcengine_v4_headers('POST', $host, $path, $query, $body, $ak, $sk, $region);
-            $signing = 'Volcengine V4';
+            $host    = parse_url($probeUrl, PHP_URL_HOST);
+            $path    = parse_url($probeUrl, PHP_URL_PATH) ?? '/';
+            $query   = parse_url($probeUrl, PHP_URL_QUERY) ?? '';
+            $region  = setting('vision_ai_region',  'ap-southeast-1') ?: 'ap-southeast-1';
+            $service = setting('vision_ai_service',  'cv')             ?: 'cv';
+            $hdrs    = volcengine_v4_headers('POST', $host, $path, $query, $body, $ak, $sk, $region, $service);
+            $signing = "Volcengine V4 (service=$service, region=$region)";
         } else {
             $hdrs    = vision_signed_headers('POST', parse_url($probeUrl, PHP_URL_PATH) ?? '/', $body, $ak, $sk);
             $signing = 'BytePlus HMAC256';
@@ -342,17 +343,19 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
             'curl_error'   => $curlErr ?: 'none',
             'response'     => $decoded,
             'diagnosis'    => match(true) {
-                (bool)$curlErr && str_contains($curlErr, 'resolve')           => 'DNS FAILURE',
-                (bool)$curlErr && str_contains($curlErr, 'timed out')         => 'TIMEOUT — server unreachable',
-                $volErr && str_contains($volErr['Code'] ?? '', 'Auth')         => 'AUTH ERROR — check AK/SK',
-                $volErr && ($volErr['Code'] ?? '') === 'InvalidAction'         => 'WRONG ACTION NAME — update omnihuman_action_generate in settings',
-                $volErr && ($volErr['Code'] ?? '') === 'MissingParameter'      => 'FORMAT ERROR — action or parameter missing',
-                $volErr                                                         => 'API ERROR: ' . ($volErr['Message'] ?? $volErr['Code'] ?? '?'),
-                $code === 401 || $code === 403                                  => 'AUTH ERROR — AK/SK rejected',
-                $code === 400                                                   => 'BAD REQUEST (may be expected for dummy payload)',
-                $code === 200                                                   => 'OK — endpoint working',
-                $code >= 500                                                    => "SERVER ERROR $code",
-                default                                                         => $curlErr ? "cURL $curlNo: $curlErr" : "HTTP $code",
+                (bool)$curlErr && str_contains($curlErr, 'resolve')                    => 'DNS FAILURE',
+                (bool)$curlErr && str_contains($curlErr, 'timed out')                  => 'TIMEOUT — server unreachable',
+                $volErr && ($volErr['Code'] ?? '') === 'ServiceNotFound'                => 'WRONG SERVICE NAME — change vision_ai_service in Admin→Settings (try: cv, imagex, dreamina)',
+                $volErr && ($volErr['Code'] ?? '') === 'InvalidAction'                  => 'WRONG ACTION NAME — change omnihuman_action_generate in Admin→Settings',
+                $volErr && str_contains($volErr['Code'] ?? '', 'Auth')                 => 'AUTH ERROR — check AK/SK',
+                $volErr && str_contains($volErr['Code'] ?? '', 'SignatureDoesNotMatch') => 'SIGNATURE ERROR — AK/SK mismatch or clock skew',
+                $volErr && ($volErr['Code'] ?? '') === 'MissingParameter'               => 'MISSING PARAM — action accepted but body param required',
+                $volErr                                                                 => 'API ERROR: ' . ($volErr['Message'] ?? $volErr['Code'] ?? '?'),
+                $code === 401 || $code === 403                                          => 'AUTH ERROR — AK/SK rejected',
+                $code === 400                                                           => 'BAD REQUEST (dummy payload rejected — endpoint + auth OK)',
+                $code === 200                                                           => 'OK — endpoint fully working',
+                $code >= 500                                                            => "SERVER ERROR $code",
+                default                                                                 => $curlErr ? "cURL: $curlErr" : "HTTP $code",
             },
         ];
     } else {

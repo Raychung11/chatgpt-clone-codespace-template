@@ -83,7 +83,7 @@ function volcengine_v4_headers(
     string $ak,
     string $sk,
     string $region  = 'ap-southeast-1',
-    string $service = 'visual'
+    string $service = 'cv'
 ): array {
     $xDate     = gmdate('Ymd\THis\Z');
     $shortDate = substr($xDate, 0, 8);
@@ -150,11 +150,12 @@ function vision_post(string $url, array $payload, string $ak, string $sk): array
     $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
     if (_is_volcengine_host($url)) {
-        $host   = parse_url($url, PHP_URL_HOST);
-        $path   = parse_url($url, PHP_URL_PATH) ?? '/';
-        $query  = parse_url($url, PHP_URL_QUERY) ?? '';
-        $region = setting('vision_ai_region', 'ap-southeast-1') ?: 'ap-southeast-1';
-        $hdrs   = volcengine_v4_headers('POST', $host, $path, $query, $body, $ak, $sk, $region);
+        $host    = parse_url($url, PHP_URL_HOST);
+        $path    = parse_url($url, PHP_URL_PATH) ?? '/';
+        $query   = parse_url($url, PHP_URL_QUERY) ?? '';
+        $region  = setting('vision_ai_region',  'ap-southeast-1') ?: 'ap-southeast-1';
+        $service = setting('vision_ai_service',  'cv')             ?: 'cv';
+        $hdrs    = volcengine_v4_headers('POST', $host, $path, $query, $body, $ak, $sk, $region, $service);
     } else {
         $path = parse_url($url, PHP_URL_PATH) ?? '/';
         $hdrs = vision_signed_headers('POST', $path, $body, $ak, $sk);
