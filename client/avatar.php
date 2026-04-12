@@ -469,52 +469,95 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
             },
         ];
 
-        // ── 5b. Multi req_key scan (only for Volcengine, only when req_key is unsupported) ─
+        // ── 5b. Multi req_key scan (only for Volcengine/BytePlus, only when req_key is unsupported) ─
         $reqKeyUnsupported = isset($decoded['code']) && $decoded['code'] == 50200
             && str_contains($decoded['message'] ?? '', 'not supported');
 
         if (_is_volcengine_host($apiBase) && $reqKeyUnsupported) {
             $region  = setting('vision_ai_region',  'ap-singapore-1') ?: 'ap-singapore-1';
             $service = setting('vision_ai_service',  'cv')             ?: 'cv';
-            $host    = parse_url($apiBase, PHP_URL_HOST);
+            $scanHostN = parse_url($apiBase, PHP_URL_HOST);
 
-            // Try candidate action+req_key combinations
+            // Candidates: all combos of CVSubmitTask + realman_avatar_* + legacy dreamina_* names.
+            // The docs confirm realman_avatar_picture_create_role_omni_cv is the Step-1 req_key;
+            // Step-2 video generation likely uses a similar realman_avatar_video_* req_key.
+            // Each candidate carries:
+            //   body_key: which JSON field the API expects for the image (image_url or image_base64)
             $candidates = [
-                ['action' => 'CVSubmitTask',             'req_key' => 'omni_human_v1_5'],
-                ['action' => 'CVSubmitTask',             'req_key' => 'omni_human'],
-                ['action' => 'CVSubmitTask',             'req_key' => 'omni_human_v1'],
-                ['action' => 'OmniHumanVideoGenerate',   'req_key' => 'dreamina_omni_human_v1_5'],
-                ['action' => 'OmniHumanVideoGenerate',   'req_key' => 'omni_human_v1_5'],
-                ['action' => 'CVAsyncSubmitTask',        'req_key' => 'dreamina_omni_human_v1_5'],
-                ['action' => 'CVAsyncSubmitTask',        'req_key' => 'omni_human_v1_5'],
+                // ── Known-correct req_key from BytePlus docs (subject recognition / Step 1) ──
+                ['action' => 'CVSubmitTask', 'req_key' => 'realman_avatar_picture_create_role_omni_cv',
+                 'body_key' => 'image_url', 'label' => '(Step-1 subject detect — known correct req_key)'],
+                // ── Likely OmniHuman video generation req_keys (realman_avatar_video_* pattern) ──
+                ['action' => 'CVSubmitTask', 'req_key' => 'realman_avatar_video_create_role_omni_cv',
+                 'body_key' => 'image_url'],
+                ['action' => 'CVSubmitTask', 'req_key' => 'realman_avatar_video_generate_omni_cv',
+                 'body_key' => 'image_url'],
+                ['action' => 'CVSubmitTask', 'req_key' => 'realman_avatar_video_omni_cv',
+                 'body_key' => 'image_url'],
+                ['action' => 'CVSubmitTask', 'req_key' => 'realman_omni_human_v1_5',
+                 'body_key' => 'image_url'],
+                ['action' => 'CVSubmitTask', 'req_key' => 'realman_omni_human',
+                 'body_key' => 'image_url'],
+                // ── Legacy dreamina_* names ──
+                ['action' => 'CVSubmitTask', 'req_key' => 'dreamina_omni_human_v1_5',
+                 'body_key' => 'image_base64'],
+                ['action' => 'CVSubmitTask', 'req_key' => 'omni_human_v1_5',
+                 'body_key' => 'image_base64'],
+                ['action' => 'CVSubmitTask', 'req_key' => 'omni_human',
+                 'body_key' => 'image_base64'],
             ];
-            $scanHost    = parse_url($apiBase, PHP_URL_HOST) ?? '';
-            $scanVersion = str_contains($scanHost, 'byteplusapi.com') ? '2024-06-06' : '2022-08-31';
+            $scanVersion = str_contains($scanHostN, 'byteplusapi.com') ? '2024-06-06' : '2022-08-31';
+            // A tiny valid-looking JPEG data URI (1×1 white pixel) for image_url-based tests
+            $testImageUrl  = 'https://www.gstatic.com/webp/gallery/1.jpg'; // public Google test image
             $scanResults = [];
             foreach ($candidates as $c) {
-                $scanUrl  = rtrim($apiBase, '/') . '/?Action=' . $c['action'] . '&Version=' . $scanVersion;
-                $scanBody = json_encode(['req_key' => $c['req_key'], 'image_base64' => 'dGVzdA==', 'text' => 'test'], JSON_UNESCAPED_SLASHES);
+                $scanUrl = rtrim($apiBase, '/') . '/?Action=' . $c['action'] . '&Version=' . $scanVersion;
+                if (($c['body_key'] ?? 'image_base64') === 'image_url') {
+                    $scanBody = json_encode([
+                        'req_key'   => $c['req_key'],
+                        'image_url' => $testImageUrl,
+                    ], JSON_UNESCAPED_SLASHES);
+                } else {
+                    $scanBody = json_encode([
+                        'req_key'      => $c['req_key'],
+                        'image_base64' => 'dGVzdA==',
+                        'text'         => 'test',
+                    ], JSON_UNESCAPED_SLASHES);
+                }
                 $scanQ    = parse_url($scanUrl, PHP_URL_QUERY) ?? '';
-                $scanHdrs = volcengine_v4_headers('POST', $host, '/', $scanQ, $scanBody, $ak, $sk, $region, $service);
+                $scanHdrs = volcengine_v4_headers('POST', $scanHostN, '/', $scanQ, $scanBody, $ak, $sk, $region, $service);
                 $scanLines = array_map(fn($k,$v) => "$k: $v", array_keys($scanHdrs), array_values($scanHdrs));
 
                 $ch2 = curl_init($scanUrl);
-                curl_setopt_array($ch2, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_TIMEOUT=>8,
+                curl_setopt_array($ch2, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_TIMEOUT=>10,
                     CURLOPT_POST=>true, CURLOPT_POSTFIELDS=>$scanBody, CURLOPT_HTTPHEADER=>$scanLines,
                     CURLOPT_SSL_VERIFYPEER=>true]);
                 $sResp = curl_exec($ch2);
                 $sCode = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
                 curl_close($ch2);
 
-                $sDecoded = json_decode($sResp ?: '', true) ?? [];
-                $sMsg     = $sDecoded['message'] ?? ($sDecoded['ResponseMetadata']['Error']['Message'] ?? '');
-                $notSupp  = str_contains($sMsg, 'not supported');
-                $sLabel   = $notSupp ? '✗ req_key not supported'
-                          : (isset($sDecoded['ResponseMetadata']['Error']) ? '✗ ' . ($sDecoded['ResponseMetadata']['Error']['Code'] ?? 'error')
-                          : ($sCode === 400 ? '✓ ACCEPTED (req_key works!)' : "HTTP $sCode"));
+                $sDecoded  = json_decode($sResp ?: '', true) ?? [];
+                $sMsg      = $sDecoded['message'] ?? ($sDecoded['ResponseMetadata']['Error']['Message'] ?? '');
+                $sApiCode  = $sDecoded['code'] ?? 0;
+                $notSupp   = str_contains($sMsg, 'not supported');
+                $inputInvalid = str_contains($sMsg, 'Input invalid') || str_contains($sMsg, 'invalid') || $sApiCode == 50215;
+                $success   = ($sApiCode == 10000);
+                $accepted  = !$notSupp && !isset($sDecoded['ResponseMetadata']['Error']) && $sCode === 400;
 
-                $scanResults[] = "Action={$c['action']} req_key={$c['req_key']} → $sLabel";
-                if (!$notSupp && !isset($sDecoded['ResponseMetadata']['Error'])) break; // found it
+                $sLabel = match(true) {
+                    $success       => '✓ SUCCESS! req_key works and task created',
+                    $notSupp       => '✗ req_key not supported',
+                    $inputInvalid  => '✓ ACCEPTED — req_key valid (test image rejected as invalid input)',
+                    isset($sDecoded['ResponseMetadata']['Error'])
+                                   => '✗ ' . ($sDecoded['ResponseMetadata']['Error']['Code'] ?? 'error'),
+                    $accepted      => '✓ ACCEPTED — req_key works',
+                    default        => "HTTP $sCode: $sMsg",
+                };
+
+                $extra = isset($c['label']) ? ' ' . $c['label'] : '';
+                $scanResults[] = "req_key={$c['req_key']}$extra → $sLabel";
+                // Stop if we found a working req_key
+                if ($success || $inputInvalid || $accepted) break;
             }
             $results['req_key_scan'] = $scanResults;
         }

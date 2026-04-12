@@ -24,13 +24,17 @@ require_once __DIR__ . '/vision_auth.php';
  * @param string|null $audioBase64  Base64-encoded audio file (MP3/WAV), or null
  * @param string|null $ttsText      Text for TTS voice (used when no audioBase64)
  * @param array       $extra        Extra params e.g. ['resolution'=>'720p','duration'=>10]
+ * @param string|null $imageUrl     Public URL of the portrait (used instead of base64 when set)
+ * @param string|null $audioUrl     Public URL of the audio file (used instead of base64 when set)
  * @return array{ok:bool, task_id?:string, raw:array, error?:string}
  */
 function omnihuman_create_task(
     string  $imageBase64,
     ?string $audioBase64 = null,
     ?string $ttsText     = null,
-    array   $extra       = []
+    array   $extra       = [],
+    ?string $imageUrl    = null,
+    ?string $audioUrl    = null
 ): array {
     [$ak, $sk, $apiBase, $reqKey] = _omnihuman_creds();
 
@@ -38,12 +42,19 @@ function omnihuman_create_task(
         return ['ok' => false, 'error' => 'Vision AI AK/SK not configured.', 'raw' => []];
     }
 
-    $payload = array_merge([
-        'req_key'      => $reqKey,
-        'image_base64' => $imageBase64,
-    ], $extra);
+    $payload = ['req_key' => $reqKey];
 
-    if ($audioBase64) {
+    // cv.byteplusapi.com uses image_url; legacy byteplus REST uses image_base64
+    if ($imageUrl) {
+        $payload['image_url'] = $imageUrl;
+    } else {
+        $payload['image_base64'] = $imageBase64;
+    }
+    $payload = array_merge($payload, $extra);
+
+    if ($audioUrl) {
+        $payload['audio_url'] = $audioUrl;
+    } elseif ($audioBase64) {
         $payload['audio_base64'] = $audioBase64;
     } elseif ($ttsText) {
         $payload['text'] = $ttsText;
