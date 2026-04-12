@@ -299,82 +299,132 @@ $balance = wallet_balance($uid);
     </style>
 </head>
 <?php
-// ── Debug action: test config + API connectivity ──────────────────────────────
+// ── Debug action: comprehensive connectivity diagnostics ─────────────────────
 if (($_GET['_action'] ?? '') === 'debug_test') {
     csrf_verify();
     [$ak, $sk, $apiBase, $reqKey] = _omnihuman_creds();
 
     $results = [];
 
-    // 1. Config check
+    // ── 1. Config: what is actually being used (DB vs constant fallback) ────────
+    $dbAk      = setting('vision_ai_ak',      '');
+    $dbSk      = setting('vision_ai_sk',      '');
+    $dbUrl     = setting('vision_ai_url',     '');
+    $dbReqKey  = setting('omnihuman_req_key', '');
     $results['config'] = [
+        'source_url'         => $dbUrl ? "DB: $dbUrl" : ('constant: ' . VISION_AI_URL),
+        'active_url'         => $apiBase ?: 'NOT SET',
         'vision_ai_ak'       => $ak  ? ('set (' . substr($ak, 0, 4) . '…)') : 'NOT SET',
         'vision_ai_sk'       => $sk  ? 'set (***)' : 'NOT SET',
-        'vision_ai_url'      => $apiBase ?: 'NOT SET',
-        'omnihuman_req_key'  => $reqKey  ?: 'NOT SET',
+        'omnihuman_req_key'  => $reqKey ?: 'NOT SET',
+        'VISION_AI_URL_const'=> VISION_AI_URL,
+        'db_vision_ai_url'   => $dbUrl ?: '(empty — using constant)',
     ];
 
-    // 2. Upload directory check
+    // ── 2. DNS resolution test ───────────────────────────────────────────────────
+    $host = parse_url($apiBase ?: VISION_AI_URL, PHP_URL_HOST) ?: '';
+    $ip   = gethostbyname($host);
+    $results['dns'] = [
+        'hostname'  => $host,
+        'resolved'  => ($ip !== $host) ? "OK → $ip" : 'FAILED (no DNS record or blocked)',
+    ];
+
+    // Also probe alternative known BytePlus Visual AI hostnames
+    $altHosts = [
+        'visual.ap-southeast-1.byteplus.com',
+        'visual.byteplus.com',
+        'open.byteplus.com',
+        'visual.volcengineapi.com',
+        'visual.ap-southeast-1.volcengineapi.com',
+    ];
+    $dnsAlts = [];
+    foreach ($altHosts as $h) {
+        $r = gethostbyname($h);
+        $dnsAlts[$h] = ($r !== $h) ? "✓ resolves → $r" : '✗ no DNS';
+    }
+    $results['dns_alternatives'] = $dnsAlts;
+
+    // ── 3. Upload directories ────────────────────────────────────────────────────
     $avatarDir = BASE_PATH . '/uploads/avatars';
     $audioDir  = BASE_PATH . '/uploads/avatar_audio';
-    $results['dirs'] = [
-        'uploads/avatars'       => is_dir($avatarDir) ? (is_writable($avatarDir) ? 'OK (writable)' : 'EXISTS but not writable') : 'MISSING',
-        'uploads/avatar_audio'  => is_dir($audioDir)  ? (is_writable($audioDir)  ? 'OK (writable)' : 'EXISTS but not writable') : 'MISSING',
-    ];
+    foreach ([$avatarDir => 'uploads/avatars', $audioDir => 'uploads/avatar_audio'] as $path => $label) {
+        if (!is_dir($path)) {
+            @mkdir($path, 0755, true);
+            $results['dirs'][$label] = is_dir($path) ? 'created OK' : 'MISSING (could not create)';
+        } else {
+            $results['dirs'][$label] = is_writable($path) ? 'OK (writable)' : 'EXISTS but not writable';
+        }
+    }
 
-    // Auto-create missing dirs
-    if (!is_dir($avatarDir)) { @mkdir($avatarDir, 0755, true); $results['dirs']['uploads/avatars'] .= ' → created'; }
-    if (!is_dir($audioDir))  { @mkdir($audioDir,  0755, true); $results['dirs']['uploads/avatar_audio'] .= ' → created'; }
+    // ── 4. Basic TCP connect test (port 443) ─────────────────────────────────────
+    if ($host) {
+        $fp = @fsockopen('ssl://' . $host, 443, $errno, $errstr, 8);
+        $results['tcp_connect'] = $fp
+            ? 'OK — TCP+TLS to port 443 succeeded'
+            : "FAILED (errno=$errno): $errstr";
+        if ($fp) fclose($fp);
+    }
 
-    // 3. Live API connectivity test (submit a minimal dummy payload to see the error)
+    // ── 5. Live API probe (intentionally invalid payload to check auth/endpoint) ─
     if ($ak && $sk && $apiBase) {
         $url = rtrim($apiBase, '/') . '/api/v1/ai_video_generate';
-        // Send a minimal (intentionally invalid) payload — we just want to see
-        // if the server responds at all and what auth error looks like
-        $testPayload = ['req_key' => $reqKey, 'image_base64' => 'test', 'text' => 'test'];
+        $testPayload = ['req_key' => $reqKey, 'image_base64' => 'dGVzdA==', 'text' => 'test'];
         $path   = '/api/v1/ai_video_generate';
         $body   = json_encode($testPayload, JSON_UNESCAPED_SLASHES);
-        $headers = vision_signed_headers('POST', $path, $body, $ak, $sk);
-        $headerLines = array_map(fn($k,$v) => "$k: $v", array_keys($headers), array_values($headers));
+        $hdrs   = vision_signed_headers('POST', $path, $body, $ak, $sk);
+        $hLines = array_map(fn($k,$v) => "$k: $v", array_keys($hdrs), array_values($hdrs));
 
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_TIMEOUT        => 12,
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => $body,
-            CURLOPT_HTTPHEADER     => $headerLines,
+            CURLOPT_HTTPHEADER     => $hLines,
             CURLOPT_SSL_VERIFYPEER => true,
         ]);
         $resp    = curl_exec($ch);
         $code    = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlErr = curl_error($ch);
+        $curlNo  = curl_errno($ch);
         curl_close($ch);
 
-        $results['api_test'] = [
-            'url'        => $url,
-            'http_code'  => $code,
-            'curl_error' => $curlErr ?: 'none',
-            'raw_response' => $resp ?: '(empty)',
+        $results['api_probe'] = [
+            'url'          => $url,
+            'http_code'    => $code ?: 0,
+            'curl_errno'   => $curlNo,
+            'curl_error'   => $curlErr ?: 'none',
+            'response'     => $resp ? (json_decode($resp, true) ?? $resp) : '(empty)',
+            'diagnosis'    => match(true) {
+                (bool)$curlErr && str_contains($curlErr, 'resolve') => 'DNS FAILURE — hostname cannot be resolved. Check dns_alternatives above for a working host.',
+                (bool)$curlErr && str_contains($curlErr, 'Connection refused') => 'Server refused connection — firewall or wrong port.',
+                (bool)$curlErr && str_contains($curlErr, 'timed out') => 'Timeout — server unreachable or blocking outbound.',
+                $code === 401 || $code === 403 => 'Auth error — AK/SK wrong or not yet active.',
+                $code === 400 => 'Bad request (expected) — endpoint is reachable, auth accepted.',
+                $code === 200 => 'Success response — fully working.',
+                $code >= 500  => "Server error $code — endpoint exists but internal error.",
+                default       => $curlErr ? "cURL error $curlNo: $curlErr" : "HTTP $code",
+            },
         ];
     } else {
-        $results['api_test'] = 'SKIPPED — AK/SK or URL not configured';
+        $results['api_probe'] = 'SKIPPED — AK, SK or URL not configured in DB settings';
     }
 
-    // 4. Last job API response (most recent job for this user)
-    $lastJob = $pdo->prepare('SELECT id,status,api_response,error_message FROM avatar_jobs WHERE user_id=? ORDER BY id DESC LIMIT 1');
+    // ── 6. Last job record ───────────────────────────────────────────────────────
+    $lastJob = $pdo->prepare(
+        'SELECT id, status, api_task_id, api_response, error_message, created_at
+         FROM avatar_jobs WHERE user_id=? ORDER BY id DESC LIMIT 1'
+    );
     $lastJob->execute([$uid]);
     $last = $lastJob->fetch();
-    if ($last) {
-        $results['last_job'] = [
-            'id'            => $last['id'],
-            'status'        => $last['status'],
-            'error_message' => $last['error_message'] ?: '(none)',
-            'api_response'  => $last['api_response'] ? json_decode($last['api_response'], true) : null,
-        ];
-    } else {
-        $results['last_job'] = 'No jobs yet';
-    }
+    $results['last_job'] = $last ? [
+        'id'            => $last['id'],
+        'status'        => $last['status'],
+        'api_task_id'   => $last['api_task_id'] ?: '(none)',
+        'error_message' => $last['error_message'] ?: '(none)',
+        'created_at'    => $last['created_at'],
+        'api_response'  => $last['api_response'] ? json_decode($last['api_response'], true) : null,
+    ] : 'No jobs yet';
 
     json_response(['ok' => true, 'debug' => $results]);
 }
@@ -900,50 +950,71 @@ async function runAvatarDebug() {
         const data = await resp.json();
         const d = data.debug;
 
-        // Config
+        // ── Config ────────────────────────────────────────────────────────────
         alog('── Configuration ─────────────────────', '#facc15');
         Object.entries(d.config).forEach(([k, v]) => {
-            const ok = !v.includes('NOT SET');
-            alog(`  ${k}: ${v}`, ok ? '#a8e063' : '#ef4444');
+            const bad = String(v).includes('NOT SET') || String(v).includes('(empty');
+            alog(`  ${k}: ${v}`, bad ? '#ef4444' : '#a8e063');
         });
 
-        // Directories
+        // ── DNS ───────────────────────────────────────────────────────────────
+        alog('── DNS Resolution ────────────────────', '#facc15');
+        const dnsOk = d.dns.resolved.startsWith('OK');
+        alog(`  ${d.dns.hostname} → ${d.dns.resolved}`, dnsOk ? '#a8e063' : '#ef4444');
+        if (!dnsOk) {
+            alog('  ⚠ Trying alternative hostnames:', '#f59e0b');
+        }
+        alog('  Alternative hosts:', '#64b5f6');
+        Object.entries(d.dns_alternatives).forEach(([h, r]) => {
+            const ok = r.startsWith('✓');
+            alog(`    ${h}: ${r}`, ok ? '#a8e063' : '#475569');
+            if (ok) alog(`    ↑ USE THIS URL in Admin → Settings → vision_ai_url`, '#fbbf24');
+        });
+
+        // ── TCP connect ───────────────────────────────────────────────────────
+        if (d.tcp_connect) {
+            alog('── TCP+TLS Connect ───────────────────', '#facc15');
+            alog('  ' + d.tcp_connect, d.tcp_connect.startsWith('OK') ? '#a8e063' : '#ef4444');
+        }
+
+        // ── Upload dirs ───────────────────────────────────────────────────────
         alog('── Upload Directories ────────────────', '#facc15');
         Object.entries(d.dirs).forEach(([k, v]) => {
-            alog(`  ${k}: ${v}`, v.includes('OK') ? '#a8e063' : '#ef4444');
+            alog(`  ${k}: ${v}`, v.includes('OK') || v.includes('created') ? '#a8e063' : '#ef4444');
         });
 
-        // API test
-        alog('── API Connectivity Test ─────────────', '#facc15');
-        if (typeof d.api_test === 'string') {
-            alog('  ' + d.api_test, '#f59e0b');
+        // ── API probe ─────────────────────────────────────────────────────────
+        alog('── API Probe ─────────────────────────', '#facc15');
+        if (typeof d.api_probe === 'string') {
+            alog('  ' + d.api_probe, '#f59e0b');
         } else {
-            alog(`  URL: ${d.api_test.url}`, '#94a3b8');
-            alog(`  HTTP code: ${d.api_test.http_code}`, d.api_test.http_code === 0 ? '#ef4444' : '#a8e063');
-            if (d.api_test.curl_error !== 'none') {
-                alog(`  cURL error: ${d.api_test.curl_error}`, '#ef4444');
+            alog(`  URL: ${d.api_probe.url}`, '#94a3b8');
+            const httpOk = d.api_probe.http_code > 0;
+            alog(`  HTTP: ${d.api_probe.http_code || 'N/A (cURL failed)'}`, httpOk ? '#a8e063' : '#ef4444');
+            alog(`  Diagnosis: ${d.api_probe.diagnosis}`,
+                d.api_probe.diagnosis.startsWith('DNS') || d.api_probe.diagnosis.startsWith('FAILED') ? '#ef4444' :
+                d.api_probe.diagnosis.startsWith('Auth') ? '#f59e0b' : '#a8e063');
+            if (d.api_probe.curl_error !== 'none') {
+                alog(`  cURL error: ${d.api_probe.curl_error}`, '#ef4444');
             }
-            alog('  Raw response:', '#94a3b8');
-            try {
-                const parsed = JSON.parse(d.api_test.raw_response);
-                JSON.stringify(parsed, null, 2).split('\n').forEach(l => alog('    ' + l, '#475569'));
-            } catch(_) {
-                alog('    ' + d.api_test.raw_response.slice(0, 500), '#475569');
+            if (d.api_probe.response && typeof d.api_probe.response === 'object') {
+                alog('  Response:', '#94a3b8');
+                JSON.stringify(d.api_probe.response, null, 2).split('\n').forEach(l => alog('    ' + l, '#475569'));
             }
         }
 
-        // Last job
+        // ── Last job ──────────────────────────────────────────────────────────
         alog('── Last Job ──────────────────────────', '#facc15');
         if (typeof d.last_job === 'string') {
             alog('  ' + d.last_job, '#94a3b8');
         } else {
-            alog(`  Job #${d.last_job.id}  status: ${d.last_job.status}`, '#94a3b8');
+            alog(`  Job #${d.last_job.id}  status: ${d.last_job.status}  created: ${d.last_job.created_at}`, '#94a3b8');
+            alog(`  api_task_id: ${d.last_job.api_task_id}`, '#94a3b8');
             alog(`  error_message: ${d.last_job.error_message}`,
                  d.last_job.error_message === '(none)' ? '#a8e063' : '#ef4444');
             if (d.last_job.api_response) {
                 alog('  api_response:', '#94a3b8');
-                JSON.stringify(d.last_job.api_response, null, 2)
-                    .split('\n').forEach(l => alog('    ' + l, '#475569'));
+                JSON.stringify(d.last_job.api_response, null, 2).split('\n').forEach(l => alog('    ' + l, '#475569'));
             }
         }
 
