@@ -294,11 +294,12 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
         'resolved' => $cvResolved ? "✓ OK → $cvIp" : '✗ FAILED (not in server DNS)',
     ];
 
-    // If server DNS resolves cv.byteplusapi.com, probe it directly
+    // If server DNS resolves cv.byteplusapi.com, probe it directly.
+    // Use CVGetResult with a dummy task_id — verifies auth + connectivity without creating a real task.
     if ($cvResolved && $ak && $sk) {
-        $cvUrl   = 'https://cv.byteplusapi.com/?Action=CVSubmitTask&Version=2024-06-06';
-        $cvBody  = json_encode(['req_key' => $reqKey, 'image_base64' => 'dGVzdA==', 'text' => 'test'], JSON_UNESCAPED_SLASHES);
-        $cvHdrs  = volcengine_v4_headers('POST', $cvHost, '/', 'Action=CVSubmitTask&Version=2024-06-06', $cvBody, $ak, $sk, 'ap-singapore-1', 'cv');
+        $cvUrl   = 'https://cv.byteplusapi.com/?Action=CVGetResult&Version=2024-06-06';
+        $cvBody  = json_encode(['req_key' => $reqKey, 'task_id' => 'probe_connectivity_test'], JSON_UNESCAPED_SLASHES);
+        $cvHdrs  = volcengine_v4_headers('POST', $cvHost, '/', 'Action=CVGetResult&Version=2024-06-06', $cvBody, $ak, $sk, 'ap-singapore-1', 'cv');
         $cvLines = array_map(fn($k,$v) => "$k: $v", array_keys($cvHdrs), array_values($cvHdrs));
         $cvCh = curl_init($cvUrl);
         curl_setopt_array($cvCh, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_TIMEOUT=>12,
@@ -309,20 +310,24 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
         $cvErr  = curl_error($cvCh);
         curl_close($cvCh);
         $cvDecoded = json_decode($cvResp ?: '', true) ?? [];
-        $cvMsg = $cvDecoded['message'] ?? ($cvDecoded['ResponseMetadata']['Error']['Message'] ?? '');
+        $cvMsg     = $cvDecoded['message'] ?? ($cvDecoded['ResponseMetadata']['Error']['Message'] ?? '');
+        $cvApiCode = (int)($cvDecoded['code'] ?? 0);
         $results['cv_byteplusapi_probe'] = [
             'url'       => $cvUrl,
             'http_code' => $cvCode ?: 0,
             'curl_error'=> $cvErr ?: 'none',
             'response'  => $cvDecoded ?: ($cvResp ? substr($cvResp, 0, 300) : '(empty)'),
             'diagnosis' => match(true) {
-                (bool)$cvErr                               => "FAILED: $cvErr",
-                ($cvDecoded['code'] ?? 0) == 10000        => '✓ SUCCESS — endpoint fully working',
-                str_contains($cvMsg, 'req_key')           => "req_key issue: $cvMsg",
-                $cvCode === 400                           => '✓ REACHABLE — bad payload rejected (auth OK)',
-                $cvCode === 401 || $cvCode === 403        => 'Reachable but auth rejected — check AK/SK',
-                $cvCode === 200                           => '✓ OK',
-                default                                   => "HTTP $cvCode: $cvMsg",
+                (bool)$cvErr                                            => "FAILED: $cvErr",
+                isset($cvDecoded['ResponseMetadata']['Error'])         => 'AUTH/SIGN ERROR: ' . ($cvDecoded['ResponseMetadata']['Error']['Message'] ?? 'check AK/SK'),
+                $cvCode === 401 || $cvCode === 403                     => 'Reachable but auth rejected — check AK/SK',
+                // "task not found" with dummy id = endpoint + auth working perfectly
+                stripos($cvMsg, 'not exist') !== false                 => '✓ SUCCESS — endpoint + auth OK (dummy task_id not found, expected)',
+                stripos($cvMsg, 'not found') !== false                 => '✓ SUCCESS — endpoint + auth OK (dummy task_id not found, expected)',
+                stripos($cvMsg, 'task') !== false                      => '✓ SUCCESS — endpoint + auth OK',
+                $cvApiCode === 10000                                   => '✓ SUCCESS — endpoint fully working',
+                $cvCode === 200                                        => '✓ OK — HTTP 200',
+                default                                                => "HTTP $cvCode: $cvMsg",
             },
         ];
     }
@@ -362,9 +367,9 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
         // If cv.byteplusapi.com resolved via DoH but not server DNS, try IP test
         if ($dohIps && $byteplusHost === 'cv.byteplusapi.com' && !$cvResolved && $ak && $sk) {
             $ip     = $dohIps[0];
-            $cvUrl  = 'https://cv.byteplusapi.com/?Action=CVSubmitTask&Version=2024-06-06';
-            $cvBody = json_encode(['req_key' => $reqKey, 'image_base64' => 'dGVzdA==', 'text' => 'test'], JSON_UNESCAPED_SLASHES);
-            $cvHdrs = volcengine_v4_headers('POST', 'cv.byteplusapi.com', '/', 'Action=CVSubmitTask&Version=2024-06-06', $cvBody, $ak, $sk, 'ap-singapore-1', 'cv');
+            $cvUrl  = 'https://cv.byteplusapi.com/?Action=CVGetResult&Version=2024-06-06';
+            $cvBody = json_encode(['req_key' => $reqKey, 'task_id' => 'probe_connectivity_test'], JSON_UNESCAPED_SLASHES);
+            $cvHdrs = volcengine_v4_headers('POST', 'cv.byteplusapi.com', '/', 'Action=CVGetResult&Version=2024-06-06', $cvBody, $ak, $sk, 'ap-singapore-1', 'cv');
             $cvLines = array_map(fn($k,$v) => "$k: $v", array_keys($cvHdrs), array_values($cvHdrs));
             $cvCh2 = curl_init($cvUrl);
             curl_setopt_array($cvCh2, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_TIMEOUT=>12,
@@ -417,8 +422,9 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
 
     // ── 5. API probe — test generate URL with correct signing ────────────────────
     if ($ak && $sk && $apiBase) {
-        $testPayload = ['req_key' => $reqKey, 'image_base64' => 'dGVzdA==', 'text' => 'test'];
-        $probeUrl    = _omnihuman_url($apiBase, 'generate');
+        // Use CVGetResult with a dummy task_id — proves auth + connectivity without creating a real task.
+        $testPayload = ['req_key' => $reqKey, 'task_id' => 'probe_connectivity_test'];
+        $probeUrl    = _omnihuman_url($apiBase, 'query');
         $body        = json_encode($testPayload, JSON_UNESCAPED_SLASHES);
 
         if (_is_volcengine_host($apiBase)) {
@@ -463,14 +469,14 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
                 (bool)$curlErr && str_contains($curlErr, 'resolve')                    => 'DNS FAILURE',
                 (bool)$curlErr && str_contains($curlErr, 'timed out')                  => 'TIMEOUT — server unreachable',
                 $volErr && ($volErr['Code'] ?? '') === 'ServiceNotFound'                => 'WRONG SERVICE NAME — change vision_ai_service in Admin→Settings (try: cv, imagex, dreamina)',
-                $volErr && ($volErr['Code'] ?? '') === 'InvalidAction'                  => 'WRONG ACTION NAME — change omnihuman_action_generate in Admin→Settings',
+                $volErr && ($volErr['Code'] ?? '') === 'InvalidAction'                  => 'WRONG ACTION NAME — change omnihuman_action_query in Admin→Settings',
                 $volErr && str_contains($volErr['Code'] ?? '', 'Auth')                 => 'AUTH ERROR — check AK/SK',
                 $volErr && str_contains($volErr['Code'] ?? '', 'SignatureDoesNotMatch') => 'SIGNATURE ERROR — AK/SK mismatch or clock skew',
-                $volErr && ($volErr['Code'] ?? '') === 'MissingParameter'               => 'MISSING PARAM — action accepted but body param required',
                 $volErr                                                                 => 'API ERROR: ' . ($volErr['Message'] ?? $volErr['Code'] ?? '?'),
                 $code === 401 || $code === 403                                          => 'AUTH ERROR — AK/SK rejected',
-                $code === 400                                                           => 'BAD REQUEST (dummy payload rejected — endpoint + auth OK)',
-                $code === 200                                                           => 'OK — endpoint fully working',
+                // "task not found" with dummy id = endpoint + auth working perfectly (no task created)
+                $code === 200 && is_array($decoded) && stripos($decoded['message'] ?? '', 'not') !== false => 'HTTP 200 ✓ SUCCESS — endpoint + auth OK',
+                $code === 200                                                           => 'HTTP 200 ✓ SUCCESS — endpoint fully working',
                 $code >= 500                                                            => "SERVER ERROR $code",
                 default                                                                 => $curlErr ? "cURL: $curlErr" : "HTTP $code",
             },
@@ -583,6 +589,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
 
                 $sLabel = match(true) {
                     $sApiCode === 10000   => '✓ TASK CREATED — use this req_key!',
+                    $sCode === 429        => '⏱ rate-limited (429) — req_key may be valid, retry later',
                     $notSupp             => '✗ not supported (req_key unknown)',
                     $unactivated         => '⚠ req_key exists but service NOT ACTIVATED in console',
                     $inputInvalid        => '✓ ACCEPTED — req_key valid (input rejected, not req_key error)',
@@ -590,6 +597,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
                                          => '✗ ' . ($sDecoded['ResponseMetadata']['Error']['Code'] ?? 'error'),
                     default              => "HTTP $sCode: " . mb_substr($sMsg, 0, 80),
                 };
+                usleep(300000); // 300ms between candidates to avoid 429 concurrency limit
 
                 $scanResults[] = [
                     'req_key' => $c['req_key'],
