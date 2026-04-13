@@ -483,53 +483,52 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
             // Step-2 video generation likely uses a similar realman_avatar_video_* req_key.
             // Each candidate carries:
             //   body_key: which JSON field the API expects for the image (image_url or image_base64)
+            // req_key=realman_avatar_picture_create_role_omni_cv is confirmed as Step-1
+            // (subject recognition only). We need to find the Step-2 video generation key.
+            // Scan ALL candidates and report every result — do NOT stop on Step-1 success.
+            // Video-gen payload includes both image + audio fields since that's required.
             $candidates = [
-                // ── Known-correct req_key from BytePlus docs (subject recognition / Step 1) ──
-                ['action' => 'CVSubmitTask', 'req_key' => 'realman_avatar_picture_create_role_omni_cv',
-                 'body_key' => 'image_url', 'label' => '(Step-1 subject detect — known correct req_key)'],
-                // ── Likely OmniHuman video generation req_keys (realman_avatar_video_* pattern) ──
-                ['action' => 'CVSubmitTask', 'req_key' => 'realman_avatar_video_create_role_omni_cv',
-                 'body_key' => 'image_url'],
-                ['action' => 'CVSubmitTask', 'req_key' => 'realman_avatar_video_generate_omni_cv',
-                 'body_key' => 'image_url'],
-                ['action' => 'CVSubmitTask', 'req_key' => 'realman_avatar_video_omni_cv',
-                 'body_key' => 'image_url'],
-                ['action' => 'CVSubmitTask', 'req_key' => 'realman_omni_human_v1_5',
-                 'body_key' => 'image_url'],
-                ['action' => 'CVSubmitTask', 'req_key' => 'realman_omni_human',
-                 'body_key' => 'image_url'],
-                // ── Legacy dreamina_* names ──
-                ['action' => 'CVSubmitTask', 'req_key' => 'dreamina_omni_human_v1_5',
-                 'body_key' => 'image_base64'],
-                ['action' => 'CVSubmitTask', 'req_key' => 'omni_human_v1_5',
-                 'body_key' => 'image_base64'],
-                ['action' => 'CVSubmitTask', 'req_key' => 'omni_human',
-                 'body_key' => 'image_base64'],
+                // ── Step-1 only (confirmed from docs) — keep to show API access works ──
+                ['req_key' => 'realman_avatar_picture_create_role_omni_cv',
+                 'label' => '(Step-1 subject detect)',
+                 'payload' => ['image_url' => 'https://www.gstatic.com/webp/gallery/1.jpg']],
+                // ── OmniHuman video generation candidates (realman_avatar_video_* pattern) ──
+                ['req_key' => 'realman_avatar_video_create_role_omni_cv',
+                 'label' => '(Step-2 video gen?)',
+                 'payload' => ['image_url' => 'https://www.gstatic.com/webp/gallery/1.jpg', 'text' => 'test']],
+                ['req_key' => 'realman_avatar_video_generate_role_omni_cv',
+                 'label' => '(Step-2 video gen?)',
+                 'payload' => ['image_url' => 'https://www.gstatic.com/webp/gallery/1.jpg', 'text' => 'test']],
+                ['req_key' => 'realman_avatar_video_omni_cv',
+                 'label' => '(Step-2 video gen?)',
+                 'payload' => ['image_url' => 'https://www.gstatic.com/webp/gallery/1.jpg', 'text' => 'test']],
+                ['req_key' => 'realman_omni_human_v1_5',
+                 'label' => '(Step-2 video gen?)',
+                 'payload' => ['image_url' => 'https://www.gstatic.com/webp/gallery/1.jpg', 'text' => 'test']],
+                ['req_key' => 'realman_omni_human',
+                 'label' => '(Step-2 video gen?)',
+                 'payload' => ['image_url' => 'https://www.gstatic.com/webp/gallery/1.jpg', 'text' => 'test']],
+                ['req_key' => 'realman_omni_human_video_v1_5',
+                 'label' => '(Step-2 video gen?)',
+                 'payload' => ['image_url' => 'https://www.gstatic.com/webp/gallery/1.jpg', 'text' => 'test']],
+                ['req_key' => 'realman_omni_human_video',
+                 'label' => '(Step-2 video gen?)',
+                 'payload' => ['image_url' => 'https://www.gstatic.com/webp/gallery/1.jpg', 'text' => 'test']],
             ];
             $scanVersion = str_contains($scanHostN, 'byteplusapi.com') ? '2024-06-06' : '2022-08-31';
-            // A tiny valid-looking JPEG data URI (1×1 white pixel) for image_url-based tests
-            $testImageUrl  = 'https://www.gstatic.com/webp/gallery/1.jpg'; // public Google test image
             $scanResults = [];
             foreach ($candidates as $c) {
-                $scanUrl = rtrim($apiBase, '/') . '/?Action=' . $c['action'] . '&Version=' . $scanVersion;
-                if (($c['body_key'] ?? 'image_base64') === 'image_url') {
-                    $scanBody = json_encode([
-                        'req_key'   => $c['req_key'],
-                        'image_url' => $testImageUrl,
-                    ], JSON_UNESCAPED_SLASHES);
-                } else {
-                    $scanBody = json_encode([
-                        'req_key'      => $c['req_key'],
-                        'image_base64' => 'dGVzdA==',
-                        'text'         => 'test',
-                    ], JSON_UNESCAPED_SLASHES);
-                }
-                $scanQ    = parse_url($scanUrl, PHP_URL_QUERY) ?? '';
+                $scanUrl  = rtrim($apiBase, '/') . '/?Action=CVSubmitTask&Version=' . $scanVersion;
+                $scanBody = json_encode(
+                    array_merge(['req_key' => $c['req_key']], $c['payload']),
+                    JSON_UNESCAPED_SLASHES
+                );
+                $scanQ    = 'Action=CVSubmitTask&Version=' . $scanVersion;
                 $scanHdrs = volcengine_v4_headers('POST', $scanHostN, '/', $scanQ, $scanBody, $ak, $sk, $region, $service);
                 $scanLines = array_map(fn($k,$v) => "$k: $v", array_keys($scanHdrs), array_values($scanHdrs));
 
                 $ch2 = curl_init($scanUrl);
-                curl_setopt_array($ch2, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_TIMEOUT=>10,
+                curl_setopt_array($ch2, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_TIMEOUT=>15,
                     CURLOPT_POST=>true, CURLOPT_POSTFIELDS=>$scanBody, CURLOPT_HTTPHEADER=>$scanLines,
                     CURLOPT_SSL_VERIFYPEER=>true]);
                 $sResp = curl_exec($ch2);
@@ -538,26 +537,26 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
 
                 $sDecoded  = json_decode($sResp ?: '', true) ?? [];
                 $sMsg      = $sDecoded['message'] ?? ($sDecoded['ResponseMetadata']['Error']['Message'] ?? '');
-                $sApiCode  = $sDecoded['code'] ?? 0;
+                $sApiCode  = (int)($sDecoded['code'] ?? 0);
                 $notSupp   = str_contains($sMsg, 'not supported');
-                $inputInvalid = str_contains($sMsg, 'Input invalid') || str_contains($sMsg, 'invalid') || $sApiCode == 50215;
-                $success   = ($sApiCode == 10000);
-                $accepted  = !$notSupp && !isset($sDecoded['ResponseMetadata']['Error']) && $sCode === 400;
+                $inputInvalid = str_contains($sMsg, 'Input invalid') || $sApiCode === 50215;
 
                 $sLabel = match(true) {
-                    $success       => '✓ SUCCESS! req_key works and task created',
-                    $notSupp       => '✗ req_key not supported',
-                    $inputInvalid  => '✓ ACCEPTED — req_key valid (test image rejected as invalid input)',
+                    $sApiCode === 10000   => '✓ TASK CREATED — use this req_key!',
+                    $notSupp             => '✗ not supported',
+                    $inputInvalid        => '✓ ACCEPTED — req_key valid (input rejected, not req_key error)',
                     isset($sDecoded['ResponseMetadata']['Error'])
-                                   => '✗ ' . ($sDecoded['ResponseMetadata']['Error']['Code'] ?? 'error'),
-                    $accepted      => '✓ ACCEPTED — req_key works',
-                    default        => "HTTP $sCode: $sMsg",
+                                         => '✗ ' . ($sDecoded['ResponseMetadata']['Error']['Code'] ?? 'error'),
+                    default              => "HTTP $sCode: " . mb_substr($sMsg, 0, 80),
                 };
 
-                $extra = isset($c['label']) ? ' ' . $c['label'] : '';
-                $scanResults[] = "req_key={$c['req_key']}$extra → $sLabel";
-                // Stop if we found a working req_key
-                if ($success || $inputInvalid || $accepted) break;
+                $scanResults[] = [
+                    'req_key' => $c['req_key'],
+                    'label'   => $c['label'] ?? '',
+                    'result'  => $sLabel,
+                    'code'    => $sApiCode,
+                    'msg'     => mb_substr($sMsg, 0, 120),
+                ];
             }
             $results['req_key_scan'] = $scanResults;
         }
@@ -1276,11 +1275,21 @@ async function runAvatarDebug() {
         // ── req_key scan ──────────────────────────────────────────────────────
         if (d.req_key_scan) {
             alog('── req_key / Action Scan ─────────────', '#facc15');
-            alog('  (scanning for working action+req_key combination…)', '#94a3b8');
-            d.req_key_scan.forEach(line => {
-                const ok = line.includes('ACCEPTED');
-                alog('  ' + line, ok ? '#a8e063' : '#475569');
-                if (ok) alog('  ↑ Update omnihuman_req_key + omnihuman_action_generate in Admin→Settings', '#fbbf24');
+            alog('  (testing all candidates — look for ✓ ACCEPTED or ✓ TASK CREATED)', '#94a3b8');
+            d.req_key_scan.forEach(item => {
+                // Item is an object: {req_key, label, result, code, msg}
+                if (typeof item === 'string') {
+                    // Fallback for old string format
+                    const ok = item.includes('ACCEPTED') || item.includes('SUCCESS');
+                    alog('  ' + item, ok ? '#a8e063' : '#475569');
+                    return;
+                }
+                const ok = item.result.startsWith('✓');
+                const color = ok ? '#a8e063' : (item.result.startsWith('✗') ? '#475569' : '#f59e0b');
+                alog(`  ${item.req_key} ${item.label || ''} → ${item.result}`, color);
+                if (ok && !item.label.includes('Step-1')) {
+                    alog(`  ↑ Set omnihuman_req_key = ${item.req_key} in Admin→Settings`, '#fbbf24');
+                }
             });
         }
 

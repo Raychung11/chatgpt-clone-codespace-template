@@ -173,7 +173,149 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Refresh balance for display
 $balance = wallet_balance($uid);
-?>
+
+// ── Debug action: video generation connectivity diagnostics ──────────────────
+// Must be before any HTML output so json_response() can set headers.
+if (($_GET['_action'] ?? '') === 'debug_test') {
+    csrf_verify();
+    $apiKey     = setting('byteplus_api_key',  BYTEPLUS_API_KEY)  ?: BYTEPLUS_API_KEY;
+    $apiBase    = rtrim(setting('byteplus_api_url', BYTEPLUS_API_URL) ?: BYTEPLUS_API_URL, '/');
+    $endpointId = setting('byteplus_endpoint_id', BYTEPLUS_ENDPOINT_ID) ?: BYTEPLUS_ENDPOINT_ID;
+    $results    = [];
+
+    // 1. Config
+    $dbUrl = setting('byteplus_api_url', '');
+    $results['config'] = [
+        'active_url'     => $apiBase ?: 'NOT SET',
+        'source'         => $dbUrl ? "DB: $dbUrl" : 'constant: ' . BYTEPLUS_API_URL,
+        'api_key'        => $apiKey ? ('set (' . substr($apiKey, 0, 6) . '…)') : 'NOT SET',
+        'endpoint_id'    => $endpointId ?: 'NOT SET',
+        'BYTEPLUS_API_URL_const' => BYTEPLUS_API_URL,
+    ];
+
+    // 2. DNS for configured host + alternatives
+    $host = parse_url($apiBase, PHP_URL_HOST) ?: '';
+    $ip   = $host ? gethostbyname($host) : '';
+    $results['dns'] = [
+        'hostname' => $host,
+        'resolved' => ($ip && $ip !== $host) ? "✓ OK → $ip" : '✗ FAILED (not in server DNS)',
+    ];
+    $altHosts = [
+        'ark.byteplusapi.com',
+        'ark.ap-southeast.byteplus.com',
+        'ark.ap-southeast-1.byteplus.com',
+        'ark.volcengineapi.com',
+    ];
+    $dnsAlts = [];
+    foreach ($altHosts as $h) {
+        $r = gethostbyname($h);
+        $dnsAlts[$h] = ($r !== $h) ? "✓ resolves → $r" : '✗ no DNS';
+    }
+    $results['dns_alternatives'] = $dnsAlts;
+
+    // 3. DoH lookup for ark.byteplusapi.com (the likely correct URL)
+    $dohHost = 'ark.byteplusapi.com';
+    $dohIps  = [];
+    foreach ([
+        'Google'     => 'https://dns.google/resolve?name=' . urlencode($dohHost) . '&type=A',
+        'Cloudflare' => 'https://cloudflare-dns.com/dns-query?name=' . urlencode($dohHost) . '&type=A',
+    ] as $prov => $dohUrl) {
+        $dohCh = curl_init($dohUrl);
+        curl_setopt_array($dohCh, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_TIMEOUT=>6,
+            CURLOPT_HTTPHEADER=>['accept: application/dns-json'], CURLOPT_SSL_VERIFYPEER=>true]);
+        $dohR = json_decode(curl_exec($dohCh) ?: '', true);
+        curl_close($dohCh);
+        $pIps = [];
+        foreach (($dohR['Answer'] ?? []) as $rec) {
+            if (($rec['type'] ?? 0) === 1) { $pIps[] = $rec['data']; $dohIps[] = $rec['data']; }
+        }
+        $results['doh_lookup'][$prov] = $pIps ? ('✓ ' . implode(', ', $pIps)) : '✗ no record';
+    }
+    $results['doh_lookup']['hostname'] = $dohHost;
+    $dohIps = array_unique($dohIps);
+
+    // 4. TCP connect test to configured host
+    if ($host) {
+        $fp = @fsockopen('ssl://' . $host, 443, $errno, $errstr, 8);
+        $results['tcp_connect'] = $fp ? 'OK — TCP+TLS port 443 succeeded' : "FAILED (errno=$errno): $errstr";
+        if ($fp) fclose($fp);
+    }
+
+    // 5. API probe — simple POST to /contents/generations/tasks
+    if ($apiKey && $apiBase) {
+        $probeUrl  = $apiBase . '/contents/generations/tasks';
+        $probeBody = json_encode(['model' => $endpointId ?: 'test', 'content' => [['type' => 'text', 'text' => 'test']]]);
+        $ch = curl_init($probeUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 12,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $probeBody,
+            CURLOPT_HTTPHEADER     => ["Authorization: Bearer $apiKey", 'Content-Type: application/json'],
+            CURLOPT_SSL_VERIFYPEER => true,
+        ]);
+        $dnsOverride = setting('byteplus_dns_override', '') ?: '';
+        if ($dnsOverride && $host) {
+            curl_setopt($ch, CURLOPT_RESOLVE, ["$host:443:$dnsOverride"]);
+        }
+        $resp    = curl_exec($ch);
+        $code    = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr = curl_error($ch);
+        curl_close($ch);
+        $decoded = json_decode($resp ?: '', true) ?? [];
+        $errMsg  = $decoded['error']['message'] ?? $decoded['message'] ?? '';
+        $results['api_probe'] = [
+            'url'        => $probeUrl,
+            'http_code'  => $code ?: 0,
+            'curl_error' => $curlErr ?: 'none',
+            'response'   => $decoded ?: ($resp ? substr($resp, 0, 300) : '(empty)'),
+            'diagnosis'  => match(true) {
+                (bool)$curlErr && str_contains($curlErr, 'resolve') => 'DNS FAILURE — change byteplus_api_url in Admin→Settings',
+                (bool)$curlErr && str_contains($curlErr, 'timed out') => 'TIMEOUT — host unreachable',
+                (bool)$curlErr             => "cURL error: $curlErr",
+                $code === 401              => '✓ REACHABLE — API key invalid (401)',
+                $code === 400 || $code === 422 => '✓ REACHABLE — bad payload rejected (auth + connectivity OK)',
+                $code === 200              => '✓ WORKING',
+                $code >= 500               => "Server error $code",
+                default                    => "HTTP $code: $errMsg",
+            },
+        ];
+
+        // If DoH found an IP for ark.byteplusapi.com and server DNS doesn't resolve it, try via IP
+        if ($dohIps && gethostbyname('ark.byteplusapi.com') === 'ark.byteplusapi.com') {
+            $ipTest = $dohIps[0];
+            $testUrl = 'https://ark.byteplusapi.com/api/v3/contents/generations/tasks';
+            $ch2 = curl_init($testUrl);
+            curl_setopt_array($ch2, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_TIMEOUT=>10,
+                CURLOPT_POST=>true, CURLOPT_POSTFIELDS=>$probeBody,
+                CURLOPT_HTTPHEADER=>["Authorization: Bearer $apiKey", 'Content-Type: application/json'],
+                CURLOPT_SSL_VERIFYPEER=>true,
+                CURLOPT_RESOLVE=>["ark.byteplusapi.com:443:$ipTest"]]);
+            $r2 = curl_exec($ch2);
+            $c2 = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
+            $e2 = curl_error($ch2);
+            curl_close($ch2);
+            $d2 = json_decode($r2 ?: '', true) ?? [];
+            $results['ark_ip_test'] = [
+                'ip'         => $ipTest,
+                'http_code'  => $c2 ?: 0,
+                'curl_error' => $e2 ?: 'none',
+                'response'   => $d2,
+                'diagnosis'  => match(true) {
+                    (bool)$e2            => "FAILED: $e2",
+                    $c2 === 401          => '✓ REACHABLE via IP — API key issue (set byteplus_api_url=https://ark.byteplusapi.com/api/v3)',
+                    $c2 === 400 || $c2 === 422 => '✓ REACHABLE via IP — set byteplus_api_url=https://ark.byteplusapi.com/api/v3',
+                    $c2 === 200          => '✓ WORKING via IP',
+                    default              => "HTTP $c2",
+                },
+            ];
+        }
+    } else {
+        $results['api_probe'] = 'SKIPPED — API key or URL not configured';
+    }
+
+    json_response(['ok' => true, 'debug' => $results]);
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -279,7 +421,26 @@ $balance = wallet_balance($uid);
             <h1 class="page-title">Generate Video</h1>
             <p class="page-sub">Turn your marketing brief into an AI video</p>
         </div>
-        <span class="navbar-wallet">⚡ <?= e(format_credits($balance)) ?> credits</span>
+        <div style="display:flex;gap:10px;align-items:center">
+            <button onclick="toggleGenDebug()" class="btn btn-ghost btn-sm" style="font-size:.75rem;opacity:.7">🔧 Debug</button>
+            <span class="navbar-wallet">⚡ <?= e(format_credits($balance)) ?> credits</span>
+        </div>
+    </div>
+
+    <!-- ── Debug panel ──────────────────────────────────────────────────────── -->
+    <div id="genDebugWrap" style="display:none;margin-bottom:20px">
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <span style="color:#facc15;font-weight:700;font-size:.85rem">🔧 Video Generation Debug Console</span>
+                <div style="display:flex;gap:8px">
+                    <button onclick="runGenDebug()" class="btn btn-sm" style="background:#1e40af;color:#fff;font-size:.75rem">▶ Run Diagnostics</button>
+                    <button onclick="document.getElementById('genDebugLog').innerHTML=''" class="btn btn-ghost btn-sm" style="font-size:.75rem">Clear</button>
+                </div>
+            </div>
+            <div id="genDebugLog" style="font-family:monospace;font-size:.75rem;line-height:1.7;max-height:380px;overflow-y:auto;color:#94a3b8">
+                Click "Run Diagnostics" to test video generation configuration and connectivity.
+            </div>
+        </div>
     </div>
 
     <?php if (!empty($errors['general'])): ?>
@@ -603,6 +764,112 @@ function dismissEnhance() {
     document.getElementById('enhanceBadge').textContent = 'Ready to generate';
     document.getElementById('enhanceBadge').style.cssText = 'background:rgba(34,197,94,.15);color:#22c55e;font-size:.68rem;padding:2px 8px;border-radius:99px';
     document.getElementById('useEnhancedBtn').style.display = '';
+}
+
+// ── Video Generation Debug Panel ──────────────────────────────────────────────
+const genCsrf = <?= json_encode($_SESSION[CSRF_TOKEN_NAME] ?? '') ?>;
+
+function toggleGenDebug() {
+    const w = document.getElementById('genDebugWrap');
+    w.style.display = w.style.display === 'none' ? 'block' : 'none';
+}
+
+function glog(msg, color) {
+    const log = document.getElementById('genDebugLog');
+    const line = document.createElement('div');
+    line.style.color = color || '#94a3b8';
+    line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+}
+
+async function runGenDebug() {
+    document.getElementById('genDebugLog').innerHTML = '';
+    glog('Running diagnostics…', '#facc15');
+    try {
+        const resp = await fetch('<?= BASE_URL ?>/client/generate.php?_action=debug_test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': genCsrf },
+            body: '<?= CSRF_TOKEN_NAME ?>=<?= csrf_token() ?>',
+        });
+        if (!resp.ok) { glog(`HTTP ${resp.status}: ${(await resp.text()).slice(0,200)}`, '#ef4444'); return; }
+        const data = await resp.json();
+        const d = data.debug;
+
+        // Config
+        glog('── Configuration ─────────────────────', '#facc15');
+        Object.entries(d.config).forEach(([k,v]) => {
+            const bad = String(v).includes('NOT SET');
+            glog(`  ${k}: ${v}`, bad ? '#ef4444' : '#a8e063');
+        });
+
+        // DNS
+        glog('── DNS Resolution ────────────────────', '#facc15');
+        const dnsOk = d.dns.resolved.startsWith('✓');
+        glog(`  ${d.dns.hostname}: ${d.dns.resolved}`, dnsOk ? '#a8e063' : '#ef4444');
+        glog('  Alternatives:', '#64b5f6');
+        Object.entries(d.dns_alternatives).forEach(([h,r]) => {
+            const ok = r.startsWith('✓');
+            glog(`    ${h}: ${r}`, ok ? '#a8e063' : '#475569');
+            if (ok) glog(`    ↑ Set this as byteplus_api_url base in Admin→Settings`, '#fbbf24');
+        });
+
+        // DoH
+        if (d.doh_lookup) {
+            glog('── DoH DNS (ark.byteplusapi.com) ────', '#facc15');
+            glog(`  hostname: ${d.doh_lookup.hostname}`, '#64b5f6');
+            ['Google','Cloudflare'].forEach(p => {
+                if (d.doh_lookup[p]) glog(`  ${p}: ${d.doh_lookup[p]}`, d.doh_lookup[p].startsWith('✓') ? '#a8e063' : '#475569');
+            });
+        }
+
+        // TCP
+        if (d.tcp_connect) {
+            glog('── TCP+TLS Connect ───────────────────', '#facc15');
+            glog('  ' + d.tcp_connect, d.tcp_connect.startsWith('OK') ? '#a8e063' : '#ef4444');
+        }
+
+        // API probe
+        glog('── API Probe ─────────────────────────', '#facc15');
+        if (typeof d.api_probe === 'string') {
+            glog('  ' + d.api_probe, '#f59e0b');
+        } else {
+            glog(`  URL: ${d.api_probe.url}`, '#94a3b8');
+            glog(`  HTTP: ${d.api_probe.http_code || 'N/A'}`, d.api_probe.http_code > 0 ? '#a8e063' : '#ef4444');
+            const diagOk = d.api_probe.diagnosis.startsWith('✓');
+            glog(`  Diagnosis: ${d.api_probe.diagnosis}`, diagOk ? '#a8e063' : '#ef4444');
+            if (d.api_probe.curl_error !== 'none') glog(`  cURL: ${d.api_probe.curl_error}`, '#ef4444');
+            if (d.api_probe.response && typeof d.api_probe.response === 'object') {
+                glog('  Response:', '#94a3b8');
+                JSON.stringify(d.api_probe.response, null, 2).split('\n').forEach(l => glog('    '+l, '#475569'));
+            }
+            if (d.api_probe.diagnosis.includes('DNS FAILURE')) {
+                glog('  → Update byteplus_api_url in Admin→Settings to a resolvable host', '#fbbf24');
+                glog('  → Likely fix: https://ark.byteplusapi.com/api/v3', '#fbbf24');
+            }
+        }
+
+        // IP test via DoH
+        if (d.ark_ip_test) {
+            glog('── ark.byteplusapi.com via DoH IP ───', '#facc15');
+            const t = d.ark_ip_test;
+            const tok = t.diagnosis.startsWith('✓');
+            glog(`  IP: ${t.ip}  HTTP: ${t.http_code || 'failed'}`, '#64b5f6');
+            glog(`  ${t.diagnosis}`, tok ? '#a8e063' : '#ef4444');
+            if (tok) {
+                glog('  → Set byteplus_api_url = https://ark.byteplusapi.com/api/v3 in Admin→Settings', '#fbbf24');
+                glog('  → Optionally set byteplus_dns_override = ' + t.ip + ' in Admin→Settings', '#fbbf24');
+            }
+            if (t.response && typeof t.response === 'object') {
+                glog('  Response:', '#94a3b8');
+                JSON.stringify(t.response, null, 2).split('\n').forEach(l => glog('    '+l, '#475569'));
+            }
+        }
+
+        glog('── Done ──────────────────────────────', '#facc15');
+    } catch(e) {
+        glog('Fetch error: ' + e.message, '#ef4444');
+    }
 }
 </script>
 </body>

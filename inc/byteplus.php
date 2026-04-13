@@ -178,7 +178,7 @@ function byteplus_get(string $url, string $apiKey): array
 function byteplus_request(string $method, string $url, array $payload, string $apiKey): array
 {
     $ch = curl_init($url);
-    curl_setopt_array($ch, [
+    $opts = [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT        => 60,
         CURLOPT_HTTPHEADER     => [
@@ -188,7 +188,15 @@ function byteplus_request(string $method, string $url, array $payload, string $a
         ],
         CURLOPT_SSL_VERIFYPEER => true,
         CURLOPT_FOLLOWLOCATION => false,
-    ]);
+    ];
+    // DNS override: set byteplus_dns_override in Admin→Settings if ark.byteplusapi.com
+    // doesn't resolve on the server but you know its IP (from DoH lookup).
+    $dnsOverride = function_exists('setting') ? (setting('byteplus_dns_override', '') ?: '') : '';
+    if ($dnsOverride) {
+        $host = parse_url($url, PHP_URL_HOST) ?? '';
+        if ($host) $opts[CURLOPT_RESOLVE] = ["$host:443:$dnsOverride"];
+    }
+    curl_setopt_array($ch, $opts);
 
     if ($method === 'POST') {
         curl_setopt($ch, CURLOPT_POST, true);
