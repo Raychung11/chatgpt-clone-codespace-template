@@ -169,15 +169,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['_action'])) {
                 if ($audioPath) @unlink($audioPath);
                 $errors['balance'] = $deduct['error'];
             } else {
-                // Convert files to base64 and submit to OmniHuman
-                $imgB64   = omnihuman_file_to_base64($portraitPath);
-                $audioB64 = $audioPath ? omnihuman_file_to_base64($audioPath) : null;
+                // Build public URLs for the uploaded files so BytePlus can fetch them.
+                // cv.byteplusapi.com requires image_url / audio_url (not base64).
+                $portraitName = basename($portraitPath);
+                $imageUrl     = rtrim(BASE_URL, '/') . '/uploads/avatars/' . rawurlencode($portraitName);
+                $audioUrl     = null;
+                if ($audioPath) {
+                    $audioUrl = rtrim(BASE_URL, '/') . '/uploads/avatar_audio/' . rawurlencode(basename($audioPath));
+                }
 
                 $apiResult = omnihuman_create_task(
-                    $imgB64 ?? '',
-                    $audioB64,
+                    '',          // imageBase64 unused — imageUrl takes priority
+                    null,        // audioBase64 unused — audioUrl takes priority
                     $audioMode === 'tts' ? $ttsText : null,
-                    ['duration' => $duration, 'resolution' => '720p']
+                    ['output_resolution' => 720],   // docs: 720 or 1080 (int, no 'p')
+                    $imageUrl,
+                    $audioUrl
                 );
 
                 if ($apiResult['ok']) {
