@@ -316,6 +316,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
 
     json_response(['ok' => true, 'debug' => $results]);
 }
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
