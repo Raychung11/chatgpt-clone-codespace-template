@@ -487,33 +487,51 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
             // (subject recognition only). We need to find the Step-2 video generation key.
             // Scan ALL candidates and report every result — do NOT stop on Step-1 success.
             // Video-gen payload includes both image + audio fields since that's required.
+            // Helper closure to build a video-gen payload with image_url + audio/text
+            $vPay = fn(array $extra = []) => array_merge([
+                'image_url' => 'https://www.gstatic.com/webp/gallery/1.jpg',
+                'audio_url' => '',          // empty — API may still accept req_key if not null
+                'text'      => 'hello world',
+            ], $extra);
             $candidates = [
                 // ── Step-1 only (confirmed from docs) — keep to show API access works ──
                 ['req_key' => 'realman_avatar_picture_create_role_omni_cv',
                  'label' => '(Step-1 subject detect)',
                  'payload' => ['image_url' => 'https://www.gstatic.com/webp/gallery/1.jpg']],
-                // ── OmniHuman video generation candidates (realman_avatar_video_* pattern) ──
-                ['req_key' => 'realman_avatar_video_create_role_omni_cv',
-                 'label' => '(Step-2 video gen?)',
-                 'payload' => ['image_url' => 'https://www.gstatic.com/webp/gallery/1.jpg', 'text' => 'test']],
-                ['req_key' => 'realman_avatar_video_generate_role_omni_cv',
-                 'label' => '(Step-2 video gen?)',
-                 'payload' => ['image_url' => 'https://www.gstatic.com/webp/gallery/1.jpg', 'text' => 'test']],
-                ['req_key' => 'realman_avatar_video_omni_cv',
-                 'label' => '(Step-2 video gen?)',
-                 'payload' => ['image_url' => 'https://www.gstatic.com/webp/gallery/1.jpg', 'text' => 'test']],
-                ['req_key' => 'realman_omni_human_v1_5',
-                 'label' => '(Step-2 video gen?)',
-                 'payload' => ['image_url' => 'https://www.gstatic.com/webp/gallery/1.jpg', 'text' => 'test']],
-                ['req_key' => 'realman_omni_human',
-                 'label' => '(Step-2 video gen?)',
-                 'payload' => ['image_url' => 'https://www.gstatic.com/webp/gallery/1.jpg', 'text' => 'test']],
-                ['req_key' => 'realman_omni_human_video_v1_5',
-                 'label' => '(Step-2 video gen?)',
-                 'payload' => ['image_url' => 'https://www.gstatic.com/webp/gallery/1.jpg', 'text' => 'test']],
-                ['req_key' => 'realman_omni_human_video',
-                 'label' => '(Step-2 video gen?)',
-                 'payload' => ['image_url' => 'https://www.gstatic.com/webp/gallery/1.jpg', 'text' => 'test']],
+
+                // ── Batch A: realman_avatar_video_* (with / without "role") ──
+                ['req_key' => 'realman_avatar_video_create_role_omni_cv',  'label' => '(video create role?)', 'payload' => $vPay()],
+                ['req_key' => 'realman_avatar_video_generate_role_omni_cv','label' => '(video gen role?)',    'payload' => $vPay()],
+                ['req_key' => 'realman_avatar_video_omni_cv',              'label' => '(video bare?)',        'payload' => $vPay()],
+                ['req_key' => 'realman_avatar_video_create_omni_cv',       'label' => '(video create norl?)', 'payload' => $vPay()],
+                ['req_key' => 'realman_avatar_video_generate_omni_cv',     'label' => '(video gen norl?)',    'payload' => $vPay()],
+
+                // ── Batch B: realman_omni_human_* variants ──
+                ['req_key' => 'realman_omni_human_v1_5',                   'label' => '(omni 1.5?)',          'payload' => $vPay()],
+                ['req_key' => 'realman_omni_human',                        'label' => '(omni bare?)',         'payload' => $vPay()],
+                ['req_key' => 'realman_omni_human_video_v1_5',             'label' => '(omni video 1.5?)',    'payload' => $vPay()],
+                ['req_key' => 'realman_omni_human_video',                  'label' => '(omni video bare?)',   'payload' => $vPay()],
+
+                // ── Batch C: talking-head / lipsync patterns ──
+                ['req_key' => 'realman_avatar_talking_head_omni_cv',       'label' => '(talking head?)',      'payload' => $vPay()],
+                ['req_key' => 'realman_avatar_lipsync_omni_cv',            'label' => '(lipsync?)',           'payload' => $vPay()],
+                ['req_key' => 'realman_avatar_talk_omni_cv',               'label' => '(talk?)',              'payload' => $vPay()],
+                ['req_key' => 'realman_avatar_animation_role_omni_cv',     'label' => '(animation role?)',    'payload' => $vPay()],
+                ['req_key' => 'realman_portrait_animation_omni_cv',        'label' => '(portrait anim?)',     'payload' => $vPay()],
+
+                // ── Batch D: dreamina_* legacy names ──
+                ['req_key' => 'dreamina_omni_human_v1_5',                  'label' => '(dreamina 1.5?)',      'payload' => $vPay()],
+                ['req_key' => 'dreamina_omni_human',                       'label' => '(dreamina bare?)',     'payload' => $vPay()],
+                ['req_key' => 'dreamina_avatar_video_create_role',         'label' => '(dreamina vid role?)', 'payload' => $vPay()],
+                ['req_key' => 'dreamina_avatar_talking_head',              'label' => '(dreamina talk hd?)',  'payload' => $vPay()],
+                ['req_key' => 'dreamina_lipsync',                          'label' => '(dreamina lipsync?)',  'payload' => $vPay()],
+
+                // ── Batch E: shorter / alternate naming ──
+                ['req_key' => 'omni_human_video',                          'label' => '(omni_human_video?)',  'payload' => $vPay()],
+                ['req_key' => 'omni_human_v1_5',                           'label' => '(omni_human_v1_5?)',   'payload' => $vPay()],
+                ['req_key' => 'avatar_video_create',                       'label' => '(avatar_video_creat?)','payload' => $vPay()],
+                ['req_key' => 'cv_talking_head',                           'label' => '(cv_talking_head?)',   'payload' => $vPay()],
+                ['req_key' => 'cv_omni_human',                             'label' => '(cv_omni_human?)',     'payload' => $vPay()],
             ];
             $scanVersion = str_contains($scanHostN, 'byteplusapi.com') ? '2024-06-06' : '2022-08-31';
             $scanResults = [];
@@ -536,14 +554,25 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
                 curl_close($ch2);
 
                 $sDecoded  = json_decode($sResp ?: '', true) ?? [];
-                $sMsg      = $sDecoded['message'] ?? ($sDecoded['ResponseMetadata']['Error']['Message'] ?? '');
+                $sMsg      = $sDecoded['message']
+                             ?? $sDecoded['ResponseMetadata']['Error']['Message']
+                             ?? ($sDecoded['error']['message'] ?? '');
                 $sApiCode  = (int)($sDecoded['code'] ?? 0);
-                $notSupp   = str_contains($sMsg, 'not supported');
-                $inputInvalid = str_contains($sMsg, 'Input invalid') || $sApiCode === 50215;
+                // "not supported" = req_key unrecognised; all other errors = req_key might be valid
+                $notSupp      = stripos($sMsg, 'not supported') !== false
+                             || stripos($sMsg, 'req_key') !== false && stripos($sMsg, 'not') !== false;
+                $inputInvalid = stripos($sMsg, 'Input invalid') !== false
+                             || stripos($sMsg, 'param') !== false
+                             || $sApiCode === 50215;
+                $unactivated  = stripos($sMsg, 'not activated') !== false
+                             || stripos($sMsg, 'not enable') !== false
+                             || stripos($sMsg, 'permission') !== false
+                             || stripos($sMsg, 'not open') !== false;
 
                 $sLabel = match(true) {
                     $sApiCode === 10000   => '✓ TASK CREATED — use this req_key!',
-                    $notSupp             => '✗ not supported',
+                    $notSupp             => '✗ not supported (req_key unknown)',
+                    $unactivated         => '⚠ req_key exists but service NOT ACTIVATED in console',
                     $inputInvalid        => '✓ ACCEPTED — req_key valid (input rejected, not req_key error)',
                     isset($sDecoded['ResponseMetadata']['Error'])
                                          => '✗ ' . ($sDecoded['ResponseMetadata']['Error']['Code'] ?? 'error'),
@@ -1285,10 +1314,18 @@ async function runAvatarDebug() {
                     return;
                 }
                 const ok = item.result.startsWith('✓');
-                const color = ok ? '#a8e063' : (item.result.startsWith('✗') ? '#475569' : '#f59e0b');
+                const warn = item.result.startsWith('⚠');
+                const color = ok ? '#a8e063' : (warn ? '#fbbf24' : '#475569');
                 alog(`  ${item.req_key} ${item.label || ''} → ${item.result}`, color);
+                // Show msg for non-trivial results (not plain "not supported")
+                if (item.msg && !item.result.includes('not supported (req_key unknown)')) {
+                    alog(`    msg: ${item.msg}`, '#64748b');
+                }
                 if (ok && !item.label.includes('Step-1')) {
                     alog(`  ↑ Set omnihuman_req_key = ${item.req_key} in Admin→Settings`, '#fbbf24');
+                }
+                if (warn) {
+                    alog(`  ↑ Activate this service in BytePlus console → Vision AI → Model Plaza`, '#f97316');
                 }
             });
         }
