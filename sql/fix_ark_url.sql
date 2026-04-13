@@ -1,10 +1,10 @@
 -- fix_ark_url.sql
 -- Run once in phpMyAdmin to fix the BytePlus ModelArk API URL.
--- ark.ap-southeast.byteplus.com doesn't resolve on many hosts.
--- ark.byteplusapi.com is the correct international endpoint.
+-- IMPORTANT: the correct domain is bytepluses.com (with an 's'), NOT byteplus.com
+-- Official docs: https://ark.ap-southeast.bytepluses.com/api/v3
 
 UPDATE `settings`
-SET `value` = 'https://ark.byteplusapi.com/api/v3'
+SET `value` = 'https://ark.ap-southeast.bytepluses.com/api/v3'
 WHERE `key` = 'byteplus_api_url';
 
 -- Optional: if ark.byteplusapi.com also doesn't resolve via server DNS,

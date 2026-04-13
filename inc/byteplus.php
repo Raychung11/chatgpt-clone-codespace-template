@@ -5,7 +5,7 @@ declare(strict_types=1);
  * inc/byteplus.php
  * BytePlus ModelArk — Text-to-Video generation provider layer.
  *
- * API: https://ark.ap-southeast-1.bytepluses.com/api/v3
+ * API: https://ark.ap-southeast.bytepluses.com/api/v3  (bytepluses.com with 's'!)
  * Docs: https://www.byteplus.com/en/docs/modelark
  *
  * Setup:
@@ -58,18 +58,17 @@ function byteplus_create_task(
         return ['ok' => false, 'error' => 'BytePlus Endpoint ID is not configured.', 'raw' => []];
     }
 
-    // ModelArk content-generation payload
-    // negative_prompt suppresses the AI model from baking garbled text / watermarks into frames
+    // ModelArk content-generation payload.
+    // Per docs, parameters are embedded as --flags in the prompt text, not a separate key.
+    // Format: "<prompt> --ratio 16:9 --resolution 720p --duration 5"
+    $ratio = $extra['ratio'] ?? '16:9';
+    $promptWithFlags = rtrim($prompt) . " --ratio {$ratio} --resolution {$resolution} --duration {$duration}";
+
     $payload = [
         'model'   => $endpointId,
         'content' => [
-            ['type' => 'text', 'text' => $prompt],
+            ['type' => 'text', 'text' => $promptWithFlags],
         ],
-        'parameters' => array_merge([
-            'resolution'      => $resolution,
-            'duration'        => $duration,
-            'negative_prompt' => 'text overlay, caption, subtitle, watermark, words, letters, writing, title card, lower third, on-screen text, blurry text, garbled text',
-        ], $extra),
     ];
 
     $result = byteplus_post($apiBase . '/contents/generations/tasks', $payload, $apiKey);

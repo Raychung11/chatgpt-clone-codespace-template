@@ -201,6 +201,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
         'resolved' => ($ip && $ip !== $host) ? "✓ OK → $ip" : '✗ FAILED (not in server DNS)',
     ];
     $altHosts = [
+        'ark.ap-southeast.bytepluses.com',   // correct per official docs (with 's')
         'ark.byteplusapi.com',
         'ark.ap-southeast.byteplus.com',
         'ark.ap-southeast-1.byteplus.com',
@@ -215,6 +216,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
 
     // 3. DoH lookup for all candidate ARK hostnames
     $dohCandidates = [
+        'ark.ap-southeast.bytepluses.com',   // correct per official docs (bytepluses.com with 's')
         'ark.ap-southeast-1.byteplus.com',
         'ark.byteplusapi.com',
         'ark.ap-southeast.byteplus.com',
