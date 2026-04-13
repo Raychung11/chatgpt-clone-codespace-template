@@ -54,7 +54,7 @@ define('CRON_SECRET', getenv('CRON_SECRET') ?: '');
 
 // ── BytePlus ModelArk API (also configurable via settings table) ─────────────
 // API URL: Asia Pacific (Jakarta) endpoint — change region if needed
-define('BYTEPLUS_API_URL',     getenv('BYTEPLUS_API_URL')     ?: 'https://ark.byteplusapi.com/api/v3');
+define('BYTEPLUS_API_URL',     getenv('BYTEPLUS_API_URL')     ?: 'https://ark.ap-southeast-1.byteplus.com/api/v3');
 define('BYTEPLUS_API_KEY',     getenv('BYTEPLUS_API_KEY')     ?: '');
 // 5-second video endpoint (Seedance Lite or Pro — ModelArk → Online inference)
 define('BYTEPLUS_ENDPOINT_ID',     getenv('BYTEPLUS_ENDPOINT_ID')     ?: '');

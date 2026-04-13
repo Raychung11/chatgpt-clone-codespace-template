@@ -213,26 +213,76 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
     }
     $results['dns_alternatives'] = $dnsAlts;
 
-    // 3. DoH lookup for ark.byteplusapi.com (the likely correct URL)
-    $dohHost = 'ark.byteplusapi.com';
-    $dohIps  = [];
-    foreach ([
-        'Google'     => 'https://dns.google/resolve?name=' . urlencode($dohHost) . '&type=A',
-        'Cloudflare' => 'https://cloudflare-dns.com/dns-query?name=' . urlencode($dohHost) . '&type=A',
-    ] as $prov => $dohUrl) {
-        $dohCh = curl_init($dohUrl);
-        curl_setopt_array($dohCh, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_TIMEOUT=>6,
-            CURLOPT_HTTPHEADER=>['accept: application/dns-json'], CURLOPT_SSL_VERIFYPEER=>true]);
-        $dohR = json_decode(curl_exec($dohCh) ?: '', true);
-        curl_close($dohCh);
-        $pIps = [];
-        foreach (($dohR['Answer'] ?? []) as $rec) {
-            if (($rec['type'] ?? 0) === 1) { $pIps[] = $rec['data']; $dohIps[] = $rec['data']; }
+    // 3. DoH lookup for all candidate ARK hostnames
+    $dohCandidates = [
+        'ark.ap-southeast-1.byteplus.com',
+        'ark.byteplusapi.com',
+        'ark.ap-southeast.byteplus.com',
+        'ark.volcengineapi.com',
+    ];
+    $dohAllIps   = []; // hostname => [ip, ...]
+    $dohResults  = [];
+    foreach ($dohCandidates as $dohHost) {
+        $foundIps = [];
+        $provResults = [];
+        foreach ([
+            'Google'     => 'https://dns.google/resolve?name=' . urlencode($dohHost) . '&type=A',
+            'Cloudflare' => 'https://cloudflare-dns.com/dns-query?name=' . urlencode($dohHost) . '&type=A',
+        ] as $prov => $dohUrl) {
+            $dohCh = curl_init($dohUrl);
+            curl_setopt_array($dohCh, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_TIMEOUT=>6,
+                CURLOPT_HTTPHEADER=>['accept: application/dns-json'], CURLOPT_SSL_VERIFYPEER=>true]);
+            $dohR = json_decode(curl_exec($dohCh) ?: '', true);
+            curl_close($dohCh);
+            $pIps = [];
+            foreach (($dohR['Answer'] ?? []) as $rec) {
+                if (($rec['type'] ?? 0) === 1) { $pIps[] = $rec['data']; $foundIps[] = $rec['data']; }
+            }
+            // Also check for CNAME
+            $cname = '';
+            foreach (($dohR['Answer'] ?? []) as $rec) {
+                if (($rec['type'] ?? 0) === 5) { $cname = ' (CNAME→' . $rec['data'] . ')'; break; }
+            }
+            $provResults[$prov] = $pIps ? ('✓ ' . implode(', ', $pIps)) : ('✗ no record' . $cname);
         }
-        $results['doh_lookup'][$prov] = $pIps ? ('✓ ' . implode(', ', $pIps)) : '✗ no record';
+        $foundIps = array_unique($foundIps);
+        $dohAllIps[$dohHost] = $foundIps;
+        $dohResults[$dohHost] = array_merge(['hostname' => $dohHost], $provResults);
+        // If any IPs found and server DNS can't resolve it, test via CURLOPT_RESOLVE
+        if ($foundIps && gethostbyname($dohHost) === $dohHost && $apiKey) {
+            $testIp  = $foundIps[0];
+            $testUrl = 'https://' . $dohHost . '/api/v3/contents/generations/tasks';
+            $testBody = json_encode(['model' => $endpointId ?: 'test', 'content' => [['type'=>'text','text'=>'test']]]);
+            $tchCh = curl_init($testUrl);
+            curl_setopt_array($tchCh, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_TIMEOUT=>10,
+                CURLOPT_POST=>true, CURLOPT_POSTFIELDS=>$testBody,
+                CURLOPT_HTTPHEADER=>["Authorization: Bearer $apiKey", 'Content-Type: application/json'],
+                CURLOPT_SSL_VERIFYPEER=>true,
+                CURLOPT_RESOLVE=>["$dohHost:443:$testIp"]]);
+            $tResp = curl_exec($tchCh);
+            $tCode = curl_getinfo($tchCh, CURLINFO_HTTP_CODE);
+            $tErr  = curl_error($tchCh);
+            curl_close($tchCh);
+            $tDec  = json_decode($tResp ?: '', true) ?? [];
+            $tMsg  = $tDec['error']['message'] ?? $tDec['message'] ?? '';
+            $dohResults[$dohHost]['ip_test'] = [
+                'ip'        => $testIp,
+                'http_code' => $tCode ?: 0,
+                'curl_err'  => $tErr ?: 'none',
+                'response'  => $tDec ?: ($tResp ? substr($tResp, 0, 200) : '(empty)'),
+                'diagnosis' => match(true) {
+                    (bool)$tErr              => "FAILED: $tErr",
+                    $tCode === 401           => '✓ REACHABLE — API key rejected (401)',
+                    $tCode === 400 || $tCode === 422 => '✓ REACHABLE — bad payload rejected (endpoint OK!)',
+                    $tCode === 200           => '✓ WORKING',
+                    default                  => "HTTP $tCode: $tMsg",
+                },
+            ];
+        }
     }
-    $results['doh_lookup']['hostname'] = $dohHost;
-    $dohIps = array_unique($dohIps);
+    $results['doh_lookup'] = $dohResults;
+    // Flat list of IPs found for the primary candidate
+    $dohIps = $dohAllIps['ark.ap-southeast-1.byteplus.com'] ?? [];
 
     // 4. TCP connect test to configured host
     if ($host) {
@@ -815,12 +865,28 @@ async function runGenDebug() {
             if (ok) glog(`    ↑ Set this as byteplus_api_url base in Admin→Settings`, '#fbbf24');
         });
 
-        // DoH
+        // DoH — multi-host
         if (d.doh_lookup) {
-            glog('── DoH DNS (ark.byteplusapi.com) ────', '#facc15');
-            glog(`  hostname: ${d.doh_lookup.hostname}`, '#64b5f6');
-            ['Google','Cloudflare'].forEach(p => {
-                if (d.doh_lookup[p]) glog(`  ${p}: ${d.doh_lookup[p]}`, d.doh_lookup[p].startsWith('✓') ? '#a8e063' : '#475569');
+            glog('── DoH DNS Lookup (all candidates) ──', '#facc15');
+            Object.values(d.doh_lookup).forEach(entry => {
+                if (typeof entry !== 'object' || !entry.hostname) return;
+                const anyIp = entry.Google?.startsWith('✓') || entry.Cloudflare?.startsWith('✓');
+                glog(`  ${entry.hostname}:`, anyIp ? '#a8e063' : '#475569');
+                ['Google','Cloudflare'].forEach(p => {
+                    if (entry[p]) glog(`    ${p}: ${entry[p]}`, entry[p].startsWith('✓') ? '#a8e063' : '#475569');
+                });
+                if (entry.ip_test) {
+                    const tok = entry.ip_test.diagnosis.startsWith('✓');
+                    glog(`    IP test (${entry.ip_test.ip}): ${entry.ip_test.diagnosis}`, tok ? '#a8e063' : '#ef4444');
+                    if (tok) {
+                        glog(`    ✓ REACHABLE via DoH IP!`, '#a8e063');
+                        glog(`    → Set byteplus_api_url = https://${entry.hostname}/api/v3 in Admin→Settings`, '#fbbf24');
+                        glog(`    → Set byteplus_dns_override = ${entry.ip_test.ip} in Admin→Settings`, '#fbbf24');
+                    }
+                    if (entry.ip_test.response && typeof entry.ip_test.response === 'object') {
+                        glog('    Response: ' + JSON.stringify(entry.ip_test.response).slice(0,120), '#475569');
+                    }
+                }
             });
         }
 
