@@ -116,7 +116,7 @@ function omnihuman_query_task(string $taskId): array
     $providerStatus = strtolower($data['status'] ?? $data['Status'] ?? 'unknown');
     $status = match (true) {
         in_array($providerStatus, ['done', 'succeed', 'succeeded', 'success', 'completed'],    true) => 'completed',
-        in_array($providerStatus, ['failed', 'error', 'cancelled', 'fail'],                    true) => 'failed',
+        in_array($providerStatus, ['failed', 'error', 'cancelled', 'fail', 'not_found'],       true) => 'failed',
         in_array($providerStatus, ['running', 'processing', 'in_progress', 'generating'],      true) => 'processing',
         in_array($providerStatus, ['in_queue', 'queued', 'pending', 'waiting', 'initialized'], true) => 'queued',
         default                                                                                       => 'queued',

@@ -119,17 +119,28 @@ if (($_GET['_action'] ?? '') === 'poll') {
                     ]);
                     $job['status']    = 'completed';
                     $job['video_url'] = $result['video_url'];
-                } elseif ($result['status'] === 'failed') {
+                } elseif ($result['status'] === 'completed' && !$result['video_url']) {
+                    // Done but no video_url — log raw and treat as failed
+                    $errMsg = 'Task completed but no video URL returned. Raw: ' . json_encode($result['raw']);
                     $pdo->prepare(
-                        'UPDATE avatar_jobs SET status="failed", error_message=? WHERE id=?'
-                    )->execute([$result['error'] ?? 'OmniHuman failed', $jobId]);
-                    // Refund
+                        'UPDATE avatar_jobs SET status="failed", error_message=?, api_response=? WHERE id=?'
+                    )->execute([$errMsg, json_encode($result['raw']), $jobId]);
+                    wallet_refund($uid, $creditCost, 'avatar_job', $jobId, 'Refund: no video URL');
+                    $pdo->prepare('UPDATE avatar_jobs SET status="refunded", refunded_at=NOW() WHERE id=?')->execute([$jobId]);
+                    $job['status'] = 'refunded';
+                    $job['error_message'] = $errMsg;
+                } elseif ($result['status'] === 'failed') {
+                    $errMsg = $result['error'] ?: ('OmniHuman failed. Raw: ' . json_encode($result['raw']));
+                    $pdo->prepare(
+                        'UPDATE avatar_jobs SET status="failed", error_message=?, api_response=? WHERE id=?'
+                    )->execute([$errMsg, json_encode($result['raw']), $jobId]);
                     wallet_refund($uid, $creditCost, 'avatar_job', $jobId,
                         'Refund: avatar job #' . $jobId . ' failed');
                     $pdo->prepare(
                         'UPDATE avatar_jobs SET status="refunded", refunded_at=NOW() WHERE id=?'
                     )->execute([$jobId]);
                     $job['status'] = 'refunded';
+                    $job['error_message'] = $errMsg;
                 } else {
                     $pdo->prepare(
                         'UPDATE avatar_jobs SET status=? WHERE id=? AND status != "completed"'
@@ -1154,18 +1165,30 @@ function fmtElapsed(ms) {
     return Math.floor(s / 60) + 'm ' + (s % 60) + 's';
 }
 
-// Tick elapsed timers every second
+// Tick elapsed timers every second + show warning if stuck > 5 min
 setInterval(() => {
     pendingJobs.forEach(j => {
         const el = document.getElementById('ajob_elapsed_' + j.id);
         if (!el) return;
         const elapsed = Date.now() - (jobStartTimes[j.id] || Date.now());
+        const secs = Math.floor(elapsed / 1000);
         el.querySelector('span').textContent = fmtElapsed(elapsed);
         // Slowly advance the bar (max 88% before complete)
         const bar = document.getElementById('ajob_bar_' + j.id);
         if (bar) {
-            const pct = Math.min(88, 15 + Math.floor(elapsed / 1000) * 0.6);
+            const pct = Math.min(88, 15 + secs * 0.6);
             bar.style.width = pct + '%';
+        }
+        // After 5 minutes show a warning with cancel suggestion
+        if (secs > 300 && !el.dataset.warned) {
+            el.dataset.warned = '1';
+            el.innerHTML = `<span style="color:#f59e0b">⚠ Still processing after 5 min — BytePlus may be busy or the task may have dropped. Consider cancelling and retrying.</span>`;
+        }
+        // After 15 minutes auto-stop polling (cron timeout will refund)
+        if (secs > 900) {
+            el.innerHTML = `<span style="color:#ef4444">⏱ Timed out — credits will be auto-refunded on next cron run. Use Cancel &amp; Refund to refund now.</span>`;
+            const idx = pendingJobs.findIndex(pj => pj.id === j.id);
+            if (idx !== -1) pendingJobs.splice(idx, 1); // stop polling
         }
     });
 }, 1000);
