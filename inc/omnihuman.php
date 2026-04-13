@@ -112,16 +112,29 @@ function omnihuman_query_task(string $taskId): array
     $data = $raw['Result'] ?? $raw['data'] ?? $raw;
 
     // Normalise status
+    // Official status values: in_queue, generating, done, failed (BytePlus docs)
     $providerStatus = strtolower($data['status'] ?? $data['Status'] ?? 'unknown');
     $status = match (true) {
-        in_array($providerStatus, ['done', 'succeed', 'succeeded', 'success', 'completed'], true) => 'completed',
-        in_array($providerStatus, ['failed', 'error', 'cancelled', 'fail'],                 true) => 'failed',
-        in_array($providerStatus, ['running', 'processing', 'in_progress', 'generating'],   true) => 'processing',
-        default                                                                                    => 'queued',
+        in_array($providerStatus, ['done', 'succeed', 'succeeded', 'success', 'completed'],    true) => 'completed',
+        in_array($providerStatus, ['failed', 'error', 'cancelled', 'fail'],                    true) => 'failed',
+        in_array($providerStatus, ['running', 'processing', 'in_progress', 'generating'],      true) => 'processing',
+        in_array($providerStatus, ['in_queue', 'queued', 'pending', 'waiting', 'initialized'], true) => 'queued',
+        default                                                                                       => 'queued',
     };
 
-    // Extract video URL — covers both BytePlus and Volcengine response shapes
-    $videoUrl = $data['video_url']
+    // Extract video URL.
+    // Official docs: resp_data is a SERIALISED JSON STRING (not a nested object).
+    //   data.resp_data = '{"video_url":"https://..."}'  ← must json_decode this
+    $respDataRaw = $data['resp_data'] ?? null;
+    $respData    = [];
+    if (is_string($respDataRaw) && $respDataRaw !== '') {
+        $respData = json_decode($respDataRaw, true) ?? [];
+    } elseif (is_array($respDataRaw)) {
+        $respData = $respDataRaw; // already decoded (shouldn't happen per docs but be safe)
+    }
+
+    $videoUrl = $respData['video_url']
+             ?? $data['video_url']
              ?? $data['VideoUrl']
              ?? $data['url']
              ?? $data['result']['video_url']

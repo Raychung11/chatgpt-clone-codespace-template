@@ -72,10 +72,10 @@ define('LLM_ENDPOINT_ID',          getenv('LLM_ENDPOINT_ID')          ?: '');
 define('VISION_AI_URL', getenv('VISION_AI_URL') ?: 'https://cv.byteplusapi.com');
 define('VISION_AI_AK',  getenv('VISION_AI_AK')  ?: '');   // Access Key ID
 define('VISION_AI_SK',  getenv('VISION_AI_SK')  ?: '');   // Secret Access Key
-// req_key for OmniHuman models:
-//   dreamina_omni_human_v1_5  (OmniHuman 1.5)
-//   dreamina_omni_human       (OmniHuman 1.0)
-define('OMNIHUMAN_REQ_KEY', getenv('OMNIHUMAN_REQ_KEY') ?: 'dreamina_omni_human_v1_5');
+// req_key for OmniHuman models (from official BytePlus docs):
+//   realman_avatar_picture_omni15_cv  (OmniHuman 1.5 — Video Generation)
+//   realman_avatar_picture_create_role_omni_cv  (Step-1 Subject Recognition only)
+define('OMNIHUMAN_REQ_KEY', getenv('OMNIHUMAN_REQ_KEY') ?: 'realman_avatar_picture_omni15_cv');
 
 // ── Error handling ────────────────────────────────────────────────────────────
 if (APP_DEBUG) {

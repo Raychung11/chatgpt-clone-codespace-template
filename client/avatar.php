@@ -494,9 +494,14 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
                 'text'      => 'hello world',
             ], $extra);
             $candidates = [
+                // ── CONFIRMED from official BytePlus docs (Video Generation, Step-4) ──
+                ['req_key' => 'realman_avatar_picture_omni15_cv',
+                 'label' => '⭐ OmniHuman 1.5 Video Gen (official docs)',
+                 'payload' => $vPay()],
+
                 // ── Step-1 only (confirmed from docs) — keep to show API access works ──
                 ['req_key' => 'realman_avatar_picture_create_role_omni_cv',
-                 'label' => '(Step-1 subject detect)',
+                 'label' => '(Step-1 subject detect — confirmed)',
                  'payload' => ['image_url' => 'https://www.gstatic.com/webp/gallery/1.jpg']],
 
                 // ── Batch A: realman_avatar_video_* (with / without "role") ──

@@ -47,7 +47,7 @@ VALUES
     ('vision_ai_url',             'https://cv.byteplusapi.com', 'Vision AI Base URL', 'string', 'byteplus'),
     ('vision_ai_region',          'ap-singapore-1', 'Vision AI Region (Volcengine)',  'string', 'byteplus'),
     ('vision_ai_service',         'cv',             'Vision AI Service name (Volcengine signing)', 'string', 'byteplus'),
-    ('omnihuman_req_key',         'dreamina_omni_human_v1_5', 'OmniHuman req_key',  'string', 'byteplus'),
+    ('omnihuman_req_key',         'realman_avatar_picture_omni15_cv', 'OmniHuman req_key (Video Generation)',  'string', 'byteplus'),
     ('omnihuman_action_generate', 'CVSubmitTask', 'OmniHuman submit Action (Volcengine)', 'string', 'byteplus'),
     ('omnihuman_action_query',    'CVGetResult',  'OmniHuman query Action (Volcengine)',  'string', 'byteplus'),
     ('avatar_credit_cost',        '5.00', 'Avatar job credit cost',                 'string', 'pricing')
