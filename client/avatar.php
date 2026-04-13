@@ -25,7 +25,71 @@ $creditCost = (float)(setting('avatar_credit_cost', '5') ?: '5');
 $errors     = [];
 $jobs       = [];
 
-// ── AJAX: poll status ─────────────────────────────────────────────────────────
+// ── AJAX: cancel a processing/queued job ──────────────────────────────────────
+if (($_GET['_action'] ?? '') === 'cancel') {
+    csrf_verify();
+    $jobId = (int)($_GET['job_id'] ?? 0);
+    $stmt  = $pdo->prepare(
+        'SELECT id, status, api_task_id, credit_cost FROM avatar_jobs WHERE id=? AND user_id=?'
+    );
+    $stmt->execute([$jobId, $uid]);
+    $job = $stmt->fetch();
+    if (!$job) { json_response(['ok' => false, 'error' => 'Not found'], 404); }
+
+    if (!in_array($job['status'], ['queued', 'processing'])) {
+        json_response(['ok' => false, 'error' => 'Job is not in a cancellable state.']);
+    }
+
+    // Best-effort: tell BytePlus to cancel the remote task
+    if ($job['api_task_id']) {
+        $cancelUrl  = rtrim(setting('vision_ai_url', VISION_AI_URL) ?: VISION_AI_URL, '/');
+        $cancelUrl .= '/?Action=CVCancelTask&Version=2024-06-06';
+        $reqKey     = setting('omnihuman_req_key', OMNIHUMAN_REQ_KEY) ?: OMNIHUMAN_REQ_KEY;
+        vision_post($cancelUrl,
+            ['req_key' => $reqKey, 'task_id' => $job['api_task_id']],
+            setting('vision_ai_ak', VISION_AI_AK) ?: VISION_AI_AK,
+            setting('vision_ai_sk', VISION_AI_SK) ?: VISION_AI_SK
+        ); // ignore result — always refund locally
+    }
+
+    $pdo->beginTransaction();
+    try {
+        $pdo->prepare(
+            'UPDATE avatar_jobs SET status="refunded", error_message="Cancelled by user", refunded_at=NOW() WHERE id=?'
+        )->execute([$jobId]);
+        wallet_refund($uid, (float)$job['credit_cost'], 'avatar_job', $jobId, 'Refund: avatar job #' . $jobId . ' cancelled');
+        $pdo->commit();
+        json_response(['ok' => true]);
+    } catch (\Throwable $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        json_response(['ok' => false, 'error' => 'DB error: ' . $e->getMessage()], 500);
+    }
+}
+
+// ── AJAX: delete a job record ──────────────────────────────────────────────────
+if (($_GET['_action'] ?? '') === 'delete') {
+    csrf_verify();
+    $jobId = (int)($_GET['job_id'] ?? 0);
+    $stmt  = $pdo->prepare(
+        'SELECT id, status, portrait_path, audio_path FROM avatar_jobs WHERE id=? AND user_id=?'
+    );
+    $stmt->execute([$jobId, $uid]);
+    $job = $stmt->fetch();
+    if (!$job) { json_response(['ok' => false, 'error' => 'Not found'], 404); }
+
+    if (in_array($job['status'], ['queued', 'processing'])) {
+        json_response(['ok' => false, 'error' => 'Cancel the job before deleting.']);
+    }
+
+    // Delete uploaded files
+    if ($job['portrait_path'] && is_file($job['portrait_path'])) @unlink($job['portrait_path']);
+    if ($job['audio_path']    && is_file($job['audio_path']))    @unlink($job['audio_path']);
+
+    $pdo->prepare('DELETE FROM avatar_jobs WHERE id=? AND user_id=?')->execute([$jobId, $uid]);
+    json_response(['ok' => true]);
+}
+
+
 if (($_GET['_action'] ?? '') === 'poll') {
     csrf_verify();
     $jobId = (int)($_GET['job_id'] ?? 0);
@@ -969,6 +1033,22 @@ Example: Welcome to our platform! We help businesses create stunning AI marketin
                             <?php endif; ?>
                         </div>
                     </div>
+                    <!-- Action buttons row -->
+                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;border-top:1px solid var(--color-border);padding-top:10px">
+                        <?php if ($inProgress): ?>
+                            <button class="btn btn-ghost btn-sm"
+                                    style="color:#ef4444;border-color:#ef4444"
+                                    onclick="cancelAvatarJob(<?= (int)$job['id'] ?>)">
+                                ✕ Cancel &amp; Refund
+                            </button>
+                        <?php else: ?>
+                            <button class="btn btn-ghost btn-sm"
+                                    style="color:var(--color-muted)"
+                                    onclick="deleteAvatarJob(<?= (int)$job['id'] ?>)">
+                                🗑 Delete
+                            </button>
+                        <?php endif; ?>
+                    </div>
                 </div>
             <?php endforeach; ?>
         </div>
@@ -1168,6 +1248,73 @@ function pollJobs(jobs) {
 if (pendingJobs.length) {
     setInterval(() => pollJobs([...pendingJobs]), 8000);
     pollJobs([...pendingJobs]);
+}
+
+// ── Cancel job ────────────────────────────────────────────────────────────────
+function cancelAvatarJob(id) {
+    if (!confirm('Cancel this job and refund credits?')) return;
+    const btn = document.querySelector(`#ajob_${id} button`);
+    if (btn) { btn.disabled = true; btn.textContent = 'Cancelling…'; }
+
+    fetch(`<?= BASE_URL ?>/client/avatar.php?_action=cancel&job_id=${id}`, {
+        headers: { 'X-CSRF-Token': csrfToken }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            // Update badge
+            const badge = document.getElementById('ajob_status_' + id);
+            if (badge) { badge.textContent = 'refunded'; badge.className = 'status-badge refunded'; }
+            // Remove progress UI
+            const card = document.getElementById('ajob_' + id);
+            if (card) {
+                card.querySelectorAll('.prog-steps,.prog-bar,.prog-elapsed').forEach(e => e.remove());
+                // Swap cancel button for delete button
+                const actRow = card.querySelector('[data-action-row]') || card.querySelector('div[style*="flex-end"]');
+                if (actRow) actRow.innerHTML = `<button class="btn btn-ghost btn-sm" style="color:var(--color-muted)" onclick="deleteAvatarJob(${id})">🗑 Delete</button>`;
+                // Show "Cancelled by user" text
+                const info = card.querySelector('.job-info');
+                if (info && !info.querySelector('.cancel-msg')) {
+                    const msg = document.createElement('div');
+                    msg.className = 'text-sm cancel-msg';
+                    msg.style.color = 'var(--color-muted)';
+                    msg.style.marginTop = '4px';
+                    msg.textContent = 'Cancelled by user · credits refunded';
+                    info.appendChild(msg);
+                }
+            }
+            // Remove from polling
+            const idx = pendingJobs.findIndex(j => j.id === id);
+            if (idx !== -1) pendingJobs.splice(idx, 1);
+        } else {
+            alert(data.error || 'Cancel failed.');
+            if (btn) { btn.disabled = false; btn.textContent = '✕ Cancel & Refund'; }
+        }
+    })
+    .catch(() => { alert('Network error.'); if (btn) { btn.disabled = false; } });
+}
+
+// ── Delete job ────────────────────────────────────────────────────────────────
+function deleteAvatarJob(id) {
+    if (!confirm('Delete this record? This cannot be undone.')) return;
+
+    fetch(`<?= BASE_URL ?>/client/avatar.php?_action=delete&job_id=${id}`, {
+        headers: { 'X-CSRF-Token': csrfToken }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            const card = document.getElementById('ajob_' + id);
+            if (card) {
+                card.style.transition = 'opacity .3s';
+                card.style.opacity = '0';
+                setTimeout(() => card.remove(), 300);
+            }
+        } else {
+            alert(data.error || 'Delete failed.');
+        }
+    })
+    .catch(() => alert('Network error.'));
 }
 
 // ── Debug panel ────────────────────────────────────────────────────────────────

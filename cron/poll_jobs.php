@@ -188,6 +188,29 @@ $avatarStmt = $pdo->prepare(
 $avatarStmt->execute();
 $avatarJobs = $avatarStmt->fetchAll();
 
+// Auto-timeout avatar jobs stuck processing for > 15 minutes
+$timeoutStmt = $pdo->prepare(
+    'SELECT id, user_id, credit_cost FROM `avatar_jobs`
+     WHERE `status` IN ("queued","processing")
+       AND `created_at` < DATE_SUB(NOW(), INTERVAL 15 MINUTE)'
+);
+$timeoutStmt->execute();
+foreach ($timeoutStmt->fetchAll() as $stuckJob) {
+    clog("Avatar job #{$stuckJob['id']} timed out after 15 min — refunding.");
+    $pdo->beginTransaction();
+    try {
+        $pdo->prepare(
+            'UPDATE avatar_jobs SET status="refunded", error_message="Timed out after 15 minutes", refunded_at=NOW() WHERE id=?'
+        )->execute([$stuckJob['id']]);
+        wallet_refund((int)$stuckJob['user_id'], (float)$stuckJob['credit_cost'], 'avatar_job', (int)$stuckJob['id'],
+            'Auto-refund: avatar job #' . $stuckJob['id'] . ' timed out');
+        $pdo->commit();
+    } catch (\Throwable $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        clog("  Timeout refund DB error: " . $e->getMessage());
+    }
+}
+
 if (!empty($avatarJobs)) {
     clog('Found ' . count($avatarJobs) . ' avatar job(s) to poll.');
 
