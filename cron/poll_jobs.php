@@ -44,6 +44,8 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../inc/functions.php';
 require_once __DIR__ . '/../inc/wallet.php';
 require_once __DIR__ . '/../inc/byteplus.php';
+require_once __DIR__ . '/../inc/vision_auth.php';
+require_once __DIR__ . '/../inc/omnihuman.php';
 
 $pdo = db();
 
@@ -173,6 +175,95 @@ foreach ($jobs as $job) {
         if ($pdo->inTransaction()) $pdo->rollBack();
         clog("  DB ERROR: " . $e->getMessage());
     }
+}
+
+// ── Poll avatar_jobs (OmniHuman) ──────────────────────────────────────────────
+$avatarStmt = $pdo->prepare(
+    'SELECT * FROM `avatar_jobs`
+     WHERE `status` IN ("queued","processing")
+       AND `api_task_id` IS NOT NULL
+     ORDER BY `created_at` ASC
+     LIMIT 20'
+);
+$avatarStmt->execute();
+$avatarJobs = $avatarStmt->fetchAll();
+
+if (!empty($avatarJobs)) {
+    clog('Found ' . count($avatarJobs) . ' avatar job(s) to poll.');
+
+    foreach ($avatarJobs as $job) {
+        $jobId  = (int)$job['id'];
+        $taskId = $job['api_task_id'];
+        $userId = (int)$job['user_id'];
+
+        clog("Checking avatar job #$jobId (task_id: $taskId)");
+
+        $result = omnihuman_query_task($taskId);
+
+        if (!$result['ok']) {
+            clog("  ERROR: " . ($result['error'] ?? 'unknown'));
+            continue;
+        }
+
+        $status   = $result['status'];    // queued|processing|completed|failed
+        $videoUrl = $result['video_url'];
+        $errorMsg = $result['error'];
+
+        clog("  Status: $status");
+
+        if ($status === 'queued' || $status === 'processing') {
+            $pdo->prepare(
+                'UPDATE `avatar_jobs`
+                 SET `status` = ?, `started_at` = COALESCE(`started_at`, NOW())
+                 WHERE `id` = ?'
+            )->execute([$status, $jobId]);
+            continue;
+        }
+
+        $pdo->beginTransaction();
+        try {
+            if ($status === 'completed' && $videoUrl) {
+
+                $pdo->prepare(
+                    'UPDATE `avatar_jobs`
+                     SET `status` = "completed",
+                         `completed_at` = NOW(),
+                         `video_url`    = ?,
+                         `api_response` = ?
+                     WHERE `id` = ?'
+                )->execute([$videoUrl, json_encode($result['raw']), $jobId]);
+
+                $pdo->commit();
+                clog("  ✓ COMPLETED — video: $videoUrl");
+
+            } elseif ($status === 'failed') {
+
+                $pdo->prepare(
+                    'UPDATE `avatar_jobs`
+                     SET `status` = "failed",
+                         `error_message` = ?,
+                         `api_response`  = ?
+                     WHERE `id` = ?'
+                )->execute([$errorMsg, json_encode($result['raw']), $jobId]);
+
+                wallet_refund($userId, (float)$job['credit_cost'], 'avatar_job', $jobId,
+                    'Auto-refund: avatar job #' . $jobId . ' failed at API');
+
+                $pdo->prepare(
+                    'UPDATE `avatar_jobs` SET `status` = "refunded", `refunded_at` = NOW() WHERE `id` = ?'
+                )->execute([$jobId]);
+
+                $pdo->commit();
+                clog("  ✗ FAILED — refunded {$job['credit_cost']} credits to user #$userId");
+            }
+
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            clog("  DB ERROR: " . $e->getMessage());
+        }
+    }
+} else {
+    clog('No avatar jobs to poll.');
 }
 
 // ── Usage summary for this run ────────────────────────────────────────────────
