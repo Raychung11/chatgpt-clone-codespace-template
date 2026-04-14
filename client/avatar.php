@@ -762,13 +762,22 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
         curl_close($liveCh);
         $liveDec  = json_decode($liveResp ?: '', true) ?? [];
         $liveData = $liveDec['data'] ?? [];
+        // Extract error message from all possible locations
+        $liveErrMsg = $liveDec['ResponseMetadata']['Error']['Message']
+                   ?? $liveDec['ResponseMetadata']['Error']['Code']
+                   ?? $liveDec['message']
+                   ?? $liveDec['error']
+                   ?? '';
         $results['live_task_query'] = [
-            'task_id'    => $liveTaskId,
-            'http_code'  => $liveCode,
-            'curl_error' => $liveCurlErr ?: 'none',
-            'raw_status' => $liveData['status'] ?? '(none)',
-            'resp_data'  => $liveData['resp_data'] ?? '(none)',
+            'task_id'      => $liveTaskId,
+            'http_code'    => $liveCode,
+            'curl_error'   => $liveCurlErr ?: 'none',
+            'raw_status'   => $liveData['status'] ?? '(none)',
+            'resp_data'    => $liveData['resp_data'] ?? '(none)',
+            'error_msg'    => $liveErrMsg,
+            'api_code'     => $liveDec['code'] ?? $liveDec['status'] ?? 0,
             'full_response' => $liveDec,
+            'raw_body'     => $liveResp ?: '(empty)',
         ];
     }
 
@@ -1608,21 +1617,26 @@ async function runAvatarDebug() {
             const lq = d.live_task_query;
             alog('── Live Task Query (BytePlus) ────────', '#facc15');
             alog(`  task_id: ${lq.task_id}`, '#94a3b8');
-            alog(`  HTTP: ${lq.http_code}  curl_error: ${lq.curl_error}`, '#94a3b8');
+            alog(`  HTTP: ${lq.http_code}  api_code: ${lq.api_code}  curl_error: ${lq.curl_error}`,
+                 lq.http_code === 200 ? '#94a3b8' : '#ef4444');
+            if (lq.error_msg) alog(`  ERROR: ${lq.error_msg}`, '#ef4444');
             const rawSt = lq.raw_status;
             const stColor = rawSt === 'done' ? '#a8e063' : (rawSt === 'failed' || rawSt === 'not_found' ? '#ef4444' : '#fbbf24');
             alog(`  BytePlus status: ${rawSt}`, stColor);
-            alog(`  resp_data: ${lq.resp_data}`, rawSt === 'done' ? '#a8e063' : '#475569');
-            if (lq.full_response && lq.full_response.data) {
-                alog('  full data:', '#94a3b8');
-                JSON.stringify(lq.full_response.data, null, 2).split('\n').forEach(l => alog('    ' + l, '#475569'));
+            if (rawSt === 'done') alog(`  resp_data: ${lq.resp_data}`, '#a8e063');
+            // Always dump full raw response so nothing is hidden
+            alog('  full raw response:', '#94a3b8');
+            JSON.stringify(lq.full_response, null, 2).split('\n').forEach(l => alog('    ' + l, '#475569'));
+            if (lq.http_code !== 200 && (!lq.full_response || Object.keys(lq.full_response).length === 0)) {
+                alog(`  raw body: ${lq.raw_body}`, '#ef4444');
             }
             // Interpret
-            if (rawSt === 'done') alog('  → Task DONE on BytePlus but our code missed it — check resp_data above', '#a8e063');
-            else if (rawSt === 'not_found') alog('  → Task no longer exists on BytePlus — cancel this job and retry', '#ef4444');
-            else if (rawSt === 'failed') alog('  → Task FAILED on BytePlus — cancel this job and retry', '#ef4444');
-            else if (['generating','in_queue'].includes(rawSt)) alog('  → Still running on BytePlus — wait or check concurrency limits', '#fbbf24');
-            else alog(`  → Unknown status "${rawSt}" — check full_response above`, '#fbbf24');
+            if (rawSt === 'done') alog('  → Task DONE — resp_data should contain video_url above', '#a8e063');
+            else if (rawSt === 'not_found') alog('  → Task no longer exists on BytePlus — cancel and retry', '#ef4444');
+            else if (rawSt === 'failed') alog('  → Task FAILED on BytePlus — cancel and retry', '#ef4444');
+            else if (['generating','in_queue'].includes(rawSt)) alog('  → Still running on BytePlus — wait', '#fbbf24');
+            else if (lq.http_code === 400) alog('  → HTTP 400: BytePlus rejected the query — check ERROR message above', '#ef4444');
+            else alog(`  → Unknown status "${rawSt}" — see full raw response above`, '#fbbf24');
         }
 
         alog('── Done ──────────────────────────────', '#facc15');
