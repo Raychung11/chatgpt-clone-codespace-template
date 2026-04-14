@@ -188,11 +188,12 @@ $avatarStmt = $pdo->prepare(
 $avatarStmt->execute();
 $avatarJobs = $avatarStmt->fetchAll();
 
-// Auto-timeout avatar jobs stuck processing for > 15 minutes
+// Auto-timeout avatar jobs stuck processing for > 30 minutes
+// OmniHuman 10-second videos can take 15–30 min in a busy queue.
 $timeoutStmt = $pdo->prepare(
     'SELECT id, user_id, credit_cost FROM `avatar_jobs`
      WHERE `status` IN ("queued","processing")
-       AND `created_at` < DATE_SUB(NOW(), INTERVAL 15 MINUTE)'
+       AND `created_at` < DATE_SUB(NOW(), INTERVAL 30 MINUTE)'
 );
 $timeoutStmt->execute();
 foreach ($timeoutStmt->fetchAll() as $stuckJob) {

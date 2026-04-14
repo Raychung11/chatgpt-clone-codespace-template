@@ -280,53 +280,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['_action'])) {
                 if ($audioPath) @unlink($audioPath);
                 $errors['balance'] = $deduct['error'];
             } else {
-                // Send files as base64 — avoids BytePlus needing to fetch from our server
-                // (URL-based approach hangs if BytePlus can't reach the Hostinger domain).
-                // Resize portrait to max 1280px before encoding to keep payload small.
-                $imgB64 = _avatar_image_to_base64($portraitPath);
-                if (!$imgB64) {
-                    $pdo->rollBack();
-                    $errors['general'] = 'Failed to read portrait image.';
-                } else {
-                    $audioB64 = $audioPath ? base64_encode(file_get_contents($audioPath)) : null;
+                // cv.byteplusapi.com ONLY accepts image_url / audio_url (not base64).
+                // Files must be publicly reachable by BytePlus servers.
+                $portraitName = basename($portraitPath);
+                $imageUrl     = rtrim(BASE_URL, '/') . '/uploads/avatars/' . rawurlencode($portraitName);
+                $audioUrl     = null;
+                if ($audioPath) {
+                    $audioUrl = rtrim(BASE_URL, '/') . '/uploads/avatar_audio/' . rawurlencode(basename($audioPath));
+                }
 
-                    $apiResult = omnihuman_create_task(
-                        $imgB64,
-                        $audioB64,
-                        $audioMode === 'tts' ? $ttsText : null,
-                        ['output_resolution' => 720],
-                        null,   // no image_url — use base64
-                        null    // no audio_url — use base64
+                $apiResult = omnihuman_create_task(
+                    '',     // imageBase64 — not supported by this req_key
+                    null,   // audioBase64 — not supported by this req_key
+                    $audioMode === 'tts' ? $ttsText : null,
+                    ['output_resolution' => 720],
+                    $imageUrl,
+                    $audioUrl
                 );
 
-                    if ($apiResult['ok']) {
-                        $pdo->prepare(
-                            'UPDATE avatar_jobs
-                             SET status="processing", api_task_id=?, api_response=?, started_at=NOW()
-                             WHERE id=?'
-                        )->execute([
-                            $apiResult['task_id'],
-                            json_encode($apiResult['raw']),
-                            $jobId,
-                        ]);
-                        $pdo->commit();
-                        flash_success('Avatar video is being generated! Track progress below.');
-                        redirect(BASE_URL . '/client/avatar.php');
-                    } else {
-                        // API failed — refund
-                        $pdo->prepare(
-                            'UPDATE avatar_jobs SET status="failed", error_message=? WHERE id=?'
-                        )->execute([$apiResult['error'], $jobId]);
-                        wallet_refund($uid, $creditCost, 'avatar_job', $jobId,
-                            'Refund: API failed for avatar job #' . $jobId);
-                        $pdo->prepare(
-                            'UPDATE avatar_jobs SET status="refunded", refunded_at=NOW() WHERE id=?'
-                        )->execute([$jobId]);
-                        $pdo->commit();
-                        flash_error('Avatar generation failed: ' . $apiResult['error'] . ' Credits refunded.');
-                        redirect(BASE_URL . '/client/avatar.php');
-                    }
-                } // end if $imgB64
+                if ($apiResult['ok']) {
+                    $pdo->prepare(
+                        'UPDATE avatar_jobs
+                         SET status="processing", api_task_id=?, api_response=?, started_at=NOW()
+                         WHERE id=?'
+                    )->execute([
+                        $apiResult['task_id'],
+                        json_encode($apiResult['raw']),
+                        $jobId,
+                    ]);
+                    $pdo->commit();
+                    flash_success('Avatar video submitted! Generation typically takes 5–20 minutes for 10s videos. Stay on this page or check back later.');
+                    redirect(BASE_URL . '/client/avatar.php');
+                } else {
+                    // API failed — refund
+                    $pdo->prepare(
+                        'UPDATE avatar_jobs SET status="failed", error_message=? WHERE id=?'
+                    )->execute([$apiResult['error'], $jobId]);
+                    wallet_refund($uid, $creditCost, 'avatar_job', $jobId,
+                        'Refund: API failed for avatar job #' . $jobId);
+                    $pdo->prepare(
+                        'UPDATE avatar_jobs SET status="refunded", refunded_at=NOW() WHERE id=?'
+                    )->execute([$jobId]);
+                    $pdo->commit();
+                    flash_error('Avatar generation failed: ' . $apiResult['error'] . ' Credits refunded.');
+                    redirect(BASE_URL . '/client/avatar.php');
+                }
             }
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
@@ -1096,7 +1094,7 @@ Example: Welcome to our platform! We help businesses create stunning AI marketin
                                          style="width:<?= $job['status'] === 'processing' ? '55' : '15' ?>%"></div>
                                 </div>
                                 <div class="prog-elapsed" id="ajob_elapsed_<?= (int)$job['id'] ?>">
-                                    Elapsed: <span>0s</span> · typically 30–90s
+                                    Elapsed: <span>0s</span> · typically 5–25 min (10s videos take longer)
                                 </div>
                             <?php elseif ($job['status'] === 'completed' && $job['video_url']): ?>
                                 <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
@@ -1256,14 +1254,14 @@ setInterval(() => {
             const pct = Math.min(88, 15 + secs * 0.6);
             bar.style.width = pct + '%';
         }
-        // After 5 minutes show a warning with cancel suggestion
-        if (secs > 300 && !el.dataset.warned) {
+        // After 10 minutes show a note (normal for 10s videos)
+        if (secs > 600 && !el.dataset.warned) {
             el.dataset.warned = '1';
-            el.innerHTML = `<span style="color:#f59e0b">⚠ Still processing after 5 min — BytePlus may be busy or the task may have dropped. Consider cancelling and retrying.</span>`;
+            el.innerHTML = `<span style="color:#f59e0b">⏳ Still rendering — 10-second videos can take 15–25 min on BytePlus. Keep this page open.</span>`;
         }
-        // After 15 minutes auto-stop polling (cron timeout will refund)
-        if (secs > 900) {
-            el.innerHTML = `<span style="color:#ef4444">⏱ Timed out — credits will be auto-refunded on next cron run. Use Cancel &amp; Refund to refund now.</span>`;
+        // After 30 minutes auto-stop polling (cron timeout will refund)
+        if (secs > 1800) {
+            el.innerHTML = `<span style="color:#ef4444">⏱ Timed out after 30 min — credits will be auto-refunded on next cron run. Use Cancel &amp; Refund to refund now.</span>`;
             const idx = pendingJobs.findIndex(pj => pj.id === j.id);
             if (idx !== -1) pendingJobs.splice(idx, 1); // stop polling
         }
