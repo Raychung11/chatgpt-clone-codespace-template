@@ -1,6 +1,11 @@
 Options -Indexes
 Options -MultiViews
 
+# ── App Environment Variables ─────────────────────────────────────────────────
+# APP_URL must NOT have a trailing slash, and MUST include /plotgold
+SetEnv APP_URL https://darkorchid-jay-133576.hostingersite.com/plotgold
+SetEnv APP_ENV production
+
 RewriteEngine On
 
 # Force HTTPS (enable on production)

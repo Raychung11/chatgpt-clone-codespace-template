@@ -21,12 +21,12 @@ function e(mixed $value): string
 
 function pg_url(string $path = ''): string
 {
-    return BASE_URL . '/' . ltrim($path, '/');
+    return rtrim(BASE_URL, '/') . '/' . ltrim($path, '/');
 }
 
 function asset_url(string $path): string
 {
-    return BASE_URL . '/assets/' . ltrim($path, '/');
+    return rtrim(BASE_URL, '/') . '/assets/' . ltrim($path, '/');
 }
 
 function slug(string $text): string
@@ -98,7 +98,7 @@ function time_ago(string $datetime): string
 function redirect(string $url, int $code = 302): never
 {
     if (!str_starts_with($url, 'http')) {
-        $url = BASE_URL . '/' . ltrim($url, '/');
+        $url = rtrim(BASE_URL, '/') . '/' . ltrim($url, '/');
     }
     header("Location: $url", true, $code);
     exit;
