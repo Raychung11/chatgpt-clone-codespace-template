@@ -688,7 +688,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
         $results['api_probe'] = 'SKIPPED — AK, SK or URL not configured in DB settings';
     }
 
-    // ── 6. Last job record ───────────────────────────────────────────────────────
+    // ── 6. Last job record + live task query ────────────────────────────────────
     $lastJob = $pdo->prepare(
         'SELECT id, status, api_task_id, api_response, error_message, created_at
          FROM avatar_jobs WHERE user_id=? ORDER BY id DESC LIMIT 1'
@@ -703,6 +703,36 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
         'created_at'    => $last['created_at'],
         'api_response'  => $last['api_response'] ? json_decode($last['api_response'], true) : null,
     ] : 'No jobs yet';
+
+    // ── 7. Live query for any processing/queued job ──────────────────────────────
+    if ($ak && $sk && $last && $last['api_task_id'] &&
+        in_array($last['status'], ['queued', 'processing'])) {
+        $liveTaskId  = $last['api_task_id'];
+        $liveUrl     = rtrim($apiBase, '/') . '/?Action=CVGetResult&Version=2024-06-06';
+        $liveBody    = json_encode(['req_key' => $reqKey, 'task_id' => $liveTaskId], JSON_UNESCAPED_SLASHES);
+        $liveQ       = 'Action=CVGetResult&Version=2024-06-06';
+        $liveHost    = parse_url($apiBase, PHP_URL_HOST) ?? 'cv.byteplusapi.com';
+        $liveHdrs    = volcengine_v4_headers('POST', $liveHost, '/', $liveQ, $liveBody, $ak, $sk, $region ?? 'ap-singapore-1', $service ?? 'cv');
+        $liveLines   = array_map(fn($k,$v) => "$k: $v", array_keys($liveHdrs), array_values($liveHdrs));
+        $liveCh = curl_init($liveUrl);
+        curl_setopt_array($liveCh, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_TIMEOUT=>20,
+            CURLOPT_POST=>true, CURLOPT_POSTFIELDS=>$liveBody, CURLOPT_HTTPHEADER=>$liveLines,
+            CURLOPT_SSL_VERIFYPEER=>true]);
+        $liveResp = curl_exec($liveCh);
+        $liveCode = curl_getinfo($liveCh, CURLINFO_HTTP_CODE);
+        $liveCurlErr = curl_error($liveCh);
+        curl_close($liveCh);
+        $liveDec  = json_decode($liveResp ?: '', true) ?? [];
+        $liveData = $liveDec['data'] ?? [];
+        $results['live_task_query'] = [
+            'task_id'    => $liveTaskId,
+            'http_code'  => $liveCode,
+            'curl_error' => $liveCurlErr ?: 'none',
+            'raw_status' => $liveData['status'] ?? '(none)',
+            'resp_data'  => $liveData['resp_data'] ?? '(none)',
+            'full_response' => $liveDec,
+        ];
+    }
 
     json_response(['ok' => true, 'debug' => $results]);
 }
@@ -1533,6 +1563,28 @@ async function runAvatarDebug() {
                 alog('  api_response:', '#94a3b8');
                 JSON.stringify(d.last_job.api_response, null, 2).split('\n').forEach(l => alog('    ' + l, '#475569'));
             }
+        }
+
+        // ── Live task query ──────────────────────────────────────────────────
+        if (d.live_task_query) {
+            const lq = d.live_task_query;
+            alog('── Live Task Query (BytePlus) ────────', '#facc15');
+            alog(`  task_id: ${lq.task_id}`, '#94a3b8');
+            alog(`  HTTP: ${lq.http_code}  curl_error: ${lq.curl_error}`, '#94a3b8');
+            const rawSt = lq.raw_status;
+            const stColor = rawSt === 'done' ? '#a8e063' : (rawSt === 'failed' || rawSt === 'not_found' ? '#ef4444' : '#fbbf24');
+            alog(`  BytePlus status: ${rawSt}`, stColor);
+            alog(`  resp_data: ${lq.resp_data}`, rawSt === 'done' ? '#a8e063' : '#475569');
+            if (lq.full_response && lq.full_response.data) {
+                alog('  full data:', '#94a3b8');
+                JSON.stringify(lq.full_response.data, null, 2).split('\n').forEach(l => alog('    ' + l, '#475569'));
+            }
+            // Interpret
+            if (rawSt === 'done') alog('  → Task DONE on BytePlus but our code missed it — check resp_data above', '#a8e063');
+            else if (rawSt === 'not_found') alog('  → Task no longer exists on BytePlus — cancel this job and retry', '#ef4444');
+            else if (rawSt === 'failed') alog('  → Task FAILED on BytePlus — cancel this job and retry', '#ef4444');
+            else if (['generating','in_queue'].includes(rawSt)) alog('  → Still running on BytePlus — wait or check concurrency limits', '#fbbf24');
+            else alog(`  → Unknown status "${rawSt}" — check full_response above`, '#fbbf24');
         }
 
         alog('── Done ──────────────────────────────', '#facc15');
