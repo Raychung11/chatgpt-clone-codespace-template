@@ -15,6 +15,42 @@ require_once __DIR__ . '/../inc/wallet.php';
 require_once __DIR__ . '/../inc/omnihuman.php';
 require_once __DIR__ . '/../inc/layout.php';
 
+/**
+ * Resize portrait image to max 1280px and return base64 JPEG string.
+ * Keeps payload small so BytePlus doesn't time out on large uploads.
+ */
+function _avatar_image_to_base64(string $path): ?string
+{
+    if (!is_file($path) || !is_readable($path)) return null;
+    $maxDim = 1280;
+
+    if (function_exists('imagecreatefromstring')) {
+        $raw = file_get_contents($path);
+        if ($raw === false) return null;
+        $src = @imagecreatefromstring($raw);
+        if ($src) {
+            $w = imagesx($src);
+            $h = imagesy($src);
+            if ($w > $maxDim || $h > $maxDim) {
+                $ratio = min($maxDim / $w, $maxDim / $h);
+                $nw = (int)round($w * $ratio);
+                $nh = (int)round($h * $ratio);
+                $dst = imagecreatetruecolor($nw, $nh);
+                imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+                imagedestroy($src);
+                ob_start();
+                imagejpeg($dst, null, 88);
+                imagedestroy($dst);
+                return base64_encode(ob_get_clean());
+            }
+            imagedestroy($src);
+        }
+    }
+    // GD not available or image already small — encode as-is
+    $raw = file_get_contents($path);
+    return $raw !== false ? base64_encode($raw) : null;
+}
+
 boot_session();
 $user = require_auth('/public/login.php');
 $uid  = (int)$user['id'];
@@ -244,51 +280,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['_action'])) {
                 if ($audioPath) @unlink($audioPath);
                 $errors['balance'] = $deduct['error'];
             } else {
-                // Build public URLs for the uploaded files so BytePlus can fetch them.
-                // cv.byteplusapi.com requires image_url / audio_url (not base64).
-                $portraitName = basename($portraitPath);
-                $imageUrl     = rtrim(BASE_URL, '/') . '/uploads/avatars/' . rawurlencode($portraitName);
-                $audioUrl     = null;
-                if ($audioPath) {
-                    $audioUrl = rtrim(BASE_URL, '/') . '/uploads/avatar_audio/' . rawurlencode(basename($audioPath));
-                }
+                // Send files as base64 — avoids BytePlus needing to fetch from our server
+                // (URL-based approach hangs if BytePlus can't reach the Hostinger domain).
+                // Resize portrait to max 1280px before encoding to keep payload small.
+                $imgB64 = _avatar_image_to_base64($portraitPath);
+                if (!$imgB64) {
+                    $pdo->rollBack();
+                    $errors['general'] = 'Failed to read portrait image.';
+                } else {
+                    $audioB64 = $audioPath ? base64_encode(file_get_contents($audioPath)) : null;
 
-                $apiResult = omnihuman_create_task(
-                    '',          // imageBase64 unused — imageUrl takes priority
-                    null,        // audioBase64 unused — audioUrl takes priority
-                    $audioMode === 'tts' ? $ttsText : null,
-                    ['output_resolution' => 720],   // docs: 720 or 1080 (int, no 'p')
-                    $imageUrl,
-                    $audioUrl
+                    $apiResult = omnihuman_create_task(
+                        $imgB64,
+                        $audioB64,
+                        $audioMode === 'tts' ? $ttsText : null,
+                        ['output_resolution' => 720],
+                        null,   // no image_url — use base64
+                        null    // no audio_url — use base64
                 );
 
-                if ($apiResult['ok']) {
-                    $pdo->prepare(
-                        'UPDATE avatar_jobs
-                         SET status="processing", api_task_id=?, api_response=?, started_at=NOW()
-                         WHERE id=?'
-                    )->execute([
-                        $apiResult['task_id'],
-                        json_encode($apiResult['raw']),
-                        $jobId,
-                    ]);
-                    $pdo->commit();
-                    flash_success('Avatar video is being generated! Track progress below.');
-                    redirect(BASE_URL . '/client/avatar.php');
-                } else {
-                    // API failed — refund
-                    $pdo->prepare(
-                        'UPDATE avatar_jobs SET status="failed", error_message=? WHERE id=?'
-                    )->execute([$apiResult['error'], $jobId]);
-                    wallet_refund($uid, $creditCost, 'avatar_job', $jobId,
-                        'Refund: API failed for avatar job #' . $jobId);
-                    $pdo->prepare(
-                        'UPDATE avatar_jobs SET status="refunded", refunded_at=NOW() WHERE id=?'
-                    )->execute([$jobId]);
-                    $pdo->commit();
-                    flash_error('Avatar generation failed: ' . $apiResult['error'] . ' Credits refunded.');
-                    redirect(BASE_URL . '/client/avatar.php');
-                }
+                    if ($apiResult['ok']) {
+                        $pdo->prepare(
+                            'UPDATE avatar_jobs
+                             SET status="processing", api_task_id=?, api_response=?, started_at=NOW()
+                             WHERE id=?'
+                        )->execute([
+                            $apiResult['task_id'],
+                            json_encode($apiResult['raw']),
+                            $jobId,
+                        ]);
+                        $pdo->commit();
+                        flash_success('Avatar video is being generated! Track progress below.');
+                        redirect(BASE_URL . '/client/avatar.php');
+                    } else {
+                        // API failed — refund
+                        $pdo->prepare(
+                            'UPDATE avatar_jobs SET status="failed", error_message=? WHERE id=?'
+                        )->execute([$apiResult['error'], $jobId]);
+                        wallet_refund($uid, $creditCost, 'avatar_job', $jobId,
+                            'Refund: API failed for avatar job #' . $jobId);
+                        $pdo->prepare(
+                            'UPDATE avatar_jobs SET status="refunded", refunded_at=NOW() WHERE id=?'
+                        )->execute([$jobId]);
+                        $pdo->commit();
+                        flash_error('Avatar generation failed: ' . $apiResult['error'] . ' Credits refunded.');
+                        redirect(BASE_URL . '/client/avatar.php');
+                    }
+                } // end if $imgB64
             }
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
