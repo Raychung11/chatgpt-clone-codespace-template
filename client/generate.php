@@ -42,9 +42,27 @@ foreach ($templates as $t) {
 $balance = wallet_balance($uid);
 $errors  = [];
 
+// ── One-time submit token — prevents double-submission ────────────────────────
+// A fresh token is generated on every GET. On POST it is consumed (deleted).
+// If a second POST arrives with the same or missing token, redirect to history.
+const GEN_TOKEN_KEY = 'gen_submit_token';
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $_SESSION[GEN_TOKEN_KEY] = bin2hex(random_bytes(16));
+}
+$genToken = $_SESSION[GEN_TOKEN_KEY] ?? '';
+
 // ── Handle POST submission ────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
+
+    // Consume the one-time token — any subsequent POST with same or stale token
+    // is a duplicate submission (double-click, back-button re-submit, etc.)
+    $submittedToken = $_POST['_gen_token'] ?? '';
+    if (!$submittedToken || $submittedToken !== $genToken) {
+        // Duplicate or replayed submission — silently redirect to history
+        redirect(BASE_URL . '/client/history.php');
+    }
+    unset($_SESSION[GEN_TOKEN_KEY]); // consume — token is now invalid
 
     $prompt  = trim($_POST['prompt']   ?? '');
     $rule_id = (int)($_POST['rule_id'] ?? 0);
@@ -173,6 +191,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Refresh balance for display
 $balance = wallet_balance($uid);
+
+// If we have validation errors the form re-renders — regenerate the token so
+// the user can submit again (the old token was consumed or was invalid).
+if (!empty($errors)) {
+    $_SESSION[GEN_TOKEN_KEY] = bin2hex(random_bytes(16));
+    $genToken = $_SESSION[GEN_TOKEN_KEY];
+}
 
 // ── Debug action: video generation connectivity diagnostics ──────────────────
 // Must be before any HTML output so json_response() can set headers.
@@ -575,6 +600,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
 
     <form method="POST" id="genForm">
         <?= csrf_field() ?>
+        <input type="hidden" name="_gen_token" value="<?= e($genToken) ?>">
 
         <!-- ── STEP 1: Quality ─────────────────────────────────────────── -->
         <div class="card mb-4">
@@ -717,7 +743,8 @@ Example: A vibrant product launch video for a new energy drink. Show the can aga
                 </div>
                 <div>
                     <button type="submit" id="submitBtn" class="btn btn-primary btn-lg"
-                            <?= $balance <= 0 ? 'disabled' : '' ?>>
+                            <?= $balance <= 0 ? 'disabled' : '' ?>
+                            onclick="this.disabled=true;this.innerHTML='<span class=\'enhance-spinner\'></span> Generating…';this.form.submit();">
                         ⚡ Generate Video
                     </button>
                     <?php if ($balance <= 0): ?>
