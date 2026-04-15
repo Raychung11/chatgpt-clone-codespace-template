@@ -96,11 +96,11 @@ $colors     = cat_colors();
                 🏢 Official Platform Partner
             </div>
             <div style="font-size:1.25rem;font-weight:800;color:#0d3b5e;margin-bottom:.3rem">
-                Koperasi Sekata Rakyat
+                Koperasi Kakitangan Bank Rakyat
             </div>
             <div style="font-size:.85rem;color:#444;line-height:1.7;margin-bottom:.8rem">
                 Koponix is proudly developed in collaboration with
-                <strong>Koperasi Sekata Rakyat</strong> to empower its members through
+                <strong>Koperasi Kakitangan Bank Rakyat</strong> to empower its members through
                 a structured digital marketplace — enabling sustainable income generation
                 and community-driven economic growth.
             </div>
@@ -111,26 +111,26 @@ $colors     = cat_colors();
     </div>
 </div>
 
-<!-- ── Koperasi Sekata Rakyat Section ─────────────────────────── -->
+<!-- ── Koperasi Kakitangan Bank Rakyat Section ─────────────────────────── -->
 <div style="background:#fff;border-radius:16px;padding:2rem;margin-bottom:2rem;box-shadow:0 2px 10px rgba(0,0,0,.07);border-top:5px solid #1a5276">
     <div class="row align-items-center g-4">
         <div class="col-lg-4 text-center">
             <div style="width:100px;height:100px;background:linear-gradient(135deg,#1a5276,#2e86c1);
                         border-radius:50%;display:flex;align-items:center;justify-content:center;
                         font-size:2.8rem;margin:0 auto .8rem">🤝</div>
-            <div style="font-size:1.1rem;font-weight:800;color:#0d3b5e">Koperasi Sekata Rakyat</div>
+            <div style="font-size:1.1rem;font-weight:800;color:#0d3b5e">Koperasi Kakitangan Bank Rakyat</div>
             <div style="font-size:.8rem;color:#777;margin-top:.2rem">Registered Cooperative · Malaysia</div>
         </div>
         <div class="col-lg-8">
             <div class="section-head mb-2">Our Koperasi Partner</div>
             <p style="font-size:.9rem;line-height:1.8;color:#444;margin-bottom:.8rem">
-                <strong>Koperasi Sekata Rakyat</strong> is a registered Malaysian cooperative committed to
+                <strong>Koperasi Kakitangan Bank Rakyat</strong> is a registered Malaysian cooperative committed to
                 improving the economic well-being of its members through collective participation, mutual support,
                 and structured business activities. The cooperative covers a diverse range of member skills and
                 services across Klang Valley and beyond.
             </p>
             <p style="font-size:.88rem;line-height:1.75;color:#555;margin-bottom:1rem">
-                Through Koponix, Koperasi Sekata Rakyat members can now list their professional services,
+                Through Koponix, Koperasi Kakitangan Bank Rakyat members can now list their professional services,
                 respond to buyer requests, and grow their income — all within a trusted, AI-supported
                 digital platform built specifically for the koperasi ecosystem.
             </p>

@@ -87,7 +87,7 @@ body {
     <div class="login-logo">
         <div class="licon">🤝</div>
         <div class="lbrand">Koponix</div>
-        <div class="lsub">Koperasi Sekata Rakyat</div>
+        <div class="lsub">Koperasi Kakitangan Bank Rakyat</div>
     </div>
     <?php if ($login_error): ?>
         <div class="alert-err"><?= e($login_error) ?></div>
@@ -430,7 +430,7 @@ body {
         <span class="hdr-logo">🤝</span>
         <div class="hdr-text">
             <div class="hdr-name">Koponix</div>
-            <div class="hdr-sub">Koperasi Sekata Rakyat</div>
+            <div class="hdr-sub">Koperasi Kakitangan Bank Rakyat</div>
         </div>
     </div>
     <div class="hdr-right">

@@ -38,11 +38,14 @@ if (isset($_POST['action']) && $_POST['action'] === 'register') {
 
     if (!$name)            $reg_errors[] = 'Full name is required.';
     if (!$kop_id)          $reg_errors[] = 'Koperasi Member ID is required.';
+    elseif (!str_starts_with(strtoupper($kop_id), MEMBER_ID_PREFIX))
+        $reg_errors[] = 'Member ID must start with ' . MEMBER_ID_PREFIX . ' (e.g. ' . MEMBER_ID_PREFIX . '00123). Contact koperasi admin if you don\'t know your ID.';
     if (strlen($pw) < 6)   $reg_errors[] = 'Password must be at least 6 characters.';
     if ($pw !== $pw2)      $reg_errors[] = 'Passwords do not match.';
-    if (empty($reg_errors) && get_member_by_kop_id($kop_id)) {
+    if (empty($reg_errors) && get_member_by_kop_id(strtoupper($kop_id))) {
         $reg_errors[] = 'Member ID already registered.';
     }
+    if (empty($reg_errors)) $kop_id = strtoupper($kop_id);
 
     if (empty($reg_errors)) {
         $id = save_member(['name' => $name, 'koperasi_id' => $kop_id, 'email' => $email, 'password_hash' => hash_password($pw)]);
@@ -123,7 +126,7 @@ html_body_open();
                 <div class="mb-3">
                     <label class="form-label">Koperasi Member ID</label>
                     <input type="text" name="koperasi_id" class="form-control"
-                        placeholder="e.g. KOP-2024-001"
+                        placeholder="e.g. KKBR-00123"
                         value="<?= e($_POST['koperasi_id'] ?? '') ?>" required>
                 </div>
                 <div class="mb-3">
@@ -153,7 +156,7 @@ html_body_open();
                 <div class="mb-2">
                     <label class="form-label">Koperasi Member ID</label>
                     <input type="text" name="koperasi_id" class="form-control"
-                        placeholder="e.g. KOP-2024-099"
+                        placeholder="e.g. KKBR-00123"
                         value="<?= e($_POST['koperasi_id'] ?? '') ?>" required>
                 </div>
                 <div class="mb-2">
@@ -219,15 +222,30 @@ $open_r      = array_filter($my_requests, fn($r) => $r['status'] === 'open');
             <?php endif; ?>
             <div class="flex-grow-1">
                 <?= cat_badge($s['category']) ?>
-                <span class="ms-1 <?= $s['status']==='active'?'pill-active':'pill-inactive' ?>"><?= e($s['status']) ?></span>
+                <?php
+                $spill = match($s['status']) {
+                    'active'   => '<span class="ms-1 pill-active">✅ active</span>',
+                    'pending'  => '<span class="ms-1" style="background:#fff3cd;color:#856404;font-size:.7rem;padding:2px 8px;border-radius:20px;font-weight:600">⏳ pending approval</span>',
+                    'rejected' => '<span class="ms-1 pill-inactive">❌ rejected</span>',
+                    default    => '<span class="ms-1 pill-inactive">' . e($s['status']) . '</span>',
+                };
+                echo $spill;
+                ?>
                 <h5 class="mt-1"><?= e($s['service_title']) ?></h5>
                 <div class="meta">📍 <?= e($s['area']) ?> &nbsp;|&nbsp; 💰 <?= e($s['price_range']) ?></div>
+                <?php if ($s['status']==='pending'): ?>
+                    <div class="small text-warning mt-1">⏳ Your listing is under review by the koperasi admin (1–2 working days).</div>
+                <?php elseif ($s['status']==='rejected' && !empty($s['admin_note'])): ?>
+                    <div class="small text-danger mt-1">Reason: <?= e($s['admin_note']) ?></div>
+                <?php endif; ?>
             </div>
         </div>
         <div class="desc mt-2"><?= e(substr($s['description'],0,120)) ?>…</div>
         <div class="d-flex gap-2 mt-2 flex-wrap">
             <a href="edit_listing.php?id=<?= urlencode($s['id']) ?>" class="btn btn-sm btn-primary">✏️ Edit</a>
+            <?php if ($s['status']==='active'): ?>
             <a href="find_services.php?category=<?= urlencode($s['category']) ?>" class="btn btn-sm btn-outline-secondary">View Public</a>
+            <?php endif; ?>
             <a href="ai_assistant.php?prompt=<?= urlencode('Give me tips to improve my listing: '.$s['service_title'].' in '.$s['area']) ?>" class="btn btn-sm btn-outline-info">🤖 AI Tips</a>
         </div>
     </div>

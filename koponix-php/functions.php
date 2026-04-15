@@ -152,6 +152,18 @@ function update_seller_status(string $id, string $status): void {
     db()->prepare('UPDATE sellers SET status=? WHERE id=?')->execute([$status, $id]);
 }
 
+function approve_seller(string $id, string $note = ''): void {
+    db()->prepare('UPDATE sellers SET status=?, admin_note=? WHERE id=?')->execute(['active', $note, $id]);
+}
+
+function reject_seller(string $id, string $note = ''): void {
+    db()->prepare('UPDATE sellers SET status=?, admin_note=? WHERE id=?')->execute(['rejected', $note, $id]);
+}
+
+function get_pending_sellers(): array {
+    return db()->query("SELECT * FROM sellers WHERE status='pending' ORDER BY registered_date ASC")->fetchAll();
+}
+
 function delete_seller(string $id): void {
     db()->prepare('DELETE FROM sellers WHERE id=?')->execute([$id]);
 }
@@ -273,6 +285,57 @@ function img_url(string $path): string {
 
 function get_all_members(): array {
     return db()->query('SELECT * FROM members ORDER BY joined_date DESC')->fetchAll();
+}
+
+function set_member_status(string $kop_id, string $status): void {
+    db()->prepare('UPDATE members SET status=? WHERE koperasi_id=?')->execute([$status, $kop_id]);
+}
+
+function admin_reset_member_password(string $kop_id, string $new_password): void {
+    db()->prepare('UPDATE members SET password_hash=? WHERE koperasi_id=?')
+        ->execute([hash_password($new_password), $kop_id]);
+}
+
+function delete_member(string $kop_id): void {
+    db()->prepare('DELETE FROM members WHERE koperasi_id=?')->execute([$kop_id]);
+}
+
+/**
+ * Bulk-import members from CSV content.
+ * Expected CSV columns (header row required): name,koperasi_id,email,password
+ * Returns ['imported'=>int, 'skipped'=>int, 'errors'=>string[]]
+ */
+function import_members_csv(string $csv_content): array {
+    $lines    = preg_split('/\r\n|\n|\r/', trim($csv_content));
+    $imported = 0; $skipped  = 0; $errors = [];
+    $header   = null;
+    foreach ($lines as $i => $line) {
+        if (!trim($line)) continue;
+        $cols = str_getcsv($line);
+        if ($header === null) {
+            $header = array_map('strtolower', array_map('trim', $cols));
+            continue;
+        }
+        $row = array_combine($header, $cols);
+        $kop_id = strtoupper(trim($row['koperasi_id'] ?? ''));
+        $name   = trim($row['name'] ?? '');
+        $email  = trim($row['email'] ?? '');
+        $pass   = trim($row['password'] ?? 'temppass' . rand(1000, 9999));
+        if (!$kop_id || !$name) {
+            $errors[] = "Row " . ($i + 1) . ": missing name or koperasi_id";
+            $skipped++;
+            continue;
+        }
+        // Skip if member ID already exists
+        $existing = db()->prepare('SELECT id FROM members WHERE koperasi_id=?');
+        $existing->execute([$kop_id]);
+        if ($existing->fetch()) { $skipped++; continue; }
+        $id = gen_uuid();
+        db()->prepare('INSERT INTO members (id,name,koperasi_id,email,password_hash,role,joined_date) VALUES (?,?,?,?,?,?,?)')
+            ->execute([$id, $name, $kop_id, $email, hash_password($pass), 'member', date('Y-m-d')]);
+        $imported++;
+    }
+    return ['imported' => $imported, 'skipped' => $skipped, 'errors' => $errors];
 }
 
 // ── Conversations & Messages ─────────────────────────────────

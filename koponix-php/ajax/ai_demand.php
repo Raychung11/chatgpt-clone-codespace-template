@@ -26,7 +26,7 @@ foreach ($req_by_loc as $loc => $cnt) {
     $loc_lines[] = "{$loc} ({$cnt})";
 }
 
-$prompt = "You are analysing the service request data for Koperasi Sekata Rakyat's Koponix marketplace.\n\n"
+$prompt = "You are analysing the service request data for Koperasi Kakitangan Bank Rakyat's Koponix marketplace.\n\n"
     . "Total requests submitted: {$total_req}\n\n"
     . "Demand vs Supply by category:\n" . implode("\n", $demand_lines) . "\n\n"
     . "Most active locations: " . implode(', ', $loc_lines) . "\n\n"

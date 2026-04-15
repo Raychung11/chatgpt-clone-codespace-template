@@ -17,6 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$name)          $errors[] = 'Name is required.';
     if (!$kop_id)        $errors[] = 'Koperasi Member ID is required.';
+    elseif (!str_starts_with(strtoupper($kop_id), MEMBER_ID_PREFIX))
+        $errors[] = 'Member ID must start with ' . MEMBER_ID_PREFIX . ' (e.g. ' . MEMBER_ID_PREFIX . '00123).';
     if (!$category)      $errors[] = 'Category is required.';
     if (!$service_title) $errors[] = 'Service title is required.';
     if (!$area)          $errors[] = 'Service area is required.';
@@ -24,13 +26,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$description)   $errors[] = 'Description is required.';
 
     if (empty($errors)) {
-        $data = compact('name','category','service_title','area','price_range','availability','experience','description','contact') + ['koperasi_id' => $kop_id];
+        $data = compact('name','category','service_title','area','price_range','availability','experience','description','contact') + ['koperasi_id' => strtoupper($kop_id)];
         $data['image']   = handle_image_upload('image',   'sellers') ?? '';
         $data['gallery1']= handle_image_upload('gallery1','sellers') ?? '';
         $data['gallery2']= handle_image_upload('gallery2','sellers') ?? '';
+        $data['status']  = 'pending'; // requires admin approval
         save_seller($data);
-        flash('Service listing submitted successfully!');
-        redirect('find_services.php');
+        flash('Listing submitted! It will be reviewed and activated by the koperasi admin within 1–2 working days.', 'info');
+        redirect('member_portal.php');
     }
 }
 
@@ -60,7 +63,7 @@ html_body_open();
             <label class="form-label fw-semibold">Koperasi Member ID *</label>
             <input type="text" name="koperasi_id" class="form-control"
                 value="<?= e($_POST['koperasi_id'] ?? $member['koperasi_id'] ?? '') ?>"
-                placeholder="e.g. KOP-2024-001" required>
+                placeholder="e.g. KKBR-00123" required>
         </div>
         <div class="col-md-6">
             <label class="form-label fw-semibold">Service Category *</label>

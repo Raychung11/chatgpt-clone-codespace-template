@@ -100,7 +100,7 @@ body{font-family:'Inter',sans-serif;background:var(--light-bg);min-height:100vh;
 <nav id="sidebar" class="d-flex flex-column">
     <div class="logo">🤝 Kopo<span>nix</span></div>
     <div style="font-size:.65rem;color:rgba(255,255,255,.55);padding:.1rem 1rem .8rem;line-height:1.3">
-        Koperasi Sekata Rakyat<br>Digital Marketplace
+        <?= defined('KOPERASI_NAME') ? KOPERASI_NAME : 'Koperasi Kakitangan Bank Rakyat' ?><br>Digital Marketplace
     </div>
     <div class="px-2 py-2 flex-grow-1">
         <nav class="nav flex-column gap-1">
@@ -174,6 +174,37 @@ body{font-family:'Inter',sans-serif;background:var(--light-bg);min-height:100vh;
         <span class="mn-icon">👤</span><?= $account_label ?>
     </a>
 </nav>
+
+<!-- Site Footer -->
+<footer style="background:#1a3a52;color:rgba(255,255,255,.75);font-size:.75rem;padding:1.5rem 2rem;margin-top:0;">
+    <div style="max-width:960px;margin:auto;display:flex;flex-wrap:wrap;gap:1.5rem;justify-content:space-between;align-items:flex-start;">
+        <div>
+            <div style="font-weight:700;font-size:.85rem;color:#fff;margin-bottom:.3rem;">🤝 Koponix — <?= defined('KOPERASI_NAME') ? KOPERASI_NAME : '' ?></div>
+            <div><?= defined('KOPERASI_TAGLINE') ? KOPERASI_TAGLINE : '' ?></div>
+            <div style="margin-top:.3rem"><?= defined('KOPERASI_ADDRESS') ? KOPERASI_ADDRESS : '' ?></div>
+        </div>
+        <div>
+            <div style="font-weight:600;color:#fff;margin-bottom:.3rem;">Hubungi Kami</div>
+            <?php if (defined('KOPERASI_EMAIL') && KOPERASI_EMAIL): ?>
+                <div>✉️ <?= e(KOPERASI_EMAIL) ?></div>
+            <?php endif; ?>
+            <?php if (defined('KOPERASI_PHONE') && KOPERASI_PHONE): ?>
+                <div>📞 <?= e(KOPERASI_PHONE) ?></div>
+            <?php endif; ?>
+            <?php if (defined('KOPERASI_FB') && KOPERASI_FB): ?>
+                <div><a href="<?= e(KOPERASI_FB) ?>" target="_blank" style="color:#7fc3f5">Facebook</a></div>
+            <?php endif; ?>
+            <?php if (defined('KOPERASI_IG') && KOPERASI_IG): ?>
+                <div><a href="<?= e(KOPERASI_IG) ?>" target="_blank" style="color:#7fc3f5">Instagram</a></div>
+            <?php endif; ?>
+        </div>
+        <div style="text-align:right;">
+            <div style="color:rgba(255,255,255,.5);">Didaftarkan di bawah SKM</div>
+            <div style="font-weight:600;color:#fff;"><?= defined('KOPERASI_SKM_NO') ? e(KOPERASI_SKM_NO) : '' ?></div>
+            <div style="margin-top:.5rem;color:rgba(255,255,255,.4);">&copy; <?= date('Y') ?> Koponix. Hak cipta terpelihara.</div>
+        </div>
+    </div>
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
