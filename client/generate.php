@@ -396,6 +396,75 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
             transition: all .15s;
         }
         .tpl-btn:hover { border-color: var(--color-primary); color: var(--color-text); }
+
+        /* ── Template fill-in modal ─────────────────────────────────── */
+        #tplModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0,0,0,.65);
+            overflow-y: auto;
+            padding: 24px 16px;
+        }
+        #tplModal.open { display: flex; align-items: flex-start; justify-content: center; }
+        .tpl-modal-box {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg, 12px);
+            padding: 28px;
+            width: 100%;
+            max-width: 560px;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,.4);
+        }
+        .tpl-modal-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--color-text);
+            margin: 0 0 4px;
+        }
+        .tpl-modal-sub {
+            font-size: .8rem;
+            color: var(--color-muted);
+            margin: 0 0 20px;
+        }
+        .tpl-modal-close {
+            position: absolute;
+            top: 16px; right: 16px;
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            color: var(--color-muted);
+            cursor: pointer;
+            line-height: 1;
+        }
+        .tpl-modal-close:hover { color: var(--color-text); }
+        .tpl-field { margin-bottom: 14px; }
+        .tpl-field label {
+            display: block;
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--color-text);
+            margin-bottom: 4px;
+            text-transform: capitalize;
+        }
+        .tpl-field input, .tpl-field textarea {
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--color-surface2);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            color: var(--color-text);
+            font-size: .88rem;
+            box-sizing: border-box;
+        }
+        .tpl-field input:focus, .tpl-field textarea:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(108,71,255,.2);
+        }
+        .tpl-modal-actions { display:flex; gap:10px; margin-top:20px; }
         #charCount { font-size: .8rem; color: var(--color-muted); text-align: right; margin-top: 4px; }
         /* AI Enhance */
         .enhance-btn {
@@ -571,7 +640,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
                             <div style="display:flex;flex-wrap:wrap;gap:8px">
                                 <?php foreach ($catTpls as $tpl): ?>
                                     <button type="button" class="tpl-btn"
-                                            onclick="applyTemplate(<?= htmlspecialchars(json_encode($tpl['template']), ENT_QUOTES) ?>)">
+                                            onclick="openTemplateFill(<?= htmlspecialchars(json_encode($tpl['name']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($tpl['template']), ENT_QUOTES) ?>)">
                                         <?= e($tpl['name']) ?>
                                     </button>
                                 <?php endforeach; ?>
@@ -715,12 +784,135 @@ function toggleTemplates() {
     panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
 }
 
-// Apply template to prompt textarea
+// ── Template fill-in modal ────────────────────────────────────────────────────
+
+let _activeTplBody = '';
+
+/**
+ * Open the fill-in modal for a template.
+ * Extracts all {{placeholder}} variables and renders an input for each.
+ */
+function openTemplateFill(name, templateBody) {
+    _activeTplBody = templateBody;
+
+    // Extract unique placeholders, preserving order of first appearance
+    const seen = new Set();
+    const vars = [];
+    for (const m of templateBody.matchAll(/\{\{([^}]+)\}\}/g)) {
+        const key = m[1].trim();
+        if (!seen.has(key)) { seen.add(key); vars.push(key); }
+    }
+
+    // If no placeholders, apply directly
+    if (!vars.length) {
+        applyTemplate(templateBody);
+        return;
+    }
+
+    // Build modal title
+    document.getElementById('tplModalTitle').textContent = name;
+    document.getElementById('tplModalSub').textContent =
+        vars.length + ' field' + (vars.length !== 1 ? 's' : '') + ' to fill in';
+
+    // Build input fields
+    const container = document.getElementById('tplModalFields');
+    container.innerHTML = '';
+    vars.forEach(key => {
+        const label = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        const isLong = ['key_benefits','signature_dishes','key_features','services',
+                        'featured_products','event_highlights'].includes(key);
+        const div = document.createElement('div');
+        div.className = 'tpl-field';
+        div.innerHTML = `<label for="tplf_${key}">${label}</label>` + (
+            isLong
+                ? `<textarea id="tplf_${key}" rows="2" placeholder="e.g. ${_placeholderHint(key)}"></textarea>`
+                : `<input  id="tplf_${key}" type="text"  placeholder="e.g. ${_placeholderHint(key)}">`
+        );
+        container.appendChild(div);
+    });
+
+    // Focus first input
+    document.getElementById('tplModal').classList.add('open');
+    setTimeout(() => {
+        const first = container.querySelector('input,textarea');
+        if (first) first.focus();
+    }, 80);
+}
+
+/** Return a short placeholder hint for common variable names */
+function _placeholderHint(key) {
+    const hints = {
+        product_name:     'Sparkling Energy Drink',
+        brand_name:       'GlowUp Skincare',
+        restaurant_name:  'The Golden Spoon',
+        property_name:    'Skyline Residences',
+        car_model:        'Tesla Model S',
+        key_benefits:     'Long-lasting, clinically tested, fast results',
+        tagline:          'Feel the Difference',
+        target_audience:  'Young professionals aged 25–40',
+        call_to_action:   'Book a free consultation today',
+        location:         'Kuala Lumpur City Centre',
+        signature_dishes: 'Wagyu Beef Steak, Truffle Pasta',
+        key_features:     '3 bedrooms, rooftop pool, 24hr security',
+        services:         'Hot stone massage, aromatherapy, facial',
+        featured_products:'Handbags, shoes, accessories',
+        discount_offer:   'Up to 70% off',
+        event_highlights: 'Live music, gourmet buffet, networking',
+    };
+    return hints[key] || key.replace(/_/g, ' ');
+}
+
+/** Close the modal */
+function closeTemplateFill() {
+    document.getElementById('tplModal').classList.remove('open');
+    _activeTplBody = '';
+}
+
+/** Assemble the prompt from filled values and insert into textarea */
+function applyFilledTemplate() {
+    if (!_activeTplBody) return;
+
+    let result = _activeTplBody;
+    let allFilled = true;
+
+    document.querySelectorAll('#tplModalFields [id^="tplf_"]').forEach(el => {
+        const key = el.id.replace('tplf_', '');
+        const val = el.value.trim();
+        if (!val) { allFilled = false; el.style.borderColor = 'var(--color-danger)'; return; }
+        el.style.borderColor = '';
+        const rx = new RegExp('\\{\\{' + key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\}\\}', 'g');
+        result = result.replace(rx, val);
+    });
+
+    if (!allFilled) return;
+
+    applyTemplate(result);
+    closeTemplateFill();
+}
+
+// Allow pressing Enter on inputs to move to next field (Tab-like)
+document.addEventListener('keydown', function(e) {
+    if (!document.getElementById('tplModal').classList.contains('open')) return;
+    if (e.key === 'Escape') { closeTemplateFill(); return; }
+    if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+        e.preventDefault();
+        const inputs = [...document.querySelectorAll('#tplModalFields input, #tplModalFields textarea')];
+        const idx = inputs.indexOf(e.target);
+        if (idx >= 0 && idx < inputs.length - 1) inputs[idx + 1].focus();
+        else applyFilledTemplate();
+    }
+});
+
+// Close modal when clicking the backdrop
+document.getElementById('tplModal').addEventListener('click', function(e) {
+    if (e.target === this) closeTemplateFill();
+});
+
+// Apply template to prompt textarea (direct, no modal)
 function applyTemplate(template) {
     const ta = document.getElementById('prompt');
     ta.value = template;
     updateCharCount(ta);
-    // Close template panel
     const panel = document.getElementById('tplPanel');
     if (panel) panel.style.display = 'none';
     ta.focus();
@@ -941,5 +1133,26 @@ async function runGenDebug() {
     }
 }
 </script>
+
+<!-- ── Template Fill-In Modal ──────────────────────────────────────────── -->
+<div id="tplModal" role="dialog" aria-modal="true" aria-labelledby="tplModalTitle">
+    <div class="tpl-modal-box">
+        <button class="tpl-modal-close" onclick="closeTemplateFill()" aria-label="Close">✕</button>
+        <p class="tpl-modal-title" id="tplModalTitle"></p>
+        <p class="tpl-modal-sub"   id="tplModalSub">Fill in the fields below to build your prompt.</p>
+
+        <div id="tplModalFields"></div>
+
+        <div class="tpl-modal-actions">
+            <button type="button" class="btn btn-primary" onclick="applyFilledTemplate()">
+                ✅ Build Prompt
+            </button>
+            <button type="button" class="btn btn-ghost"   onclick="closeTemplateFill()">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
