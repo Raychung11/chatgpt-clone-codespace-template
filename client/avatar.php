@@ -183,6 +183,31 @@ if (($_GET['_action'] ?? '') === 'poll') {
                     )->execute([$result['status'], $jobId]);
                     $job['status'] = $result['status'];
                 }
+            } else {
+                // API query itself failed (network error, auth error, or BytePlus rejected the query).
+                // Only auto-fail on permanent BytePlus error codes — transient errors (DNS, timeout)
+                // leave the job untouched so the next poll can retry.
+                $apiErrCode = (int)($result['raw']['code'] ?? $result['raw']['status'] ?? 0);
+                $permanentCodes = [
+                    50215, // Input invalid for this service (task submitted with bad params)
+                    50204, // Task not found / expired
+                    50200, // req_key not supported
+                ];
+                if (in_array($apiErrCode, $permanentCodes, true)) {
+                    $errMsg = 'BytePlus rejected task (code ' . $apiErrCode . '): '
+                            . ($result['error'] ?? 'permanent API error') . '. Credits refunded.';
+                    $pdo->prepare(
+                        'UPDATE avatar_jobs SET status="failed", error_message=?, api_response=? WHERE id=?'
+                    )->execute([$errMsg, json_encode($result['raw']), $jobId]);
+                    wallet_refund($uid, $creditCost, 'avatar_job', $jobId,
+                        'Refund: avatar job #' . $jobId . ' — code ' . $apiErrCode);
+                    $pdo->prepare(
+                        'UPDATE avatar_jobs SET status="refunded", refunded_at=NOW() WHERE id=?'
+                    )->execute([$jobId]);
+                    $job['status']        = 'refunded';
+                    $job['error_message'] = $errMsg;
+                }
+                // else: transient error — leave status unchanged, will retry next poll
             }
         }
     }
@@ -520,6 +545,58 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
         } else {
             $results['dirs'][$label] = is_writable($path) ? 'OK (writable)' : 'EXISTS but not writable';
         }
+    }
+
+    // ── 3b. Test whether uploaded files are publicly reachable by BytePlus ────────
+    // BytePlus fetches image_url / audio_url from its own servers.
+    // If those URLs return 403/404, BytePlus silently marks the task as invalid (code 50215).
+    $lastJobForUrlTest = $pdo->prepare(
+        'SELECT portrait_path, audio_path FROM avatar_jobs WHERE user_id=? ORDER BY id DESC LIMIT 1'
+    );
+    $lastJobForUrlTest->execute([$uid]);
+    $lastJobRow = $lastJobForUrlTest->fetch();
+    if ($lastJobRow) {
+        $testUrls = [];
+        if ($lastJobRow['portrait_path']) {
+            $pName = basename($lastJobRow['portrait_path']);
+            $testUrls['portrait_url'] = rtrim(BASE_URL, '/') . '/uploads/avatars/' . rawurlencode($pName);
+        }
+        if ($lastJobRow['audio_path']) {
+            $aName = basename($lastJobRow['audio_path']);
+            $testUrls['audio_url'] = rtrim(BASE_URL, '/') . '/uploads/avatar_audio/' . rawurlencode($aName);
+        }
+        foreach ($testUrls as $label => $testUrl) {
+            $tCh = curl_init($testUrl);
+            curl_setopt_array($tCh, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT        => 8,
+                CURLOPT_NOBODY         => true,   // HEAD-like: no body download
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_MAXREDIRS      => 3,
+                CURLOPT_SSL_VERIFYPEER => false,  // test reachability, not cert
+            ]);
+            curl_exec($tCh);
+            $tCode = curl_getinfo($tCh, CURLINFO_HTTP_CODE);
+            $tErr  = curl_error($tCh);
+            curl_close($tCh);
+            $results['url_accessibility'][$label] = [
+                'url'       => $testUrl,
+                'http_code' => $tCode,
+                'error'     => $tErr ?: 'none',
+                'diagnosis' => match(true) {
+                    (bool)$tErr               => 'NETWORK ERROR: ' . $tErr . ' — BytePlus cannot fetch this file',
+                    $tCode === 200            => '✓ Publicly accessible (HTTP 200)',
+                    $tCode === 403            => 'BLOCKED (HTTP 403) — directory not public; BytePlus will get 50215',
+                    $tCode === 404            => 'NOT FOUND (HTTP 404) — file missing; BytePlus will get 50215',
+                    $tCode === 401            => 'AUTH REQUIRED (HTTP 401) — protect removed or add allow rule',
+                    $tCode >= 300 && $tCode < 400 => "REDIRECT ($tCode) — may work if BytePlus follows redirects",
+                    $tCode === 0              => 'NO RESPONSE — server or DNS unreachable from this host',
+                    default                   => "HTTP $tCode — unexpected; BytePlus may reject task",
+                },
+            ];
+        }
+    } else {
+        $results['url_accessibility'] = 'No jobs yet — submit a job first to test URL accessibility';
     }
 
     // ── 4. Basic TCP connect test (port 443) ─────────────────────────────────────

@@ -225,7 +225,33 @@ if (!empty($avatarJobs)) {
         $result = omnihuman_query_task($taskId);
 
         if (!$result['ok']) {
-            clog("  ERROR: " . ($result['error'] ?? 'unknown'));
+            $apiErrCode = (int)($result['raw']['code'] ?? $result['raw']['status'] ?? 0);
+            clog("  ERROR (code $apiErrCode): " . ($result['error'] ?? 'unknown'));
+            // Permanent BytePlus error codes — auto-fail and refund so job doesn't stay stuck
+            $permanentCodes = [50215, 50204, 50200];
+            if (in_array($apiErrCode, $permanentCodes, true)) {
+                $errMsg = 'BytePlus rejected task (code ' . $apiErrCode . '): '
+                        . ($result['error'] ?? 'permanent API error');
+                $pdo->beginTransaction();
+                try {
+                    $pdo->prepare(
+                        'UPDATE `avatar_jobs`
+                         SET `status` = "failed", `error_message` = ?, `api_response` = ?
+                         WHERE `id` = ?'
+                    )->execute([$errMsg, json_encode($result['raw']), $jobId]);
+                    wallet_refund($userId, (float)$job['credit_cost'], 'avatar_job', $jobId,
+                        'Auto-refund: avatar job #' . $jobId . ' — code ' . $apiErrCode);
+                    $pdo->prepare(
+                        'UPDATE `avatar_jobs` SET `status` = "refunded", `refunded_at` = NOW() WHERE `id` = ?'
+                    )->execute([$jobId]);
+                    $pdo->commit();
+                    clog("  ✗ PERMANENT ERROR — refunded {$job['credit_cost']} credits to user #$userId");
+                } catch (\Throwable $e) {
+                    if ($pdo->inTransaction()) $pdo->rollBack();
+                    clog("  DB ERROR during refund: " . $e->getMessage());
+                }
+            }
+            // else: transient error (network, auth timeout) — leave status, retry next run
             continue;
         }
 
