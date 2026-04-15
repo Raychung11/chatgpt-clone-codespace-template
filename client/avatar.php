@@ -314,11 +314,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['_action'])) {
                     $audioUrl = rtrim(BASE_URL, '/') . '/uploads/avatar_audio/' . rawurlencode(basename($audioPath));
                 }
 
+                // OmniHuman 1.5 (realman_avatar_picture_omni15_cv) only accepts:
+                //   req_key, image_url, audio_url (or text for TTS).
+                // Do NOT send extra fields like output_resolution — they are not
+                // documented for this req_key and cause BytePlus to return code 50215.
                 $apiResult = omnihuman_create_task(
                     '',     // imageBase64 — not supported by this req_key
                     null,   // audioBase64 — not supported by this req_key
                     $audioMode === 'tts' ? $ttsText : null,
-                    ['output_resolution' => 720],
+                    [],     // No extra params — undocumented fields cause 50215
                     $imageUrl,
                     $audioUrl
                 );
