@@ -188,13 +188,14 @@ function get_requests(array $filters = []): array {
 
 function save_request(array $data): string {
     $id = gen_uuid();
-    db()->prepare('INSERT INTO requests (id,buyer_name,buyer_contact,member_kop_id,category,location,service_description,preferred_date,urgency,budget,special_notes,submitted_date,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
+    db()->prepare('INSERT INTO requests (id,buyer_name,buyer_contact,member_kop_id,category,location,service_description,preferred_date,urgency,budget,special_notes,submitted_date,status,credits_used) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
         ->execute([
             $id, $data['buyer_name'], $data['buyer_contact'],
             $data['member_kop_id'] ?? '', $data['category'], $data['location'],
             $data['service_description'], $data['preferred_date'] ?? '',
             $data['urgency'] ?? '', $data['budget'] ?? '',
             $data['special_notes'] ?? '', date('Y-m-d'), 'open',
+            (int)($data['credits_used'] ?? 0),
         ]);
     return $id;
 }
@@ -465,6 +466,106 @@ function claude_api(array $messages, string $system = '', int $max_tokens = 1024
     if ($errno) return '[AI unavailable — cURL error ' . $errno . ']';
     $data = json_decode($result, true);
     return $data['content'][0]['text'] ?? ('[AI error: ' . ($data['error']['message'] ?? 'unknown') . ']');
+}
+
+// ── Referral & Credits ───────────────────────────────────────
+
+/**
+ * Generate a unique referral code for a member.
+ * Format: [ABBREV prefix][6 alphanumeric chars]  e.g. KKBR2F8X4A
+ */
+function gen_referral_code(string $kop_id): string {
+    $abbrev = defined('KOPERASI_ABBREV') ? KOPERASI_ABBREV : 'KOP';
+    $hash   = strtoupper(substr(hash('sha256', $kop_id . 'koponix_ref_salt'), 0, 6));
+    return $abbrev . $hash;
+}
+
+/**
+ * Get or create the referral code for a member.
+ */
+function ensure_referral_code(string $kop_id): string {
+    $m = get_member_by_kop_id($kop_id);
+    if (!empty($m['referral_code'])) return $m['referral_code'];
+    $code = gen_referral_code($kop_id);
+    db()->prepare('UPDATE members SET referral_code=? WHERE koperasi_id=?')->execute([$code, $kop_id]);
+    return $code;
+}
+
+/**
+ * Get current credit balance for a member.
+ */
+function get_credits(string $kop_id): int {
+    $stmt = db()->prepare('SELECT credits FROM members WHERE koperasi_id=?');
+    $stmt->execute([$kop_id]);
+    return (int)($stmt->fetchColumn() ?? 0);
+}
+
+/**
+ * Add credits to a member and log the transaction.
+ */
+function add_credits(string $kop_id, int $amount, string $description): void {
+    db()->prepare('UPDATE members SET credits = credits + ? WHERE koperasi_id=?')
+        ->execute([$amount, $kop_id]);
+    db()->prepare('INSERT INTO credit_transactions (id,member_kop_id,amount,type,description,created_at) VALUES (?,?,?,?,?,NOW())')
+        ->execute([gen_short_id(), $kop_id, $amount, 'earn', $description]);
+}
+
+/**
+ * Spend credits. Returns false if balance insufficient.
+ */
+function spend_credits(string $kop_id, int $amount, string $description): bool {
+    if (get_credits($kop_id) < $amount) return false;
+    db()->prepare('UPDATE members SET credits = credits - ? WHERE koperasi_id=?')
+        ->execute([$amount, $kop_id]);
+    db()->prepare('INSERT INTO credit_transactions (id,member_kop_id,amount,type,description,created_at) VALUES (?,?,?,?,?,NOW())')
+        ->execute([gen_short_id(), $kop_id, -$amount, 'spend', $description]);
+    return true;
+}
+
+/**
+ * Process a referral when a new member registers.
+ * - Referrer gets +10 credits
+ * - New member gets +5 welcome credits
+ * Returns true on success, false if code invalid or self-referral.
+ */
+function apply_referral(string $new_kop_id, string $referral_code): bool {
+    $code = strtoupper(trim($referral_code));
+    if (!$code) return false;
+    $stmt = db()->prepare('SELECT koperasi_id FROM members WHERE referral_code=?');
+    $stmt->execute([$code]);
+    $referrer_id = $stmt->fetchColumn();
+    if (!$referrer_id || $referrer_id === $new_kop_id) return false;
+
+    // Link the new member to their referrer
+    db()->prepare('UPDATE members SET referred_by=? WHERE koperasi_id=?')
+        ->execute([$code, $new_kop_id]);
+
+    // Award referrer 10 credits
+    add_credits($referrer_id, 10, 'Referral reward — ' . $new_kop_id . ' joined using your code');
+    // Award new member 5 welcome credits
+    add_credits($new_kop_id, 5, 'Welcome bonus — joined via referral');
+
+    return true;
+}
+
+/**
+ * How many people used this referral code.
+ */
+function get_referral_count(string $referral_code): int {
+    $stmt = db()->prepare('SELECT COUNT(*) FROM members WHERE referred_by=?');
+    $stmt->execute([$referral_code]);
+    return (int)$stmt->fetchColumn();
+}
+
+/**
+ * Credit transaction history for a member.
+ */
+function get_credit_history(string $kop_id, int $limit = 30): array {
+    $stmt = db()->prepare(
+        'SELECT * FROM credit_transactions WHERE member_kop_id=? ORDER BY created_at DESC LIMIT ?'
+    );
+    $stmt->execute([$kop_id, $limit]);
+    return $stmt->fetchAll();
 }
 
 // ── Flash messages ───────────────────────────────────────────

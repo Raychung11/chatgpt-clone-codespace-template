@@ -49,17 +49,33 @@ try {
 
     // Add new columns to existing tables (safe to run multiple times)
     foreach ([
-        "ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar VARCHAR(255) DEFAULT ''",
-        "ALTER TABLE members ADD COLUMN IF NOT EXISTS bio TEXT",
-        "ALTER TABLE members ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active'",
-        "ALTER TABLE sellers ADD COLUMN IF NOT EXISTS image VARCHAR(255) DEFAULT ''",
-        "ALTER TABLE sellers ADD COLUMN IF NOT EXISTS gallery1 VARCHAR(255) DEFAULT ''",
-        "ALTER TABLE sellers ADD COLUMN IF NOT EXISTS gallery2 VARCHAR(255) DEFAULT ''",
-        "ALTER TABLE sellers ADD COLUMN IF NOT EXISTS admin_note VARCHAR(500) DEFAULT ''",
+        "ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar        VARCHAR(255) DEFAULT ''",
+        "ALTER TABLE members ADD COLUMN IF NOT EXISTS bio           TEXT",
+        "ALTER TABLE members ADD COLUMN IF NOT EXISTS status        VARCHAR(20)  DEFAULT 'active'",
+        "ALTER TABLE members ADD COLUMN IF NOT EXISTS referral_code VARCHAR(20)  DEFAULT ''",
+        "ALTER TABLE members ADD COLUMN IF NOT EXISTS referred_by   VARCHAR(20)  DEFAULT ''",
+        "ALTER TABLE members ADD COLUMN IF NOT EXISTS credits       INT          DEFAULT 0",
+        "ALTER TABLE sellers ADD COLUMN IF NOT EXISTS image         VARCHAR(255) DEFAULT ''",
+        "ALTER TABLE sellers ADD COLUMN IF NOT EXISTS gallery1      VARCHAR(255) DEFAULT ''",
+        "ALTER TABLE sellers ADD COLUMN IF NOT EXISTS gallery2      VARCHAR(255) DEFAULT ''",
+        "ALTER TABLE sellers ADD COLUMN IF NOT EXISTS admin_note    VARCHAR(500) DEFAULT ''",
+        "ALTER TABLE requests ADD COLUMN IF NOT EXISTS credits_used INT          DEFAULT 0",
     ] as $sql) {
         try { $pdo->exec($sql); } catch (PDOException $e) { /* already exists */ }
     }
-    $done[] = 'Columns updated (image, avatar, bio, status, admin_note).';
+    $done[] = 'Columns updated (credits, referral_code, referred_by, credits_used).';
+
+    // Credit transactions table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS credit_transactions (
+        id            VARCHAR(8)   PRIMARY KEY,
+        member_kop_id VARCHAR(100) NOT NULL,
+        amount        INT          NOT NULL,
+        type          VARCHAR(10)  NOT NULL DEFAULT 'earn',
+        description   VARCHAR(255) DEFAULT '',
+        created_at    DATETIME     NOT NULL,
+        INDEX idx_cred_member (member_kop_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    $done[] = 'Table <b>credit_transactions</b> created.';
 
     // Create uploads directories
     $dirs = [

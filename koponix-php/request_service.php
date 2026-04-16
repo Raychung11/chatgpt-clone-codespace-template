@@ -1,7 +1,9 @@
 <?php
 require_once __DIR__ . '/layout.php';
 
-$errors = [];
+$errors  = [];
+$member  = current_member();
+$credits = $member ? get_credits($member['koperasi_id']) : 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $buyer_name          = trim($_POST['buyer_name']          ?? '');
@@ -13,8 +15,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $urgency             = trim($_POST['urgency']             ?? '');
     $budget              = trim($_POST['budget']              ?? '');
     $special_notes       = trim($_POST['special_notes']       ?? '');
-    $member              = current_member();
     $member_kop_id       = $member['koperasi_id'] ?? '';
+    $apply_credits       = !empty($_POST['apply_credits']) && $member_kop_id;
+    $credits_to_use      = $apply_credits ? min((int)($_POST['credits_amount'] ?? 0), $credits) : 0;
 
     if (!$buyer_name)          $errors[] = 'Your name is required.';
     if (!$buyer_contact)       $errors[] = 'Contact number is required.';
@@ -23,9 +26,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$service_description) $errors[] = 'Service description is required.';
 
     if (empty($errors)) {
-        save_request(compact('buyer_name','buyer_contact','member_kop_id','category','location',
-            'service_description','preferred_date','urgency','budget','special_notes'));
-        flash('Your service request has been submitted!');
+        $req_data = compact('buyer_name','buyer_contact','member_kop_id','category','location',
+            'service_description','preferred_date','urgency','budget','special_notes');
+        $req_data['credits_used'] = $credits_to_use;
+        save_request($req_data);
+        // Deduct credits if applied
+        if ($credits_to_use > 0) {
+            spend_credits($member_kop_id, $credits_to_use,
+                'Credits applied to service request: ' . substr($service_description, 0, 60));
+        }
+        $msg = 'Your service request has been submitted!';
+        if ($credits_to_use > 0) $msg .= " {$credits_to_use} credits applied (RM " . number_format($credits_to_use, 2) . " discount).";
+        flash($msg);
         redirect('match_engine.php?category=' . urlencode($category) . '&location=' . urlencode($location));
     }
 }
@@ -315,6 +327,27 @@ html_body_open();
                     <textarea name="special_notes" class="form-control" rows="2"
                         placeholder="Any special instructions or requirements"><?= e($_POST['special_notes'] ?? '') ?></textarea>
                 </div>
+                <?php if ($member && $credits > 0): ?>
+                <div class="col-12">
+                    <div class="card p-3" style="background:#fffbf0;border:1px solid #f6d365">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <input class="form-check-input mt-0" type="checkbox" name="apply_credits"
+                                id="applyCredits" value="1"
+                                onchange="document.getElementById('creditAmtRow').style.display=this.checked?'flex':'none'">
+                            <label class="form-check-label fw-semibold" for="applyCredits">
+                                💰 Apply my credits as discount
+                            </label>
+                            <span class="ms-auto text-muted small">Balance: <strong><?= $credits ?> credits</strong> = RM <?= number_format($credits, 2) ?></span>
+                        </div>
+                        <div id="creditAmtRow" class="d-none align-items-center gap-2">
+                            <label class="small fw-semibold" style="white-space:nowrap">Credits to use:</label>
+                            <input type="number" name="credits_amount" class="form-control form-control-sm"
+                                style="max-width:100px" min="1" max="<?= $credits ?>" value="<?= min($credits, 10) ?>">
+                            <span class="text-muted small">max <?= $credits ?></span>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
                 <div class="col-12">
                     <button type="submit" class="btn btn-primary">🚀 Submit Request</button>
                     <a href="find_services.php" class="btn btn-outline-secondary ms-2">Browse Services Instead</a>

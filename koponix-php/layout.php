@@ -237,7 +237,10 @@ body{font-family:'Inter',sans-serif;background:var(--light-bg);min-height:100vh;
                 </div>
                 <div class="d-none d-md-block text-start" style="line-height:1.2">
                     <div style="font-size:.8rem;font-weight:600;color:#1a3a52"><?= e($member['name']) ?></div>
-                    <div style="font-size:.65rem;color:#888"><?= e($member['koperasi_id']) ?></div>
+                    <div style="font-size:.65rem;color:#888">
+                        <?= e($member['koperasi_id']) ?>
+                        &nbsp;·&nbsp; 💰 <strong><?= get_credits($member['koperasi_id']) ?></strong> credits
+                    </div>
                 </div>
                 <svg class="d-none d-md-block" width="14" height="14" fill="#aaa" viewBox="0 0 16 16">
                     <path d="M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
@@ -252,6 +255,13 @@ body{font-family:'Inter',sans-serif;background:var(--light-bg);min-height:100vh;
                 <li><a class="dropdown-item" href="member_portal.php?tab=listings">📋 My Listings</a></li>
                 <li><a class="dropdown-item" href="member_portal.php?tab=requests">🛒 My Requests</a></li>
                 <li><a class="dropdown-item" href="messages.php">💬 Messages</a></li>
+                <li><a class="dropdown-item" href="member_portal.php?tab=credits">
+                    💰 Credits &amp; Referral
+                    <span style="float:right;background:#f6d365;color:#7d3200;font-size:.65rem;
+                        padding:1px 6px;border-radius:10px;font-weight:700">
+                        <?= get_credits($member['koperasi_id']) ?> cr
+                    </span>
+                </a></li>
 
                 <?php if ($role === 'member'): ?>
                     <li><hr class="dropdown-divider"></li>

@@ -135,6 +135,8 @@ $my_convs    = get_conversations_for_member($kop_id);
 $active_l    = array_filter($my_listings, fn($s) => $s['status'] === 'active');
 $open_r      = array_filter($my_requests, fn($r) => $r['status'] === 'open');
 $recent_l    = array_slice($my_listings, 0, 3);
+$credits     = get_credits($kop_id);
+$ref_code    = ensure_referral_code($kop_id);
 
 // Greeting by time
 $hour     = (int) date('G');
@@ -471,6 +473,19 @@ body {
             <div class="sbox"><div class="sv"><?= count($my_requests) ?></div><div class="sl">My Requests</div></div>
             <div class="sbox"><div class="sv"><?= count($open_r) ?></div><div class="sl">Open</div></div>
         </div>
+        <!-- Credits banner -->
+        <a href="member_portal.php?tab=credits" style="display:flex;align-items:center;gap:12px;
+            background:linear-gradient(135deg,#f6d365,#fda085);border-radius:14px;
+            padding:12px 16px;margin-bottom:14px;text-decoration:none">
+            <span style="font-size:1.8rem">💰</span>
+            <div>
+                <div style="font-weight:800;font-size:1.1rem;color:#7d3200"><?= $credits ?> Credits</div>
+                <div style="font-size:.72rem;color:rgba(125,50,0,.8)">
+                    ≈ RM <?= number_format($credits, 2) ?> &nbsp;·&nbsp; Referral code: <strong><?= e($ref_code) ?></strong>
+                </div>
+            </div>
+            <span style="margin-left:auto;color:rgba(125,50,0,.6);font-size:1.1rem">›</span>
+        </a>
 
         <div class="sec-lbl">Quick Actions</div>
         <div class="qa-grid">
