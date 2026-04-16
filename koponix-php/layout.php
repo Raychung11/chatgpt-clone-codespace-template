@@ -60,7 +60,7 @@ body{font-family:'Inter',sans-serif;background:var(--light-bg);min-height:100vh;
 .chat-msg.ai-msg .bubble{background:#eaf4fb;color:#1a5276;border:1px solid #b8d9f0;border-radius:14px 14px 14px 0;}
 .chat-ts{font-size:.68rem;color:#aaa;margin-top:2px;}
 @media(max-width:768px){
-    #sidebar{display:none;}
+    #sidebar{display:none!important;}
     #content{padding:1rem .8rem 80px;}
     .page-title{font-size:1.2rem;}
     #mobile-nav{display:flex!important;}
