@@ -287,6 +287,27 @@ function get_all_members(): array {
     return db()->query('SELECT * FROM members ORDER BY joined_date DESC')->fetchAll();
 }
 
+/**
+ * Returns the current member's view role:
+ *   'public'   – not logged in
+ *   'admin'    – role = admin
+ *   'provider' – member with at least one listing (any status)
+ *   'member'   – logged-in member with no listings yet
+ */
+function view_role(): string {
+    $m = current_member();
+    if (!$m) return 'public';
+    if (($m['role'] ?? '') === 'admin') return 'admin';
+    static $checked = false, $result = 'member';
+    if (!$checked) {
+        $stmt = db()->prepare('SELECT COUNT(*) FROM sellers WHERE koperasi_id=?');
+        $stmt->execute([$m['koperasi_id']]);
+        $result  = (int)$stmt->fetchColumn() > 0 ? 'provider' : 'member';
+        $checked = true;
+    }
+    return $result;
+}
+
 function set_member_status(string $kop_id, string $status): void {
     db()->prepare('UPDATE members SET status=? WHERE koperasi_id=?')->execute([$status, $kop_id]);
 }
