@@ -201,7 +201,7 @@ $active_l    = array_filter($my_listings, fn($s) => $s['status'] === 'active');
 $open_r      = array_filter($my_requests, fn($r) => $r['status'] === 'open');
 $credits     = get_credits($kop_id);
 $ref_code    = ensure_referral_code($kop_id);
-$ref_url     = (defined('SITE_URL') ? SITE_URL : 'https://yourdomain.com')
+$ref_url     = rtrim(defined('SITE_URL') ? SITE_URL : 'https://yourdomain.com', '/')
                . '/member_portal.php?tab=register&ref=' . $ref_code;
 ?>
 

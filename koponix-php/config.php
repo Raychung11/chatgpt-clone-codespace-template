@@ -18,7 +18,7 @@ define('CLAUDE_MODEL_OPUS', 'claude-opus-4-6');
 
 // ── Site ────────────────────────────────────────────────────
 define('SITE_NAME', 'Koponix');
-define('SITE_URL', 'https://yourdomain.com');   // no trailing slash
+define('SITE_URL', rtrim('https://yourdomain.com', '/'));  // no trailing slash — update this!
 define('ADMIN_PASSWORD_HASH', hash('sha256', 'admin123')); // change 'admin123'
 
 // ── Koperasi Identity ────────────────────────────────────────
