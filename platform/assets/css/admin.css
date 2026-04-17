@@ -3,6 +3,7 @@
    ============================================================ */
 
 .admin-body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background: #080810;
   display: flex;
   min-height: 100vh;
