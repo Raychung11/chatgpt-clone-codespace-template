@@ -1,4 +1,4 @@
-# Root .htaccess — route root requests to the public landing page
+# Root .htaccess
 
 Options -Indexes
 
@@ -10,13 +10,8 @@ Options -Indexes
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
-# Redirect domain root → /public/index.php (landing page)
+# Block direct browser access to server-side directories
 <IfModule mod_rewrite.c>
     RewriteEngine On
-
-    # motions.my or motions.my/ → /public/index.php
-    RewriteRule ^$ /public/index.php [L,R=301]
-
-    # Block direct browser access to server-side directories
     RewriteRule ^(config|inc|cron|logs|sql)(/|$) - [F,L]
 </IfModule>
