@@ -1,5 +1,4 @@
-# Root .htaccess — redirect public traffic to /public/
-# Place this at your document root or configure Apache VirtualHost to point to /public/
+# Root .htaccess — route root requests to the public landing page
 
 Options -Indexes
 
@@ -11,9 +10,13 @@ Options -Indexes
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
-# If document root is the project root, redirect to /public/
+# Redirect domain root → /public/index.php (landing page)
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteCond %{REQUEST_URI} !^/public/
-    RewriteRule ^$ /public/ [L,R=302]
+
+    # motions.my or motions.my/ → /public/index.php
+    RewriteRule ^$ /public/index.php [L,R=301]
+
+    # Block direct browser access to server-side directories
+    RewriteRule ^(config|inc|cron|logs|sql)(/|$) - [F,L]
 </IfModule>

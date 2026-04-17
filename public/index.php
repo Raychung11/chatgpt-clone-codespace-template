@@ -26,7 +26,7 @@ $siteName = setting('site_name', 'Motions');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($siteName) ?> — AI Marketing Video Generator</title>
     <meta name="description" content="Create stunning AI marketing videos in seconds. Turn your brief into professional ads powered by BytePlus Seedance AI.">
-    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/public/assets/css/main.css">
     <style>
         .hero {
             text-align: center;
@@ -112,9 +112,9 @@ $siteName = setting('site_name', 'Motions');
     <div class="navbar-inner">
         <a href="<?= BASE_URL ?>/" class="navbar-brand"><?= e($siteName) ?></a>
         <ul class="navbar-nav" style="display:flex;margin-left:auto">
-            <li><a href="login.php" style="color:var(--color-muted);font-size:.9rem">Sign In</a></li>
+            <li><a href="<?= BASE_URL ?>/public/login.php" style="color:var(--color-muted);font-size:.9rem">Sign In</a></li>
             <li>
-                <a href="register.php" class="btn btn-primary btn-sm" style="margin-left:10px">
+                <a href="<?= BASE_URL ?>/public/register.php" class="btn btn-primary btn-sm" style="margin-left:10px">
                     Get Started Free →
                 </a>
             </li>
@@ -135,8 +135,8 @@ $siteName = setting('site_name', 'Motions');
         No editing skills needed.
     </p>
     <div class="hero-cta">
-        <a href="register.php" class="btn btn-primary btn-lg">Start Free — No Card Required</a>
-        <a href="login.php"    class="btn btn-ghost btn-lg">Sign In</a>
+        <a href="<?= BASE_URL ?>/public/register.php" class="btn btn-primary btn-lg">Start Free — No Card Required</a>
+        <a href="<?= BASE_URL ?>/public/login.php"    class="btn btn-ghost btn-lg">Sign In</a>
     </div>
 </section>
 
@@ -226,7 +226,7 @@ $siteName = setting('site_name', 'Motions');
         </div>
         <?php endforeach ?>
         <div style="margin-top:24px">
-            <a href="register.php" class="btn btn-primary" style="width:100%">Start Free →</a>
+            <a href="<?= BASE_URL ?>/public/register.php" class="btn btn-primary" style="width:100%">Start Free →</a>
         </div>
     </div>
 </section>
@@ -237,8 +237,8 @@ $siteName = setting('site_name', 'Motions');
         © <?= date('Y') ?> <?= e($siteName) ?> &nbsp;·&nbsp; motions.my
     </div>
     <div>
-        <a href="login.php">Sign In</a>
-        <a href="register.php">Register</a>
+        <a href="<?= BASE_URL ?>/public/login.php">Sign In</a>
+        <a href="<?= BASE_URL ?>/public/register.php">Register</a>
     </div>
 </footer>
 
