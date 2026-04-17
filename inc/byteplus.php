@@ -162,7 +162,67 @@ function byteplus_query_task(string $task_id): array
     ];
 }
 
-// ── Low-level HTTP helpers ────────────────────────────────────────────────────
+/**
+ * Submit an image-to-video (i2v) task to ModelArk.
+ * Used for clips 2 & 3 of the 30-second ad feature: the last frame of the
+ * previous clip is passed as first_frame to maintain visual continuity.
+ *
+ * @param string      $prompt        Shot prompt (with --dur / --rs flags appended here)
+ * @param string      $firstFrameUrl Public URL of the first-frame image
+ * @param string      $resolution    '720p' | '1080p'
+ * @param int         $duration      Seconds (10 for 30s ad clips)
+ * @param string|null $lastFrameUrl  Optional public URL of a hero ending frame
+ */
+function byteplus_create_i2v_task(
+    string  $prompt,
+    string  $firstFrameUrl,
+    string  $resolution  = '1080p',
+    int     $duration    = 10,
+    ?string $lastFrameUrl = null
+): array {
+    $apiKey     = setting('byteplus_api_key',     BYTEPLUS_API_KEY)     ?: BYTEPLUS_API_KEY;
+    $apiBase    = rtrim(setting('byteplus_api_url', BYTEPLUS_API_URL)   ?: BYTEPLUS_API_URL, '/');
+
+    // Prefer a dedicated i2v endpoint; fall back to the 10s endpoint, then default
+    $endpointId = setting('byteplus_endpoint_id_i2v', '') ?: '';
+    if (!$endpointId) {
+        $endpointId = setting('byteplus_endpoint_id_10s', BYTEPLUS_ENDPOINT_ID_10S) ?: BYTEPLUS_ENDPOINT_ID_10S;
+    }
+    if (!$endpointId) {
+        $endpointId = setting('byteplus_endpoint_id', BYTEPLUS_ENDPOINT_ID) ?: BYTEPLUS_ENDPOINT_ID;
+    }
+
+    if (!$apiKey)     return ['ok' => false, 'error' => 'BytePlus API key is not configured.',     'raw' => []];
+    if (!$endpointId) return ['ok' => false, 'error' => 'BytePlus Endpoint ID is not configured.', 'raw' => []];
+
+    $promptWithFlags = rtrim($prompt) . " --ratio 16:9 --resolution {$resolution} --duration {$duration}";
+
+    $content = [];
+    $content[] = [
+        'type'      => 'image_url',
+        'image_url' => ['url' => $firstFrameUrl, 'role' => 'first_frame'],
+    ];
+    if ($lastFrameUrl) {
+        $content[] = [
+            'type'      => 'image_url',
+            'image_url' => ['url' => $lastFrameUrl, 'role' => 'last_frame'],
+        ];
+    }
+    $content[] = ['type' => 'text', 'text' => $promptWithFlags];
+
+    $payload = ['model' => $endpointId, 'content' => $content];
+
+    $result = byteplus_post($apiBase . '/contents/generations/tasks', $payload, $apiKey);
+    if (!$result['ok']) return $result;
+
+    $raw    = $result['raw'];
+    $taskId = $raw['id'] ?? $raw['task_id'] ?? $raw['data']['id'] ?? $raw['data']['task_id'] ?? null;
+    if (!$taskId) return ['ok' => false, 'error' => 'API returned success but no task ID.', 'raw' => $raw];
+
+    return ['ok' => true, 'task_id' => (string)$taskId, 'raw' => $raw];
+}
+
+
 
 function byteplus_post(string $url, array $payload, string $apiKey): array
 {

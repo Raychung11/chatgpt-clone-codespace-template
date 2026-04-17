@@ -46,6 +46,7 @@ require_once __DIR__ . '/../inc/wallet.php';
 require_once __DIR__ . '/../inc/byteplus.php';
 require_once __DIR__ . '/../inc/vision_auth.php';
 require_once __DIR__ . '/../inc/omnihuman.php';
+require_once __DIR__ . '/../inc/long_video.php';
 
 $pdo = db();
 
@@ -314,6 +315,67 @@ if (!empty($avatarJobs)) {
     }
 } else {
     clog('No avatar jobs to poll.');
+}
+
+// ── Poll long_video_jobs (30-Second Ad) ──────────────────────────────────────
+$lvTableExists = false;
+try {
+    $pdo->query('SELECT 1 FROM `long_video_jobs` LIMIT 1');
+    $lvTableExists = true;
+} catch (\Throwable $e) { /* table not yet created */ }
+
+if ($lvTableExists) {
+    $lvStmt = $pdo->prepare(
+        'SELECT * FROM `long_video_jobs`
+         WHERE `status` IN ("queued","clip1","clip2","clip3","stitching")
+         ORDER BY `created_at` ASC
+         LIMIT 10'
+    );
+    $lvStmt->execute();
+    $lvJobs = $lvStmt->fetchAll();
+
+    // Auto-timeout jobs stuck for > 90 minutes (3 clips × ~25 min worst-case)
+    $lvTimeout = $pdo->prepare(
+        'SELECT id, user_id, credit_cost FROM `long_video_jobs`
+         WHERE `status` IN ("queued","clip1","clip2","clip3","stitching")
+           AND `created_at` < DATE_SUB(NOW(), INTERVAL 90 MINUTE)'
+    );
+    $lvTimeout->execute();
+    foreach ($lvTimeout->fetchAll() as $stuck) {
+        clog("30s Ad job #{$stuck['id']} timed out — refunding.");
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare(
+                'UPDATE `long_video_jobs`
+                 SET `status`="failed", `error_message`="Timed out after 90 minutes"
+                 WHERE `id`=?'
+            )->execute([$stuck['id']]);
+            wallet_refund((int)$stuck['user_id'], (float)$stuck['credit_cost'],
+                'long_video_job', (int)$stuck['id'],
+                'Auto-refund: 30s Ad #' . $stuck['id'] . ' timed out');
+            $pdo->prepare(
+                'UPDATE `long_video_jobs` SET `status`="refunded", `refunded_at`=NOW() WHERE `id`=?'
+            )->execute([$stuck['id']]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            clog("  Timeout refund DB error: " . $e->getMessage());
+        }
+    }
+
+    if (!empty($lvJobs)) {
+        clog('Found ' . count($lvJobs) . ' 30s Ad job(s) to advance.');
+        foreach ($lvJobs as $lvJob) {
+            clog("Advancing 30s Ad job #{$lvJob['id']} (status: {$lvJob['status']})");
+            try {
+                lv_advance_job($lvJob, $pdo);
+            } catch (\Throwable $e) {
+                clog("  ERROR advancing job #{$lvJob['id']}: " . $e->getMessage());
+            }
+        }
+    } else {
+        clog('No 30s Ad jobs to advance.');
+    }
 }
 
 // ── Usage summary for this run ────────────────────────────────────────────────

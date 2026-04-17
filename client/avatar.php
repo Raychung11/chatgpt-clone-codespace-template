@@ -305,26 +305,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['_action'])) {
                 if ($audioPath) @unlink($audioPath);
                 $errors['balance'] = $deduct['error'];
             } else {
-                // cv.byteplusapi.com ONLY accepts image_url / audio_url (not base64).
-                // Files must be publicly reachable by BytePlus servers.
-                $portraitName = basename($portraitPath);
-                $imageUrl     = rtrim(BASE_URL, '/') . '/uploads/avatars/' . rawurlencode($portraitName);
-                $audioUrl     = null;
-                if ($audioPath) {
-                    $audioUrl = rtrim(BASE_URL, '/') . '/uploads/avatar_audio/' . rawurlencode(basename($audioPath));
-                }
+                // Send portrait and audio as base64 to avoid URL-accessibility issues
+                // (BytePlus servers may not be able to reach our uploads directory).
+                // NOTE: Do NOT send extra fields — undocumented params cause code 50215.
+                $imageBase64 = omnihuman_file_to_base64($portraitPath) ?? '';
+                $audioBase64 = ($audioPath && $audioMode === 'upload')
+                    ? omnihuman_file_to_base64($audioPath)
+                    : null;
 
-                // OmniHuman 1.5 (realman_avatar_picture_omni15_cv) only accepts:
-                //   req_key, image_url, audio_url (or text for TTS).
-                // Do NOT send extra fields like output_resolution — they are not
-                // documented for this req_key and cause BytePlus to return code 50215.
+                if (!$imageBase64) {
+                    $pdo->rollBack();
+                    @unlink($portraitPath);
+                    if ($audioPath) @unlink($audioPath);
+                    $errors['portrait'] = 'Could not read portrait image file.';
+                } else {
                 $apiResult = omnihuman_create_task(
-                    '',     // imageBase64 — not supported by this req_key
-                    null,   // audioBase64 — not supported by this req_key
+                    $imageBase64,
+                    $audioBase64,
                     $audioMode === 'tts' ? $ttsText : null,
-                    [],     // No extra params — undocumented fields cause 50215
-                    $imageUrl,
-                    $audioUrl
+                    []  // No extra params — undocumented fields cause 50215
                 );
 
                 if ($apiResult['ok']) {
@@ -354,6 +353,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['_action'])) {
                     flash_error('Avatar generation failed: ' . $apiResult['error'] . ' Credits refunded.');
                     redirect(BASE_URL . '/client/avatar.php');
                 }
+                } // end if (!$imageBase64)
             }
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();

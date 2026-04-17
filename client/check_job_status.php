@@ -20,6 +20,33 @@ $user = require_auth('/public/login.php');
 $uid  = (int)$user['id'];
 $pdo  = db();
 
+// ── Long-video status check ───────────────────────────────────────────────────
+$lvId = (int)($_GET['lv'] ?? 0);
+if ($lvId) {
+    $lvRow = $pdo->prepare(
+        'SELECT id, status, clip1_url, clip2_url, clip3_url, final_video_url, error_message
+         FROM `long_video_jobs` WHERE id=? AND user_id=? LIMIT 1'
+    );
+    $lvRow->execute([$lvId, $uid]);
+    $lv = $lvRow->fetch();
+    if (!$lv) { json_response(['ok' => false, 'error' => 'Not found']); }
+    $statusLabels = [
+        'queued'=>'Queued','clip1'=>'Clip 1/3','clip2'=>'Clip 2/3',
+        'clip3'=>'Clip 3/3','stitching'=>'Stitching…',
+        'completed'=>'Completed','failed'=>'Failed','refunded'=>'Refunded',
+    ];
+    json_response([
+        'ok'           => true,
+        'status'       => $lv['status'],
+        'status_label' => $statusLabels[$lv['status']] ?? $lv['status'],
+        'final_url'    => $lv['final_video_url'],
+        'clip1_url'    => $lv['clip1_url'],
+        'clip2_url'    => $lv['clip2_url'],
+        'clip3_url'    => $lv['clip3_url'],
+        'error'        => $lv['error_message'],
+    ]);
+}
+
 $jobId = (int)($_GET['job_id'] ?? 0);
 if (!$jobId) {
     json_response(['ok' => false, 'error' => 'Missing job_id']);
