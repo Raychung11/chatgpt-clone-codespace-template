@@ -260,6 +260,48 @@ body.theme-zen    .footer-dark         .text-white,
 body.theme-zen    .badge               .text-white,
 body.theme-zen    .btn                 .text-white { color: #ffffff !important; }
 
+/* ── Override Bootstrap navbar-dark CSS variables for light themes ──
+   Bootstrap .navbar-dark sets --bs-navbar-color etc. on the element.
+   We override them directly on #mainNav so all Bootstrap components pick up dark colors.
+   ──────────────────────────────────────────────────────────────────────────────── */
+body.theme-bright #mainNav,
+body.theme-zen    #mainNav {
+  --bs-navbar-color:               #374151;
+  --bs-navbar-hover-color:         #111827;
+  --bs-navbar-disabled-color:      #9ca3af;
+  --bs-navbar-active-color:        #111827;
+  --bs-navbar-brand-color:         #111827;
+  --bs-navbar-brand-hover-color:   #000000;
+  --bs-navbar-toggler-border-color: rgba(0,0,0,0.15);
+  --bs-navbar-toggler-icon-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%280%2C0%2C0%2C0.55%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+body.theme-zen #mainNav {
+  --bs-navbar-color:               #4a5568;
+  --bs-navbar-hover-color:         #2d3748;
+  --bs-navbar-active-color:        #2d3748;
+  --bs-navbar-brand-color:         #2d3748;
+  --bs-navbar-brand-hover-color:   #1a202c;
+}
+
+/* btn-outline-light is invisible on light navbar backgrounds — restyle as dark outline */
+body.theme-bright #mainNav .btn-outline-light,
+body.theme-zen    #mainNav .btn-outline-light {
+  --bs-btn-color:              #374151;
+  --bs-btn-border-color:       #6b7280;
+  --bs-btn-hover-color:        #ffffff;
+  --bs-btn-hover-bg:           #374151;
+  --bs-btn-hover-border-color: #374151;
+  --bs-btn-active-color:       #ffffff;
+  --bs-btn-active-bg:          #374151;
+  --bs-btn-active-border-color:#374151;
+}
+body.theme-zen #mainNav .btn-outline-light {
+  --bs-btn-color:              #4a5568;
+  --bs-btn-border-color:       #718096;
+  --bs-btn-hover-bg:           #4a5568;
+  --bs-btn-hover-border-color: #4a5568;
+}
+
 /* Navbar brand stays readable */
 body.theme-bright .navbar-brand,
 body.theme-zen    .navbar-brand { color: #111 !important; }
