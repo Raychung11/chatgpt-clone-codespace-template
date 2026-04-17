@@ -14,6 +14,7 @@ class DB {
             ];
             try {
                 self::$instance = new PDO($dsn, DB_USER, DB_PASS, $options);
+                self::$instance->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
             } catch (PDOException $e) {
                 die(json_encode(['error' => 'Database connection failed: ' . $e->getMessage()]));
             }

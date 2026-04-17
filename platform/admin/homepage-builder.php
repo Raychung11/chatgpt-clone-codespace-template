@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!in_array($theme, $allowed)) $theme = 'dark';
         $existing = DB::fetch("SELECT id FROM settings WHERE `key`='active_theme'");
         if ($existing) {
-            DB::update('settings', ['value' => $theme], 'key=?', ['active_theme']);
+            DB::update('settings', ['value' => $theme], '`key`=?', ['active_theme']);
         } else {
             DB::insert('settings', ['key' => 'active_theme', 'value' => $theme]);
         }
@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         foreach ([['page_sections_order', $orderJson], ['page_sections_visibility', $visJson]] as [$k, $v]) {
             $exists = DB::fetch("SELECT id FROM settings WHERE `key`=?", [$k]);
             if ($exists) {
-                DB::update('settings', ['value' => $v], 'key=?', [$k]);
+                DB::update('settings', ['value' => $v], '`key`=?', [$k]);
             } else {
                 DB::insert('settings', ['key' => $k, 'value' => $v]);
             }
@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $navJson = json_encode($navItems);
         $exists  = DB::fetch("SELECT id FROM settings WHERE `key`='nav_items'");
         if ($exists) {
-            DB::update('settings', ['value' => $navJson], 'key=?', ['nav_items']);
+            DB::update('settings', ['value' => $navJson], '`key`=?', ['nav_items']);
         } else {
             DB::insert('settings', ['key' => 'nav_items', 'value' => $navJson]);
         }
