@@ -242,6 +242,42 @@ body.theme-punk   .form-control:focus, body.theme-punk   .form-select:focus  { b
 body.theme-bright .text-muted { color: #6b7280 !important; }
 body.theme-zen    .text-muted { color: #718096 !important; }
 
+/* ── text-white fix for light themes ────────────────────────────────────────
+   Bootstrap .text-white forces color:#fff !important.
+   On light backgrounds this makes text invisible.
+   Override globally, then RESTORE white inside known dark-bg containers.
+   ──────────────────────────────────────────────────────────────────────── */
+body.theme-bright .text-white { color: #111827 !important; }
+body.theme-zen    .text-white { color: #1a202c !important; }
+
+/* Restore inside dark-background containers that stay dark even in light themes */
+body.theme-bright .pricing-sticky-card .text-white,
+body.theme-bright .footer-dark         .text-white,
+body.theme-bright .badge               .text-white,
+body.theme-bright .btn                 .text-white,
+body.theme-zen    .pricing-sticky-card .text-white,
+body.theme-zen    .footer-dark         .text-white,
+body.theme-zen    .badge               .text-white,
+body.theme-zen    .btn                 .text-white { color: #ffffff !important; }
+
+/* Navbar brand stays readable */
+body.theme-bright .navbar-brand,
+body.theme-zen    .navbar-brand { color: #111 !important; }
+
+/* Page header (breadcrumbs + section headings) */
+body.theme-bright .page-header,
+body.theme-zen    .page-header {
+  background: linear-gradient(180deg, rgba(99,102,241,0.05) 0%, transparent 100%),
+              var(--theme-bg) !important;
+  border-bottom-color: var(--theme-border) !important;
+}
+body.theme-bright .breadcrumb-item,
+body.theme-bright .breadcrumb-item a,
+body.theme-zen    .breadcrumb-item,
+body.theme-zen    .breadcrumb-item a { color: #6b7280 !important; }
+body.theme-bright .breadcrumb-item.active,
+body.theme-zen    .breadcrumb-item.active { color: #374151 !important; }
+
 /* Glass card overrides */
 body.theme-bright .glass-card { background:rgba(255,255,255,0.85) !important; box-shadow:0 4px 24px rgba(0,0,0,0.08) !important; }
 body.theme-zen    .glass-card { background:rgba(255,255,255,0.75) !important; box-shadow:0 4px 24px rgba(5,150,105,0.08) !important; border-radius:16px !important; }
