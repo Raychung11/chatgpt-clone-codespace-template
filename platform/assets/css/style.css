@@ -11,6 +11,19 @@
   --bg-section: #0d0d14;
   --border: rgba(255,255,255,0.08);
   --text-muted: #6b7280;
+
+  /* Override Bootstrap 5 CSS variables for dark theme */
+  --bs-body-color:        #e5e7eb;
+  --bs-body-bg:           #0a0a0f;
+  --bs-heading-color:     #ffffff;
+  --bs-link-color:        #818cf8;
+  --bs-link-hover-color:  #a5b4fc;
+  --bs-border-color:      rgba(255,255,255,0.08);
+  --bs-secondary-color:   #9ca3af;
+  --bs-tertiary-color:    #6b7280;
+  --bs-secondary-bg:      #111118;
+  --bs-tertiary-bg:       #16161e;
+  --bs-emphasis-color:    #ffffff;
 }
 
 /* Base */
@@ -22,6 +35,41 @@ body {
   color: #e5e7eb;
   min-height: 100vh;
 }
+
+/* Force all headings white */
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+  color: #ffffff;
+}
+
+/* Paragraphs and base text */
+p, li, td, th, label, span:not(.badge):not(.nav-link), div {
+  color: inherit;
+}
+
+/* Bootstrap table defaults */
+.table { color: #e5e7eb; }
+.table > :not(caption) > * > * { color: inherit; background-color: transparent; }
+
+/* Bootstrap list-group */
+.list-group-item { background-color: var(--bg-card); color: #e5e7eb; border-color: var(--border); }
+
+/* Bootstrap modal */
+.modal-content { background-color: var(--bg-card); color: #e5e7eb; border-color: var(--border); }
+.modal-header, .modal-footer { border-color: var(--border); }
+
+/* Bootstrap dropdown */
+.dropdown-menu { background-color: var(--bg-card2); border-color: var(--border); }
+.dropdown-item { color: #e5e7eb; }
+.dropdown-item:hover { background-color: rgba(255,255,255,0.06); color: #fff; }
+
+/* Bootstrap alerts */
+.alert-success { --bs-alert-color: #d1fae5; --bs-alert-bg: rgba(5,150,105,0.15); --bs-alert-border-color: rgba(5,150,105,0.3); }
+.alert-danger  { --bs-alert-color: #fecaca; --bs-alert-bg: rgba(239,68,68,0.15);  --bs-alert-border-color: rgba(239,68,68,0.3); }
+.alert-warning { --bs-alert-color: #fef3c7; --bs-alert-bg: rgba(245,158,11,0.15); --bs-alert-border-color: rgba(245,158,11,0.3); }
+.alert-info    { --bs-alert-color: #bfdbfe; --bs-alert-bg: rgba(59,130,246,0.15); --bs-alert-border-color: rgba(59,130,246,0.3); }
+
+/* Close button */
+.btn-close { filter: invert(1); }
 
 /* ── Navbar ── */
 #mainNav {
