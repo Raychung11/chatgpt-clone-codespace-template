@@ -42,7 +42,7 @@ if (!$job || !$job['cdn_url']) {
     die('Video not found or not ready yet.');
 }
 
-$siteName  = setting('site_name', 'VideoSaaS');
+$siteName  = setting('site_name', 'Motions');
 $shareUrl  = BASE_URL . '/client/share.php?job_id=' . $jobId;
 $videoUrl  = $job['cdn_url'];
 $thumbUrl  = $job['thumbnail'] ?: '';

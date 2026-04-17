@@ -37,7 +37,7 @@ function social_generate_caption(string $prompt, string $platform = 'generic'): 
     ];
     $cta = $ctas[abs(crc32($prompt)) % count($ctas)];
 
-    $siteName = defined('APP_ENV') ? (setting('site_name', 'VideoSaaS') ?: 'VideoSaaS') : 'VideoSaaS';
+    $siteName = defined('APP_ENV') ? (setting('site_name', 'Motions') ?: 'Motions') : 'Motions';
 
     return match ($platform) {
         'twitter'  => mb_substr("🎬 {$snippet} {$cta}", 0, 240),

@@ -13,7 +13,8 @@ declare(strict_types=1);
  */
 function render_client_navbar(array $user, string $active = ''): void
 {
-    $balance = format_credits(wallet_balance((int)$user['id']));
+    $balance   = format_credits(wallet_balance((int)$user['id']));
+    $siteName  = function_exists('setting') ? (setting('site_name', 'Motions') ?: 'Motions') : 'Motions';
     $nav = [
         'dashboard'   => ['label' => 'Dashboard',  'url' => BASE_URL . '/client/dashboard.php'],
         'generate'    => ['label' => 'Generate',   'url' => BASE_URL . '/client/generate.php'],
@@ -27,7 +28,7 @@ function render_client_navbar(array $user, string $active = ''): void
     ?>
     <nav class="navbar">
         <div class="navbar-inner">
-            <a href="<?= BASE_URL ?>/client/dashboard.php" class="navbar-brand">Video<span>SaaS</span></a>
+            <a href="<?= BASE_URL ?>/client/dashboard.php" class="navbar-brand"><?= e($siteName) ?></a>
             <ul class="navbar-nav">
                 <?php foreach ($nav as $key => $item): ?>
                     <li>
@@ -71,7 +72,8 @@ function render_admin_navbar(array $admin): void
     ?>
     <nav class="navbar">
         <div class="navbar-inner">
-            <a href="<?= BASE_URL ?>/admin/index.php" class="navbar-brand">Video<span>SaaS</span>
+            <a href="<?= BASE_URL ?>/admin/index.php" class="navbar-brand">
+                <?= e(function_exists('setting') ? (setting('site_name','Motions') ?: 'Motions') : 'Motions') ?>
                 <span style="font-size:.7rem;color:var(--color-primary);margin-left:6px;font-weight:400">Admin</span>
             </a>
             <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">

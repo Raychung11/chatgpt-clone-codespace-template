@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 /**
  * public/index.php
- * Landing page — redirect to login or dashboard.
+ * Landing page — motions.my
  */
 
 require_once __DIR__ . '/../config/config.php';
@@ -13,11 +13,11 @@ require_once __DIR__ . '/../inc/auth.php';
 
 boot_session();
 
-// Auto-redirect logged-in users to their dashboard
+// Auto-redirect logged-in users
 if (auth_user())  redirect(BASE_URL . '/client/dashboard.php');
 if (auth_admin()) redirect(BASE_URL . '/admin/index.php');
 
-$siteName = setting('site_name', 'VideoSaaS');
+$siteName = setting('site_name', 'Motions');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -25,63 +25,222 @@ $siteName = setting('site_name', 'VideoSaaS');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($siteName) ?> — AI Marketing Video Generator</title>
+    <meta name="description" content="Create stunning AI marketing videos in seconds. Turn your brief into professional ads powered by BytePlus Seedance AI.">
     <link rel="stylesheet" href="assets/css/main.css">
+    <style>
+        .hero {
+            text-align: center;
+            padding: 90px 16px 70px;
+            background: radial-gradient(ellipse at 50% -10%, rgba(108,71,255,.25) 0%, transparent 65%);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236c47ff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+        .hero-badge {
+            display: inline-block;
+            background: rgba(108,71,255,.15);
+            border: 1px solid rgba(108,71,255,.35);
+            border-radius: 20px;
+            padding: 6px 18px;
+            font-size: .82rem;
+            color: var(--color-primary);
+            margin-bottom: 24px;
+            letter-spacing: .02em;
+        }
+        .hero h1 {
+            font-size: clamp(2.2rem, 6vw, 4rem);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 22px;
+            letter-spacing: -.02em;
+        }
+        .hero h1 .accent { color: var(--color-primary); }
+        .hero p {
+            font-size: 1.1rem;
+            color: var(--color-muted);
+            max-width: 500px;
+            margin: 0 auto 36px;
+            line-height: 1.65;
+        }
+        .hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+        /* Stats row */
+        .stats { display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; padding: 40px 16px; border-bottom: 1px solid var(--color-border); }
+        .stat { text-align: center; }
+        .stat-num { font-size: 1.8rem; font-weight: 800; color: var(--color-text); }
+        .stat-label { font-size: .8rem; color: var(--color-muted); margin-top: 2px; }
+
+        /* Features */
+        .features { padding: 70px 16px; }
+        .features-title { text-align: center; font-size: 1.7rem; font-weight: 800; margin-bottom: 10px; }
+        .features-sub { text-align: center; color: var(--color-muted); margin-bottom: 48px; }
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; max-width: 960px; margin: 0 auto; }
+        .feature-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg, 12px); padding: 24px; transition: border-color .2s, transform .2s; }
+        .feature-card:hover { border-color: var(--color-primary); transform: translateY(-2px); }
+        .feature-icon { font-size: 2rem; margin-bottom: 14px; }
+        .feature-title { font-weight: 700; margin-bottom: 8px; }
+        .feature-desc { color: var(--color-muted); font-size: .88rem; line-height: 1.6; }
+
+        /* How it works */
+        .how { padding: 70px 16px; background: var(--color-surface); border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+        .how-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 30px; max-width: 800px; margin: 0 auto; }
+        .how-step { text-align: center; }
+        .how-num { width: 40px; height: 40px; border-radius: 50%; background: var(--color-primary); color: #fff; font-weight: 800; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+        .how-title { font-weight: 700; margin-bottom: 6px; }
+        .how-desc { font-size: .85rem; color: var(--color-muted); line-height: 1.5; }
+
+        /* Pricing teaser */
+        .pricing { padding: 70px 16px; text-align: center; }
+        .credit-card { display: inline-block; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg, 12px); padding: 32px 40px; margin-top: 32px; min-width: 280px; }
+
+        /* Footer */
+        footer { text-align: center; padding: 28px 16px; border-top: 1px solid var(--color-border); color: var(--color-muted); font-size: .85rem; }
+        footer a { color: var(--color-muted); margin: 0 8px; }
+        footer a:hover { color: var(--color-text); }
+    </style>
 </head>
 <body>
+
+<!-- ── Navbar ── -->
 <nav class="navbar">
     <div class="navbar-inner">
-        <span class="navbar-brand">Video<span>SaaS</span></span>
-        <ul class="navbar-nav" style="display:flex">
-            <li><a href="login.php">Sign In</a></li>
-            <li><a href="register.php" class="btn btn-primary btn-sm" style="margin-left:8px">Get Started</a></li>
+        <a href="<?= BASE_URL ?>/" class="navbar-brand"><?= e($siteName) ?></a>
+        <ul class="navbar-nav" style="display:flex;margin-left:auto">
+            <li><a href="login.php" style="color:var(--color-muted);font-size:.9rem">Sign In</a></li>
+            <li>
+                <a href="register.php" class="btn btn-primary btn-sm" style="margin-left:10px">
+                    Get Started Free →
+                </a>
+            </li>
         </ul>
     </div>
 </nav>
 
-<div style="text-align:center;padding:80px 16px 60px;
-            background:radial-gradient(ellipse at 50% 0%,rgba(108,71,255,.2) 0%,transparent 70%)">
-    <div style="display:inline-block;background:rgba(108,71,255,.15);border:1px solid rgba(108,71,255,.3);
-                border-radius:20px;padding:6px 18px;font-size:.85rem;color:var(--color-primary);margin-bottom:20px">
-        Powered by BytePlus / Bytedance AI
-    </div>
-    <h1 style="font-size:clamp(2rem,5vw,3.5rem);font-weight:900;line-height:1.15;margin-bottom:20px">
+<!-- ── Hero ── -->
+<section class="hero">
+    <div class="hero-badge">🇲🇾 Made for Malaysian Marketers</div>
+    <h1>
         Create AI Marketing Videos<br>
-        <span style="color:var(--color-primary)">in Seconds</span>
+        <span class="accent">in Seconds, Not Days</span>
     </h1>
-    <p style="font-size:1.1rem;color:var(--color-muted);max-width:520px;margin:0 auto 32px">
-        Turn your marketing brief into stunning videos. Pay only for what you generate — with our flexible credit system.
+    <p>
+        Turn your product brief into stunning video ads powered by
+        BytePlus Seedance 1.5 — the same AI used by the world's top brands.
+        No editing skills needed.
     </p>
-    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-        <a href="register.php" class="btn btn-primary btn-lg">Start Free →</a>
+    <div class="hero-cta">
+        <a href="register.php" class="btn btn-primary btn-lg">Start Free — No Card Required</a>
         <a href="login.php"    class="btn btn-ghost btn-lg">Sign In</a>
     </div>
+</section>
+
+<!-- ── Stats ── -->
+<div class="stats">
+    <div class="stat"><div class="stat-num">10s–30s</div><div class="stat-label">Video length</div></div>
+    <div class="stat"><div class="stat-num">720p–1080p</div><div class="stat-label">HD quality</div></div>
+    <div class="stat"><div class="stat-num">5–30 min</div><div class="stat-label">Generation time</div></div>
+    <div class="stat"><div class="stat-num">100%</div><div class="stat-label">Auto-refund if failed</div></div>
 </div>
 
-<!-- Features grid -->
-<div class="container" style="padding-bottom:60px">
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;margin-top:60px">
+<!-- ── Features ── -->
+<section class="features">
+    <div class="features-title">Everything you need to produce great video ads</div>
+    <p class="features-sub">From single-clip promos to full 30-second brand stories</p>
+    <div class="features-grid">
         <?php
         $features = [
-            ['⚡', 'Credit-based',  'Buy only what you need. No subscriptions, no surprises.'],
-            ['🎬', 'AI Video Gen',  'BytePlus 1.5 generates professional marketing videos from text.'],
-            ['💳', 'Easy Payments', 'Bank transfer with instant admin approval.'],
-            ['🔗', 'Referral Rewards', 'Invite friends and earn free credits automatically.'],
-            ['📱', 'Social Sharing', 'Share videos directly to WhatsApp, Facebook, X, and more.'],
-            ['🛡️', 'Secure & Reliable', 'Auto-refund if generation fails. Your credits are safe.'],
+            ['🎬', 'Text-to-Video',      'Write a prompt, pick a duration — Seedance 1.5 does the rest. 720p or 1080p.'],
+            ['🧑‍🎤', 'AI Avatar',          'Upload a portrait + voice, get a talking-head spokesperson video in minutes.'],
+            ['📹', '30-Second Ads',       'Chain 3 clips with first-frame continuity into one seamless 30s brand story.'],
+            ['✨', 'AI Prompt Helper',    'Not sure what to write? Our LLM rewrites your brief into a cinematic prompt.'],
+            ['📝', 'Ready Templates',     '10+ fill-in-the-blank video templates: F&B, beauty, real estate & more.'],
+            ['💳', 'Credit System',       'Buy only what you need. No monthly fees. Credits never expire.'],
+            ['🔗', 'Referral Rewards',    'Share your link, earn 10% of every purchase your referrals make.'],
+            ['🔒', 'Safe & Reliable',     'Credits auto-refunded if any generation fails. Zero risk.'],
         ];
         foreach ($features as [$icon, $title, $desc]):
         ?>
-        <div class="card" style="text-align:center">
-            <div style="font-size:2rem;margin-bottom:12px"><?= $icon ?></div>
-            <div style="font-weight:700;margin-bottom:8px"><?= e($title) ?></div>
-            <div class="text-muted text-sm"><?= e($desc) ?></div>
+        <div class="feature-card">
+            <div class="feature-icon"><?= $icon ?></div>
+            <div class="feature-title"><?= e($title) ?></div>
+            <div class="feature-desc"><?= e($desc) ?></div>
         </div>
-        <?php endforeach; ?>
+        <?php endforeach ?>
     </div>
-</div>
+</section>
 
-<footer style="text-align:center;padding:24px;border-top:1px solid var(--color-border);color:var(--color-muted);font-size:.85rem">
-    © <?= date('Y') ?> <?= e($siteName) ?>. All rights reserved.
+<!-- ── How it works ── -->
+<section class="how">
+    <div style="text-align:center;margin-bottom:48px">
+        <div class="features-title">How it works</div>
+        <p class="features-sub" style="margin-bottom:0">From idea to video in 4 simple steps</p>
+    </div>
+    <div class="how-grid">
+        <div class="how-step">
+            <div class="how-num">1</div>
+            <div class="how-title">Register & top up</div>
+            <div class="how-desc">Create a free account, purchase a credit package via bank transfer.</div>
+        </div>
+        <div class="how-step">
+            <div class="how-num">2</div>
+            <div class="how-title">Write your brief</div>
+            <div class="how-desc">Choose a template or write your own prompt. AI will polish it for you.</div>
+        </div>
+        <div class="how-step">
+            <div class="how-num">3</div>
+            <div class="how-title">Generate</div>
+            <div class="how-desc">Hit submit — Seedance 1.5 renders your video. Usually ready in 5–30 min.</div>
+        </div>
+        <div class="how-step">
+            <div class="how-num">4</div>
+            <div class="how-title">Download & share</div>
+            <div class="how-desc">Download your MP4 and share directly to WhatsApp, Facebook, or TikTok.</div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Pricing teaser ── -->
+<section class="pricing">
+    <div class="features-title">Simple, pay-as-you-go pricing</div>
+    <p class="features-sub">No subscriptions. No hidden fees. Credits never expire.</p>
+    <div class="credit-card">
+        <div style="font-size:.85rem;color:var(--color-muted);margin-bottom:16px;text-transform:uppercase;letter-spacing:.06em">Typical costs</div>
+        <?php
+        $plans = [
+            ['5s video (HD)',   '5 credits'],
+            ['10s video (HD)',  '35 credits'],
+            ['AI Avatar 10s',  '5 credits'],
+            ['30s Ad (3 clips)', '105 credits'],
+        ];
+        foreach ($plans as [$item, $cost]):
+        ?>
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--color-border);font-size:.9rem">
+            <span><?= e($item) ?></span>
+            <span style="font-weight:700;color:var(--color-primary)"><?= e($cost) ?></span>
+        </div>
+        <?php endforeach ?>
+        <div style="margin-top:24px">
+            <a href="register.php" class="btn btn-primary" style="width:100%">Start Free →</a>
+        </div>
+    </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+    <div style="margin-bottom:8px">
+        © <?= date('Y') ?> <?= e($siteName) ?> &nbsp;·&nbsp; motions.my
+    </div>
+    <div>
+        <a href="login.php">Sign In</a>
+        <a href="register.php">Register</a>
+    </div>
 </footer>
+
 </body>
 </html>

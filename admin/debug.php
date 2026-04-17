@@ -151,7 +151,7 @@ $failed = $total - $passed;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Debug — <?= e(setting('site_name','VideoSaaS')) ?></title>
+    <title>System Debug — <?= e(setting('site_name','Motions')) ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/public/assets/css/main.css">
     <style>
         .check-row { display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid var(--color-border); }

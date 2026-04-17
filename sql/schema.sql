@@ -313,7 +313,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- Default settings
 INSERT INTO `settings` (`key`, `value`, `type`, `label`, `group`) VALUES
-('site_name',            'VideoSaaS',                          'string',  'Site Name',                    'general'),
+('site_name',            'Motions',                          'string',  'Site Name',                    'general'),
 ('site_url',             'https://example.com',                'string',  'Site URL',                     'general'),
 ('support_email',        'support@example.com',                'string',  'Support Email',                'general'),
 ('currency',             'MYR',                                'string',  'Currency Code',                'general'),
@@ -323,7 +323,7 @@ INSERT INTO `settings` (`key`, `value`, `type`, `label`, `group`) VALUES
 ('byteplus_api_url',        'https://ark.ap-southeast.bytepluses.com/api/v3', 'string',  'BytePlus API Base URL',                   'api'),
 ('referral_reward_credits','10.00',                            'float',   'Referral Reward (credits)',    'referral'),
 ('mail_driver',          'mail',                               'string',  'Mail Driver (mail or smtp)',    'email'),
-('mail_from_name',       'VideoSaaS',                          'string',  'Mail From Name',               'email'),
+('mail_from_name',       'Motions',                          'string',  'Mail From Name',               'email'),
 ('mail_from_email',      'noreply@example.com',                'string',  'Mail From Email',              'email'),
 ('smtp_host',            'smtp.mailtrap.io',                   'string',  'SMTP Host',                    'email'),
 ('smtp_port',            '587',                                'integer', 'SMTP Port',                    'email'),

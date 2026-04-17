@@ -25,7 +25,7 @@ declare(strict_types=1);
 function mail_send(string $to, string $subject, string $body, string $altBody = ''): bool
 {
     $driver   = setting('mail_driver', 'mail');
-    $fromName = setting('mail_from_name',  setting('site_name', 'VideoSaaS'));
+    $fromName = setting('mail_from_name',  setting('site_name', 'Motions'));
     $fromAddr = setting('mail_from_email', 'noreply@' . parse_url(BASE_URL, PHP_URL_HOST));
 
     // ── PHPMailer SMTP path ───────────────────────────────────────────────────
@@ -91,7 +91,7 @@ function mail_send_smtp(
  */
 function mail_template(string $heading, string $content, string $cta_url = '', string $cta_label = ''): string
 {
-    $siteName = setting('site_name', 'VideoSaaS');
+    $siteName = setting('site_name', 'Motions');
     $siteUrl  = setting('site_url',  BASE_URL);
     $year     = date('Y');
     $btn      = $cta_url
@@ -156,7 +156,7 @@ function mail_password_reset(string $to, string $name, string $resetUrl): bool
         <p>If you didn't request this, you can safely ignore this email.</p>
     ";
     $body = mail_template('Password Reset Request', $content, $resetUrl, 'Reset My Password');
-    return mail_send($to, 'Password Reset — ' . setting('site_name','VideoSaaS'), $body);
+    return mail_send($to, 'Password Reset — ' . setting('site_name','Motions'), $body);
 }
 
 /**
@@ -185,7 +185,7 @@ function mail_payment_received(string $to, string $name, float $amount, float $c
         <p>Credits will be added to your wallet once our team approves your payment (usually within 1 business day).</p>
     ";
     $body = mail_template('Payment Received', $content, BASE_URL . '/client/wallet.php', 'View Wallet');
-    return mail_send($to, 'Payment Received #' . $orderId . ' — ' . setting('site_name','VideoSaaS'), $body);
+    return mail_send($to, 'Payment Received #' . $orderId . ' — ' . setting('site_name','Motions'), $body);
 }
 
 /**
@@ -200,7 +200,7 @@ function mail_payment_approved(string $to, string $name, float $credits, int $or
         <p>You can now generate AI marketing videos. Head to the dashboard to get started!</p>
     ";
     $body = mail_template('Payment Approved!', $content, BASE_URL . '/client/generate.php', 'Generate Now');
-    return mail_send($to, 'Credits Added — ' . setting('site_name','VideoSaaS'), $body);
+    return mail_send($to, 'Credits Added — ' . setting('site_name','Motions'), $body);
 }
 
 /**
@@ -217,7 +217,7 @@ function mail_payment_rejected(string $to, string $name, string $reason, int $or
         <p>Please resubmit with the correct receipt or contact support if you believe this is an error.</p>
     ";
     $body = mail_template('Payment Not Approved', $content, BASE_URL . '/client/buy-credits.php', 'Resubmit Payment');
-    return mail_send($to, 'Payment Update — ' . setting('site_name','VideoSaaS'), $body);
+    return mail_send($to, 'Payment Update — ' . setting('site_name','Motions'), $body);
 }
 
 /**
@@ -235,7 +235,7 @@ function mail_referral_reward(string $to, string $name, float $credits, string $
         <p>Your credits have been added to your wallet automatically. Keep sharing to earn more!</p>
     ";
     $body = mail_template('You Earned a Referral Reward!', $content, BASE_URL . '/client/referral.php', 'View Referrals');
-    return mail_send($to, 'Referral Reward Earned — ' . setting('site_name','VideoSaaS'), $body);
+    return mail_send($to, 'Referral Reward Earned — ' . setting('site_name','Motions'), $body);
 }
 
 /**
@@ -248,5 +248,5 @@ function mail_video_completed(string $to, string $name, int $jobId): bool
         <p>Your AI marketing video <strong>#$jobId</strong> is ready! Head to your history to preview, download, and share it.</p>
     ";
     $body = mail_template('Your Video is Ready!', $content, BASE_URL . '/client/history.php', 'View Video');
-    return mail_send($to, 'Video Ready — ' . setting('site_name','VideoSaaS'), $body);
+    return mail_send($to, 'Video Ready — ' . setting('site_name','Motions'), $body);
 }

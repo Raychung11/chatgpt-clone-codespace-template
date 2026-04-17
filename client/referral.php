@@ -35,7 +35,8 @@ $totalRefs    = count($referrals);
 $rewardedRefs = count(array_filter($referrals, fn($r) => $r['status'] === 'rewarded'));
 $earned       = $rewardedRefs * (float)$rewardCredit;
 
-$waText = urlencode("Hey! I'm using VideoSaaS to create AI marketing videos. Sign up with my link and we both get bonus credits: $referralUrl");
+$siteName     = setting('site_name', 'Motions');
+$waText = urlencode("Hey! I'm using {$siteName} to create AI marketing videos. Sign up with my referral link and we both get bonus credits: $referralUrl");
 $waUrl  = "https://wa.me/?text=$waText";
 ?>
 <!DOCTYPE html>
@@ -43,7 +44,7 @@ $waUrl  = "https://wa.me/?text=$waText";
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Referral — <?= e(setting('site_name','VideoSaaS')) ?></title>
+    <title>Referral — <?= e(setting('site_name','Motions')) ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/public/assets/css/main.css">
 </head>
 <body>

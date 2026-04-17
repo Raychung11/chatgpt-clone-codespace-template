@@ -144,7 +144,7 @@ $shareBase = BASE_URL . '/client/share.php?job_id=';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video History — <?= e(setting('site_name','VideoSaaS')) ?></title>
+    <title>Video History — <?= e(setting('site_name','Motions')) ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/public/assets/css/main.css">
     <style>
         .video-card { margin-bottom: 16px; }

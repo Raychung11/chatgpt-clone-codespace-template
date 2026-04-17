@@ -134,7 +134,7 @@ $statusBadge = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Jobs — <?= e(setting('site_name','VideoSaaS')) ?></title>
+    <title>Video Jobs — <?= e(setting('site_name','Motions')) ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/public/assets/css/main.css">
     <style>
         .thumb { width:80px;height:45px;object-fit:cover;border-radius:4px;

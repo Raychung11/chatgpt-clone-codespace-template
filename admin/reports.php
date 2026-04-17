@@ -110,7 +110,7 @@ $kpi['credits_balance'] = $kpi['credits_sold'] - $kpi['credits_used']; // unused
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reports — <?= e(setting('site_name','VideoSaaS')) ?></title>
+    <title>Reports — <?= e(setting('site_name','Motions')) ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/public/assets/css/main.css">
 </head>
 <body>

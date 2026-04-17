@@ -22,8 +22,15 @@ define('INC_PATH',    BASE_PATH . '/inc');
 define('UPLOAD_PATH', BASE_PATH . '/uploads');
 define('PUBLIC_PATH', BASE_PATH . '/public');
 
-// ── URL (set to your domain) ─────────────────────────────────────────────────
-define('BASE_URL', rtrim(getenv('APP_URL') ?: 'http://localhost', '/'));
+// ── URL (set APP_URL env var on production, or auto-detected from server host) ─
+if (getenv('APP_URL')) {
+    define('BASE_URL', rtrim(getenv('APP_URL'), '/'));
+} elseif (isset($_SERVER['HTTP_HOST'])) {
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    define('BASE_URL', $scheme . '://' . $_SERVER['HTTP_HOST']);
+} else {
+    define('BASE_URL', 'http://localhost');
+}
 
 // ── Database ─────────────────────────────────────────────────────────────────
 define('DB_HOST',    getenv('DB_HOST')    ?: '127.0.0.1');
