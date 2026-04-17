@@ -99,6 +99,95 @@ $siteName = setting('site_name', 'Motions');
         .pricing { padding: 70px 16px; text-align: center; }
         .credit-card { display: inline-block; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg, 12px); padding: 32px 40px; margin-top: 32px; min-width: 280px; }
 
+        /* ── Video showcase ── */
+        .showcase { padding: 70px 16px; background: var(--color-surface); border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+        .showcase-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            max-width: 1040px;
+            margin: 40px auto 0;
+        }
+        @media (max-width: 900px) { .showcase-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 540px) { .showcase-grid { grid-template-columns: 1fr; } }
+
+        .vid-card {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            background: var(--color-surface2);
+            border: 1px solid var(--color-border);
+            cursor: pointer;
+            transition: transform .25s, box-shadow .25s;
+        }
+        .vid-card:hover { transform: scale(1.03); box-shadow: 0 16px 48px rgba(0,0,0,.5); }
+
+        .vid-card video {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        /* Animated gradient placeholder shown when no video src is set */
+        .vid-card .vid-placeholder {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background-size: 300% 300%;
+            animation: gradShift 5s ease infinite;
+        }
+        .vid-card video[src]:not([src=""]) ~ .vid-placeholder { display: none; }
+        .vid-card .vid-play {
+            width: 52px; height: 52px; border-radius: 50%;
+            background: rgba(255,255,255,.18);
+            border: 2px solid rgba(255,255,255,.5);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem;
+            backdrop-filter: blur(4px);
+            transition: background .2s;
+        }
+        .vid-card:hover .vid-play { background: rgba(108,71,255,.7); border-color: transparent; }
+        .vid-card .vid-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,.7) 0%, transparent 55%);
+            pointer-events: none;
+        }
+        .vid-card .vid-meta {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            padding: 14px 14px 12px;
+            display: flex; align-items: flex-end; justify-content: space-between;
+        }
+        .vid-badge {
+            font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+            background: rgba(108,71,255,.85); color: #fff;
+            padding: 3px 9px; border-radius: 20px;
+            backdrop-filter: blur(4px);
+        }
+        .vid-dur {
+            font-size: .72rem; color: rgba(255,255,255,.75);
+            background: rgba(0,0,0,.4); padding: 2px 7px; border-radius: 4px;
+        }
+        @keyframes gradShift {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        /* Full-screen lightbox */
+        .vid-lightbox {
+            display: none; position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,.92);
+            align-items: center; justify-content: center;
+        }
+        .vid-lightbox.open { display: flex; }
+        .vid-lightbox video { max-width: 92vw; max-height: 85vh; border-radius: 10px; outline: none; }
+        .vid-lightbox-close {
+            position: absolute; top: 20px; right: 28px;
+            font-size: 2.2rem; color: #fff; cursor: pointer; line-height: 1;
+            opacity: .7; transition: opacity .15s;
+        }
+        .vid-lightbox-close:hover { opacity: 1; }
+
         /* Footer */
         footer { text-align: center; padding: 28px 16px; border-top: 1px solid var(--color-border); color: var(--color-muted); font-size: .85rem; }
         footer a { color: var(--color-muted); margin: 0 8px; }
@@ -146,6 +235,62 @@ $siteName = setting('site_name', 'Motions');
     <div class="stat"><div class="stat-num">720p–1080p</div><div class="stat-label">HD quality</div></div>
     <div class="stat"><div class="stat-num">5–30 min</div><div class="stat-label">Generation time</div></div>
     <div class="stat"><div class="stat-num">100%</div><div class="stat-label">Auto-refund if failed</div></div>
+</div>
+
+<!-- ── Video Showcase ── -->
+<?php
+/*
+ * DEMO VIDEOS — paste your BytePlus CDN video URLs here.
+ * Leave 'src' as '' to show the animated placeholder.
+ * 'poster' is the thumbnail image shown before the video plays.
+ */
+$showcaseVideos = [
+    ['label'=>'F&B',        'dur'=>'10s', 'src'=>'', 'poster'=>'', 'grad'=>'linear-gradient(135deg,#f97316,#ea580c,#9a3412)'],
+    ['label'=>'Beauty',     'dur'=>'10s', 'src'=>'', 'poster'=>'', 'grad'=>'linear-gradient(135deg,#ec4899,#db2777,#9d174d)'],
+    ['label'=>'Real Estate','dur'=>'10s', 'src'=>'', 'poster'=>'', 'grad'=>'linear-gradient(135deg,#6c47ff,#4f46e5,#3730a3)'],
+    ['label'=>'Automotive', 'dur'=>'10s', 'src'=>'', 'poster'=>'', 'grad'=>'linear-gradient(135deg,#64748b,#334155,#0f172a)'],
+    ['label'=>'Fashion',    'dur'=>'10s', 'src'=>'', 'poster'=>'', 'grad'=>'linear-gradient(135deg,#a855f7,#7c3aed,#4c1d95)'],
+    ['label'=>'Tech',       'dur'=>'10s', 'src'=>'', 'poster'=>'', 'grad'=>'linear-gradient(135deg,#06b6d4,#0891b2,#164e63)'],
+];
+?>
+<section class="showcase">
+    <div style="text-align:center">
+        <div class="features-title">See what Motions creates</div>
+        <p class="features-sub" style="margin-bottom:0">AI-generated marketing videos — ready in minutes</p>
+    </div>
+
+    <div class="showcase-grid">
+        <?php foreach ($showcaseVideos as $i => $v): ?>
+        <div class="vid-card" onclick="openVidLight(<?= $i ?>)">
+            <?php if ($v['src']): ?>
+                <video src="<?= e($v['src']) ?>"
+                       <?= $v['poster'] ? 'poster="'.e($v['poster']).'"' : '' ?>
+                       muted loop playsinline preload="none"
+                       id="showcase-vid-<?= $i ?>"></video>
+            <?php endif ?>
+            <div class="vid-placeholder" style="background:<?= $v['grad'] ?>">
+                <div class="vid-play">▶</div>
+            </div>
+            <div class="vid-overlay"></div>
+            <div class="vid-meta">
+                <span class="vid-badge"><?= e($v['label']) ?></span>
+                <span class="vid-dur"><?= e($v['dur']) ?></span>
+            </div>
+        </div>
+        <?php endforeach ?>
+    </div>
+
+    <div style="text-align:center;margin-top:36px">
+        <a href="<?= BASE_URL ?>/public/register.php" class="btn btn-primary btn-lg">
+            Create your own video →
+        </a>
+    </div>
+</section>
+
+<!-- Lightbox -->
+<div class="vid-lightbox" id="vidLightbox" onclick="closeVidLight()">
+    <span class="vid-lightbox-close" onclick="closeVidLight()">✕</span>
+    <video id="vidLightboxPlayer" controls playsinline></video>
 </div>
 
 <!-- ── Features ── -->
@@ -242,5 +387,35 @@ $siteName = setting('site_name', 'Motions');
     </div>
 </footer>
 
+<script>
+// ── Showcase video hover-play ─────────────────────────────────────────────────
+document.querySelectorAll('.vid-card').forEach(card => {
+    const vid = card.querySelector('video');
+    if (!vid || !vid.src) return;
+    card.addEventListener('mouseenter', () => { vid.play().catch(() => {}); });
+    card.addEventListener('mouseleave', () => { vid.pause(); vid.currentTime = 0; });
+});
+
+// ── Lightbox ──────────────────────────────────────────────────────────────────
+const showcaseSrcs = <?= json_encode(array_column($showcaseVideos, 'src')) ?>;
+const lightbox  = document.getElementById('vidLightbox');
+const lbPlayer  = document.getElementById('vidLightboxPlayer');
+
+function openVidLight(idx) {
+    const src = showcaseSrcs[idx];
+    if (!src) return; // placeholder — no video yet
+    lbPlayer.src = src;
+    lbPlayer.play().catch(() => {});
+    lightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function closeVidLight() {
+    lbPlayer.pause();
+    lbPlayer.src = '';
+    lightbox.classList.remove('open');
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVidLight(); });
+</script>
 </body>
 </html>
