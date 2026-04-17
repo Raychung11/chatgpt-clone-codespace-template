@@ -36,9 +36,9 @@ body {
   min-height: 100vh;
 }
 
-/* Force all headings white */
+/* Headings use Bootstrap heading color var — themes override it */
 h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
-  color: #ffffff;
+  color: var(--bs-heading-color, #ffffff);
 }
 
 /* Paragraphs and base text */
