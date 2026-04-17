@@ -28,11 +28,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ],
         ];
 
-        $existing = DB::fetch("SELECT id FROM settings WHERE setting_key = 'ai_guide_config'");
+        $existing = DB::fetch("SELECT `key` FROM settings WHERE `key` = 'ai_guide_config'");
         if ($existing) {
-            DB::update('settings', ['setting_value' => json_encode($config)], "setting_key = 'ai_guide_config'");
+            DB::update('settings', ['value' => json_encode($config)], '`key` = ?', ['ai_guide_config']);
         } else {
-            DB::insert('settings', ['setting_key' => 'ai_guide_config', 'setting_value' => json_encode($config)]);
+            DB::insert('settings', ['key' => 'ai_guide_config', 'value' => json_encode($config)]);
         }
         header('Location: /admin/ai-shop-guide.php?tab=config&saved=1');
         exit;
@@ -40,10 +40,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ── Load Config ───────────────────────────────────────────────────────────────
-$configRow = DB::fetch("SELECT setting_value FROM settings WHERE setting_key = 'ai_guide_config'");
+$configRow = DB::fetch("SELECT value FROM settings WHERE `key` = 'ai_guide_config'");
 $cfg = [];
 if ($configRow) {
-    $cfg = json_decode($configRow['setting_value'], true) ?? [];
+    $cfg = json_decode($configRow['value'], true) ?? [];
 }
 // Defaults
 $cfg = array_merge([
