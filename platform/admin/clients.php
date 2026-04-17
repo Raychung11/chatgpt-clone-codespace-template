@@ -11,7 +11,7 @@ $page   = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 20;
 $offset = ($page - 1) * $perPage;
 
-$where  = $search ? 'WHERE u.email LIKE ? OR u.name LIKE ? OR u.company LIKE ?' : 'WHERE 1=1';
+$where  = $search ? 'WHERE (u.email LIKE ? OR u.name LIKE ? OR u.company LIKE ?)' : 'WHERE 1=1';
 $params = $search ? ["%$search%", "%$search%", "%$search%"] : [];
 
 $total = DB::fetch("SELECT COUNT(*) as n FROM users u $where AND u.role='customer'", $params)['n'];
@@ -21,7 +21,7 @@ $customers = DB::fetchAll(
         (SELECT COUNT(*) FROM purchases WHERE user_id=u.id AND status='completed') as purchases
      FROM users u $where AND u.role='customer'
      ORDER BY u.created_at DESC LIMIT $perPage OFFSET $offset",
-    array_merge($params, [$perPage, $offset])
+    $params
 );
 $totalPages = ceil($total / $perPage);
 

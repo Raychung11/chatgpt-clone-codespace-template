@@ -50,7 +50,7 @@ $products = DB::fetchAll(
     "SELECT p.*, c.name as cat_name, c.icon as cat_icon, c.color as cat_color, c.slug as cat_slug
      FROM products p LEFT JOIN categories c ON p.category_id=c.id
      WHERE $whereStr ORDER BY $orderBy LIMIT $perPage OFFSET $offset",
-    array_merge($params, [$perPage, $offset])
+    $params
 );
 
 $categories = DB::fetchAll('SELECT *, (SELECT COUNT(*) FROM products WHERE category_id=categories.id AND is_active=1) as cnt FROM categories ORDER BY sort_order');
