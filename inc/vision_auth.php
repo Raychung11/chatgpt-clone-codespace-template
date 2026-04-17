@@ -195,7 +195,11 @@ function vision_post(string $url, array $payload, string $ak, string $sk): array
         return ['ok' => false, 'error' => 'Network error: ' . $curlErr, 'raw' => []];
     }
 
-    $decoded = json_decode($resp ?: '', true) ?? [];
+    // JSON_BIGINT_AS_STRING: BytePlus returns task_id as a bare JSON number that
+    // exceeds PHP_INT_MAX (e.g. 10016392077968025086). Without this flag, json_decode
+    // silently converts it to float "1.0016392077968E+19", corrupting the task_id.
+    // CVGetResult then receives the garbled string and returns code 50215.
+    $decoded = json_decode($resp ?: '', true, 512, JSON_BIGINT_AS_STRING) ?? [];
 
     // Volcengine wraps errors in ResponseMetadata.Error
     if (isset($decoded['ResponseMetadata']['Error'])) {

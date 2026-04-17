@@ -212,7 +212,7 @@ function byteplus_request(string $method, string $url, array $payload, string $a
         return ['ok' => false, 'error' => 'Network error: ' . $curlErr, 'raw' => []];
     }
 
-    $decoded = json_decode($body, true);
+    $decoded = json_decode($body, true, 512, JSON_BIGINT_AS_STRING);
 
     if ($httpCode === 401) {
         return ['ok' => false, 'error' => 'Invalid API key.', 'raw' => $decoded ?? []];

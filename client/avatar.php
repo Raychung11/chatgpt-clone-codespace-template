@@ -449,7 +449,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
         $cvCode = curl_getinfo($cvCh, CURLINFO_HTTP_CODE);
         $cvErr  = curl_error($cvCh);
         curl_close($cvCh);
-        $cvDecoded = json_decode($cvResp ?: '', true) ?? [];
+        $cvDecoded = json_decode($cvResp ?: '', true, 512, JSON_BIGINT_AS_STRING) ?? [];
         $cvMsg     = $cvDecoded['message'] ?? ($cvDecoded['ResponseMetadata']['Error']['Message'] ?? '');
         $cvApiCode = (int)($cvDecoded['code'] ?? 0);
         $results['cv_byteplusapi_probe'] = [
@@ -519,7 +519,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
             $cvCode2 = curl_getinfo($cvCh2, CURLINFO_HTTP_CODE);
             $cvErr2  = curl_error($cvCh2);
             curl_close($cvCh2);
-            $cvDec2 = json_decode($cvResp2 ?: '', true) ?? [];
+            $cvDec2 = json_decode($cvResp2 ?: '', true, 512, JSON_BIGINT_AS_STRING) ?? [];
             $cvMsg2 = $cvDec2['message'] ?? ($cvDec2['ResponseMetadata']['Error']['Message'] ?? '');
             $results['cv_byteplusapi_doh_ip_test'] = [
                 'ip_used'    => $ip,
@@ -648,7 +648,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
         $curlNo  = curl_errno($ch);
         curl_close($ch);
 
-        $decoded = $resp ? (json_decode($resp, true) ?? $resp) : '(empty)';
+        $decoded = $resp ? (json_decode($resp, true, 512, JSON_BIGINT_AS_STRING) ?? $resp) : '(empty)';
         $volErr  = is_array($decoded) ? ($decoded['ResponseMetadata']['Error'] ?? null) : null;
 
         $results['api_probe'] = [
@@ -763,7 +763,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
                 $sCode = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
                 curl_close($ch2);
 
-                $sDecoded  = json_decode($sResp ?: '', true) ?? [];
+                $sDecoded  = json_decode($sResp ?: '', true, 512, JSON_BIGINT_AS_STRING) ?? [];
                 $sMsg      = $sDecoded['message']
                              ?? $sDecoded['ResponseMetadata']['Error']['Message']
                              ?? ($sDecoded['error']['message'] ?? '');
@@ -839,7 +839,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
         $liveCode = curl_getinfo($liveCh, CURLINFO_HTTP_CODE);
         $liveCurlErr = curl_error($liveCh);
         curl_close($liveCh);
-        $liveDec  = json_decode($liveResp ?: '', true) ?? [];
+        $liveDec  = json_decode($liveResp ?: '', true, 512, JSON_BIGINT_AS_STRING) ?? [];
         $liveData = $liveDec['data'] ?? [];
         // Extract error message from all possible locations
         $liveErrMsg = $liveDec['ResponseMetadata']['Error']['Message']
