@@ -2,6 +2,11 @@
 require_once __DIR__ . '/auth.php';
 Auth::requireAdmin();
 $adminPage = basename($_SERVER['PHP_SELF'], '.php');
+
+/* Safe badge count — never crashes if table missing */
+function adminBadge(string $sql): int {
+    try { return (int)(DB::fetch($sql)['n'] ?? 0); } catch (Throwable $e) { return 0; }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -52,10 +57,8 @@ $adminPage = basename($_SERVER['PHP_SELF'], '.php');
         </a>
         <a href="/admin/leads.php" class="admin-nav-link <?= $adminPage === 'leads' ? 'active' : '' ?>">
             <i class="bi bi-funnel"></i> Leads
-            <?php
-            $newLeads = DB::fetch('SELECT COUNT(*) as n FROM leads WHERE status="new"')['n'];
-            if ($newLeads > 0) echo "<span class='badge bg-warning text-dark ms-auto'>$newLeads</span>";
-            ?>
+            <?php $n = adminBadge('SELECT COUNT(*) as n FROM leads WHERE status="new"');
+            if ($n > 0) echo "<span class='badge bg-warning text-dark ms-auto'>$n</span>"; ?>
         </a>
 
         <div class="nav-section-label mt-3">Finance</div>
@@ -69,10 +72,8 @@ $adminPage = basename($_SERVER['PHP_SELF'], '.php');
         </a>
         <a href="/admin/invoices.php" class="admin-nav-link <?= $adminPage === 'invoices' ? 'active' : '' ?>">
             <i class="bi bi-receipt"></i> Invoices
-            <?php
-            $overdueInvoices = DB::fetch('SELECT COUNT(*) as n FROM invoices WHERE status="overdue" OR (status="sent" AND due_date < CURDATE())')['n'] ?? 0;
-            if ($overdueInvoices > 0) echo "<span class='badge bg-danger ms-auto'>$overdueInvoices</span>";
-            ?>
+            <?php $n = adminBadge('SELECT COUNT(*) as n FROM invoices WHERE status="overdue" OR (status="sent" AND due_date < CURDATE())');
+            if ($n > 0) echo "<span class='badge bg-danger ms-auto'>$n</span>"; ?>
         </a>
         <a href="/admin/expenses.php" class="admin-nav-link <?= $adminPage === 'expenses' ? 'active' : '' ?>">
             <i class="bi bi-credit-card"></i> Expenses
@@ -82,17 +83,13 @@ $adminPage = basename($_SERVER['PHP_SELF'], '.php');
         </a>
         <a href="/admin/debtor-ageing.php" class="admin-nav-link <?= $adminPage === 'debtor-ageing' ? 'active' : '' ?>">
             <i class="bi bi-person-exclamation"></i> Debtor Ageing
-            <?php
-            $overdueDebtors = DB::fetch("SELECT COUNT(*) as n FROM invoices WHERE status IN ('sent','overdue') AND due_date < CURDATE()")['n'] ?? 0;
-            if ($overdueDebtors > 0) echo "<span class='badge bg-danger ms-auto'>$overdueDebtors</span>";
-            ?>
+            <?php $n = adminBadge("SELECT COUNT(*) as n FROM invoices WHERE status IN ('sent','overdue') AND due_date < CURDATE()");
+            if ($n > 0) echo "<span class='badge bg-danger ms-auto'>$n</span>"; ?>
         </a>
         <a href="/admin/creditor-ageing.php" class="admin-nav-link <?= $adminPage === 'creditor-ageing' ? 'active' : '' ?>">
             <i class="bi bi-building-exclamation"></i> Creditor Ageing
-            <?php
-            $overdueCreditors = DB::fetch("SELECT COUNT(*) as n FROM supplier_invoices WHERE status IN ('unpaid','partial','overdue') AND due_date < CURDATE()")['n'] ?? 0;
-            if ($overdueCreditors > 0) echo "<span class='badge bg-warning text-dark ms-auto'>$overdueCreditors</span>";
-            ?>
+            <?php $n = adminBadge("SELECT COUNT(*) as n FROM supplier_invoices WHERE status IN ('unpaid','partial','overdue') AND due_date < CURDATE()");
+            if ($n > 0) echo "<span class='badge bg-warning text-dark ms-auto'>$n</span>"; ?>
         </a>
 
         <div class="nav-section-label mt-3">HR</div>
@@ -104,10 +101,8 @@ $adminPage = basename($_SERVER['PHP_SELF'], '.php');
         </a>
         <a href="/admin/leave.php" class="admin-nav-link <?= $adminPage === 'leave' ? 'active' : '' ?>">
             <i class="bi bi-calendar3"></i> Leave
-            <?php
-            $pendingLeaveCount = DB::fetch('SELECT COUNT(*) as n FROM leave_requests WHERE status="pending"')['n'] ?? 0;
-            if ($pendingLeaveCount > 0) echo "<span class='badge bg-warning text-dark ms-auto'>$pendingLeaveCount</span>";
-            ?>
+            <?php $n = adminBadge('SELECT COUNT(*) as n FROM leave_requests WHERE status="pending"');
+            if ($n > 0) echo "<span class='badge bg-warning text-dark ms-auto'>$n</span>"; ?>
         </a>
         <a href="/admin/payroll.php" class="admin-nav-link <?= $adminPage === 'payroll' ? 'active' : '' ?>">
             <i class="bi bi-cash-stack"></i> Payroll
@@ -158,10 +153,8 @@ $adminPage = basename($_SERVER['PHP_SELF'], '.php');
         </a>
         <a href="/admin/shoutouts.php" class="admin-nav-link <?= $adminPage === 'shoutouts' ? 'active' : '' ?>">
             <i class="bi bi-megaphone"></i> Shoutouts
-            <?php
-            $pendingShoutouts = DB::fetch('SELECT COUNT(*) as n FROM shoutouts WHERE status="pending"')['n'] ?? 0;
-            if ($pendingShoutouts > 0) echo "<span class='badge bg-warning text-dark ms-auto'>$pendingShoutouts</span>";
-            ?>
+            <?php $n = adminBadge('SELECT COUNT(*) as n FROM shoutouts WHERE status="pending"');
+            if ($n > 0) echo "<span class='badge bg-warning text-dark ms-auto'>$n</span>"; ?>
         </a>
         <a href="/admin/behavior-tracking.php" class="admin-nav-link <?= $adminPage === 'behavior-tracking' ? 'active' : '' ?>">
             <i class="bi bi-activity"></i> Behavior Tracking
@@ -184,17 +177,13 @@ $adminPage = basename($_SERVER['PHP_SELF'], '.php');
         </a>
         <a href="/admin/inventory.php" class="admin-nav-link <?= $adminPage === 'inventory' ? 'active' : '' ?>">
             <i class="bi bi-box-seam"></i> Inventory
-            <?php
-            $lowStockBadge = DB::fetch("SELECT COUNT(*) as n FROM inventory_items WHERE qty_on_hand <= reorder_level AND status='active'")['n'] ?? 0;
-            if ($lowStockBadge > 0) echo "<span class='badge bg-warning text-dark ms-auto'>$lowStockBadge</span>";
-            ?>
+            <?php $n = adminBadge("SELECT COUNT(*) as n FROM inventory_items WHERE qty_on_hand <= reorder_level AND status='active'");
+            if ($n > 0) echo "<span class='badge bg-warning text-dark ms-auto'>$n</span>"; ?>
         </a>
         <a href="/admin/shipments.php" class="admin-nav-link <?= $adminPage === 'shipments' ? 'active' : '' ?>">
             <i class="bi bi-truck-front"></i> Shipments
-            <?php
-            $overdueShipments = DB::fetch("SELECT COUNT(*) as n FROM shipments WHERE est_delivery < CURDATE() AND status NOT IN ('delivered','cancelled','returned')")['n'] ?? 0;
-            if ($overdueShipments > 0) echo "<span class='badge bg-danger ms-auto'>$overdueShipments</span>";
-            ?>
+            <?php $n = adminBadge("SELECT COUNT(*) as n FROM shipments WHERE est_delivery < CURDATE() AND status NOT IN ('delivered','cancelled','returned')");
+            if ($n > 0) echo "<span class='badge bg-danger ms-auto'>$n</span>"; ?>
         </a>
 
         <div class="nav-section-label mt-3">Website</div>

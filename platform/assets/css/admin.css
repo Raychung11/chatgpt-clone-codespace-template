@@ -107,6 +107,13 @@
   flex-shrink: 0;
 }
 
+/* ── Admin Content Area ── */
+.admin-content {
+  flex: 1;
+  padding: 24px;
+  color: #e5e7eb;
+}
+
 /* ── Mobile ── */
 @media (max-width: 991px) {
   .admin-sidebar {
