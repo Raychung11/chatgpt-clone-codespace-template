@@ -239,14 +239,40 @@ include INC_PATH . '/nav.php';
             <?php foreach ($parks as $park): ?>
             <div class="col-sm-6 col-lg-3">
                 <a href="<?= park_url($park['slug']) ?>" class="text-decoration-none">
-                    <div class="pg-card park-card">
-                        <div class="park-image d-flex align-items-center justify-content-center text-muted" style="background:var(--pg-bg)">
-                            <i class="fas fa-tree fa-3x" style="opacity:.2"></i>
+                    <div class="pg-card park-card h-100" style="overflow:hidden;">
+                        <!-- Banner image or fallback gradient -->
+                        <div class="park-image position-relative" style="height:160px;overflow:hidden;">
+                            <?php if (!empty($park['banner_path'])): ?>
+                                <img src="<?= pg_url('uploads/parks/' . h($park['banner_path'])) ?>"
+                                     alt="<?= h($park['name']) ?>"
+                                     style="width:100%;height:100%;object-fit:cover;">
+                            <?php else: ?>
+                                <div class="w-100 h-100 d-flex align-items-center justify-content-center"
+                                     style="background:linear-gradient(135deg,#1a2f4a 0%,#0D1B2A 100%);">
+                                    <i class="fas fa-tree fa-3x" style="color:rgba(200,160,60,.35);"></i>
+                                </div>
+                            <?php endif; ?>
+                            <!-- Logo badge overlay -->
+                            <?php if (!empty($park['logo_path'])): ?>
+                                <div class="position-absolute" style="bottom:8px;left:8px;">
+                                    <img src="<?= pg_url('uploads/parks/' . h($park['logo_path'])) ?>"
+                                         alt=""
+                                         style="width:40px;height:40px;object-fit:contain;background:#fff;border-radius:8px;padding:4px;border:1px solid rgba(255,255,255,.3);">
+                                </div>
+                            <?php endif; ?>
+                            <?php if ($park['is_featured']): ?>
+                                <div class="position-absolute" style="top:8px;right:8px;">
+                                    <span class="badge" style="background:var(--pg-gold);font-size:.65rem;">Featured</span>
+                                </div>
+                            <?php endif; ?>
                         </div>
                         <div class="p-3">
                             <h6 class="fw-600 mb-1 text-navy"><?= h($park['name']) ?></h6>
+                            <?php if ($park['name_zh']): ?>
+                                <div class="text-muted small mb-1" style="font-size:.78rem;"><?= h($park['name_zh']) ?></div>
+                            <?php endif; ?>
                             <p class="small text-muted mb-2"><i class="fas fa-map-marker-alt me-1"></i><?= h($park['city']) ?>, <?= h($park['state']) ?></p>
-                            <span class="listing-type-tag"><?= _e('btn.view') ?></span>
+                            <span class="listing-type-tag"><?= _e('btn.view') ?> &rsaquo;</span>
                         </div>
                     </div>
                 </a>
