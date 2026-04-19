@@ -27,6 +27,9 @@ RewriteRule ^city/([a-z0-9\-]+)/?$ city/index.php?slug=$1 [L,QSA]
 # SEO-friendly listing pages
 RewriteRule ^listing/([a-z0-9\-]+)/?$ listing_detail.php?slug=$1 [L,QSA]
 
+# CMS pages
+RewriteRule ^page/([a-z0-9\-]+)/?$ page.php?slug=$1 [L,QSA]
+
 # Canonical URL rewrites
 RewriteRule ^sell-my-burial-plot/?$ sell_plot.php [L]
 RewriteRule ^compare-burial-plots/?$ buyer/compare.php [L]
