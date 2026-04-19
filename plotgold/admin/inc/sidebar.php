@@ -3,11 +3,11 @@ defined('PLOTGOLD') or die('Direct access not permitted.');
 
 $currentFile = basename($_SERVER['PHP_SELF']);
 
-// Live badge counts
-$pendingReview  = (int)(Database::fetchOne("SELECT COUNT(*) c FROM listings WHERE status = 'pending_review'")['c'] ?? 0);
-$openEnquiries  = (int)(Database::fetchOne("SELECT COUNT(*) c FROM enquiries WHERE status = 'open'")['c'] ?? 0);
-$pendingQuotes  = (int)(Database::fetchOne("SELECT COUNT(*) c FROM quotes WHERE status = 'pending'")['c'] ?? 0);
-$pendingProviders = (int)(Database::fetchOne("SELECT COUNT(*) c FROM providers WHERE approval_status = 'pending'")['c'] ?? 0);
+// Live badge counts — wrapped in try/catch so a missing table never breaks the nav
+try { $pendingReview    = (int)(Database::fetchOne("SELECT COUNT(*) c FROM listings    WHERE status = 'pending_review'")['c'] ?? 0); } catch (\Throwable $e) { $pendingReview    = 0; }
+try { $openEnquiries    = (int)(Database::fetchOne("SELECT COUNT(*) c FROM enquiries   WHERE status = 'new'")['c']            ?? 0); } catch (\Throwable $e) { $openEnquiries    = 0; }
+try { $pendingQuotes    = (int)(Database::fetchOne("SELECT COUNT(*) c FROM quotations  WHERE status = 'in_review'")['c']      ?? 0); } catch (\Throwable $e) { $pendingQuotes    = 0; }
+try { $pendingProviders = (int)(Database::fetchOne("SELECT COUNT(*) c FROM providers   WHERE approval_status = 'pending'")['c'] ?? 0); } catch (\Throwable $e) { $pendingProviders = 0; }
 
 $sections = [
     'Overview' => [
