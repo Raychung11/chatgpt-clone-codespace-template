@@ -2,6 +2,19 @@
 require_once __DIR__ . '/../inc/bootstrap.php';
 require_admin();
 
+// ── POST: Toggle homepage featured flag ────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_enforce();
+    if (clean($_POST['_action'] ?? '') === 'toggle_featured') {
+        $lid = clean_int($_POST['_listing_id'] ?? 0);
+        if ($lid) {
+            Database::query('UPDATE listings SET is_featured = 1 - is_featured WHERE id = ?', [$lid]);
+            flash_set(FLASH_SUCCESS, 'Homepage featured status updated.');
+        }
+    }
+    redirect('admin/listings.php?' . http_build_query($_GET));
+}
+
 $statusFilter = clean($_GET['status'] ?? '');
 $typeFilter   = clean($_GET['type']   ?? '');
 $q            = clean($_GET['q']      ?? '');
@@ -39,6 +52,7 @@ include INC_PATH . '/header.php';
 <div class="d-flex">
 <?php include __DIR__ . '/inc/sidebar.php'; ?>
 <div class="admin-main">
+    <?= render_flash() ?>
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-700 text-navy mb-0">Listings</h4>
         <div class="small text-muted"><?= number_format($total) ?> total</div>
@@ -65,7 +79,7 @@ include INC_PATH . '/header.php';
         <div class="table-responsive">
             <table class="table admin-table mb-0">
                 <thead>
-                    <tr><th>Code</th><th>Title</th><th>Type</th><th>Status</th><th>Verification</th><th>Price</th><th>Seller</th><th>Date</th><th></th></tr>
+                    <tr><th>Code</th><th>Title</th><th>Type</th><th>Status</th><th>Verification</th><th>Price</th><th>Seller</th><th>Date</th><th title="Pin to homepage">Homepage</th><th></th></tr>
                 </thead>
                 <tbody>
                 <?php foreach ($listings as $l): ?>
@@ -90,6 +104,20 @@ include INC_PATH . '/header.php';
                     <td class="small fw-500"><?= $l['asking_price'] ? 'RM ' . number_format($l['asking_price']) : 'POQ' ?></td>
                     <td class="small"><?= h($l['seller_name'] ?? '—') ?></td>
                     <td class="small text-muted"><?= format_date($l['created_at'], 'd M') ?></td>
+                    <!-- Homepage featured toggle -->
+                    <td class="text-center">
+                        <form method="POST" class="d-inline m-0">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="_action" value="toggle_featured">
+                            <input type="hidden" name="_listing_id" value="<?= $l['id'] ?>">
+                            <button type="submit"
+                                    class="btn btn-sm border-0 p-1"
+                                    title="<?= $l['is_featured'] ? 'Remove from homepage' : 'Pin to homepage' ?>"
+                                    style="background:none;font-size:1.1rem;color:<?= $l['is_featured'] ? 'var(--pg-gold)' : '#ccc' ?>;">
+                                <i class="fas fa-star"></i>
+                            </button>
+                        </form>
+                    </td>
                     <td>
                         <div class="d-flex gap-1">
                             <a href="<?= pg_url('admin/listing_review.php?id=' . $l['id']) ?>" class="btn btn-sm btn-outline-gold" title="Review"><i class="fas fa-search-plus"></i></a>
@@ -101,7 +129,7 @@ include INC_PATH . '/header.php';
                 </tr>
                 <?php endforeach; ?>
                 <?php if (!$listings): ?>
-                    <tr><td colspan="9" class="text-center text-muted py-4">No listings found.</td></tr>
+                    <tr><td colspan="10" class="text-center text-muted py-4">No listings found.</td></tr>
                 <?php endif; ?>
                 </tbody>
             </table>

@@ -8,6 +8,35 @@ $error  = '';
 
 $parksUploadDir = UPLOAD_PATH . '/parks';
 
+// ── POST: Quick actions (toggle active / delete) ───────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['_action'])) {
+    csrf_enforce();
+    $quickId = clean_int($_POST['_park_id'] ?? 0);
+    $qAction = clean($_POST['_action']);
+
+    if ($qAction === 'toggle_active' && $quickId) {
+        Database::query('UPDATE memorial_parks SET is_active = 1 - is_active WHERE id = ?', [$quickId]);
+        flash_set(FLASH_SUCCESS, 'Park status updated.');
+    }
+
+    if ($qAction === 'delete' && $quickId) {
+        $activeCount = (int)(Database::fetchOne(
+            "SELECT COUNT(*) c FROM listings WHERE park_id = ? AND status = 'active'", [$quickId]
+        )['c'] ?? 0);
+        if ($activeCount > 0) {
+            flash_set(FLASH_ERROR, "Cannot delete: {$activeCount} active listing(s) exist at this park. Archive it instead.");
+        } else {
+            $row = Database::fetchOne('SELECT logo_path, banner_path FROM memorial_parks WHERE id = ?', [$quickId]);
+            if (!empty($row['logo_path'])   && file_exists($parksUploadDir . '/' . $row['logo_path']))   @unlink($parksUploadDir . '/' . $row['logo_path']);
+            if (!empty($row['banner_path']) && file_exists($parksUploadDir . '/' . $row['banner_path'])) @unlink($parksUploadDir . '/' . $row['banner_path']);
+            Database::query('DELETE FROM memorial_parks WHERE id = ?', [$quickId]);
+            flash_set(FLASH_SUCCESS, 'Park deleted.');
+        }
+    }
+
+    redirect('admin/memorial_parks.php');
+}
+
 // ── POST: Save park ────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_enforce();
@@ -329,12 +358,35 @@ include INC_PATH . '/header.php';
                         </span>
                     </td>
                     <td class="text-end">
-                        <a href="?action=edit&id=<?= $p['id'] ?>" class="btn btn-sm btn-outline-gold">
+                        <div class="d-flex gap-1 justify-content-end flex-wrap">
+                        <a href="?action=edit&id=<?= $p['id'] ?>" class="btn btn-sm btn-outline-gold" title="Edit">
                             <i class="fas fa-edit"></i>
                         </a>
-                        <a href="<?= park_url($p['slug']) ?>" class="btn btn-sm btn-outline-secondary" target="_blank">
+                        <a href="<?= park_url($p['slug']) ?>" class="btn btn-sm btn-outline-secondary" target="_blank" title="View public page">
                             <i class="fas fa-eye"></i>
                         </a>
+                        <!-- Archive / Restore -->
+                        <form method="POST" class="d-inline m-0">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="_action" value="toggle_active">
+                            <input type="hidden" name="_park_id" value="<?= $p['id'] ?>">
+                            <button type="submit"
+                                    class="btn btn-sm <?= $p['is_active'] ? 'btn-outline-warning' : 'btn-outline-success' ?>"
+                                    title="<?= $p['is_active'] ? 'Archive (hide from site)' : 'Restore (show on site)' ?>">
+                                <i class="fas fa-<?= $p['is_active'] ? 'archive' : 'undo-alt' ?>"></i>
+                            </button>
+                        </form>
+                        <!-- Delete -->
+                        <form method="POST" class="d-inline m-0"
+                              onsubmit="return confirm('Delete \'<?= h(addslashes($p['name'])) ?>\'?\n\nThis permanently removes the park and its photos.\nThis cannot be undone.')">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="_action" value="delete">
+                            <input type="hidden" name="_park_id" value="<?= $p['id'] ?>">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete permanently">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>
