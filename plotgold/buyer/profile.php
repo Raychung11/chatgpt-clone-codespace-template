@@ -11,6 +11,8 @@ $avatarUploadDir = UPLOAD_PATH . '/avatars';
 $user    = Database::fetchOne('SELECT * FROM users WHERE id = ?', [$uid]);
 $profile = Database::fetchOne('SELECT * FROM user_profiles WHERE user_id = ?', [$uid]);
 $buyer   = Database::fetchOne('SELECT * FROM buyers WHERE user_id = ?', [$uid]);
+$seller  = Database::fetchOne('SELECT * FROM sellers WHERE user_id = ?', [$uid]);
+$provider= Database::fetchOne('SELECT * FROM providers WHERE user_id = ?', [$uid]);
 
 if (!$profile) redirect('buyer/dashboard.php');
 
@@ -110,10 +112,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // ── Apply as Seller ───────────────────────────────────────────────────────
+    if ($postAction === 'apply_seller') {
+        if ($seller) {
+            flash_set(FLASH_INFO, 'You already have a seller account.');
+        } else {
+            $sellerType = clean($_POST['seller_type'] ?? 'individual');
+            $companyName = clean($_POST['company_name'] ?? '');
+            Database::query(
+                'INSERT INTO sellers (user_id, seller_type, company_name, verification_status) VALUES (?,?,?,?)',
+                [$uid, $sellerType, $companyName ?: null, 'unverified']
+            );
+            $role = Database::fetchOne('SELECT id FROM roles WHERE name = ?', [ROLE_SELLER]);
+            if ($role) {
+                Database::query(
+                    'INSERT IGNORE INTO user_role_map (user_id, role_id) VALUES (?,?)',
+                    [$uid, $role['id']]
+                );
+            }
+            activity_log($uid, 'seller_role_added', 'sellers', $uid, 'Buyer upgraded to seller');
+            flash_set(FLASH_SUCCESS, 'Seller account activated! You can now list plots.');
+            redirect('seller/dashboard.php');
+        }
+        redirect('buyer/profile.php#upgrade');
+    }
+
+    // ── Apply as Provider ─────────────────────────────────────────────────────
+    if ($postAction === 'apply_provider') {
+        if ($provider) {
+            flash_set(FLASH_INFO, 'You already have a provider application.');
+        } else {
+            $businessName = clean($_POST['business_name'] ?? '');
+            $providerType = clean($_POST['provider_type'] ?? 'funeral_home');
+            $description  = clean($_POST['description']   ?? '');
+            $website      = clean($_POST['website']       ?? '');
+            $whatsapp     = clean($_POST['whatsapp']      ?? '');
+            if (!$businessName) {
+                $error = 'Business name is required to apply as a provider.';
+            } else {
+                Database::query(
+                    'INSERT INTO providers (user_id, business_name, provider_type, description, website, whatsapp, approval_status) VALUES (?,?,?,?,?,?,?)',
+                    [$uid, $businessName, $providerType, $description ?: null, $website ?: null, $whatsapp ?: null, 'pending']
+                );
+                $role = Database::fetchOne('SELECT id FROM roles WHERE name = ?', [ROLE_PROVIDER]);
+                if ($role) {
+                    Database::query(
+                        'INSERT IGNORE INTO user_role_map (user_id, role_id) VALUES (?,?)',
+                        [$uid, $role['id']]
+                    );
+                }
+                activity_log($uid, 'provider_application', 'providers', $uid, 'Buyer applied as provider: ' . $businessName);
+                flash_set(FLASH_SUCCESS, 'Provider application submitted! Our team will review within 1–2 business days.');
+                redirect('buyer/profile.php#upgrade');
+            }
+        }
+    }
+
     // Reload after potential error
     $user    = Database::fetchOne('SELECT * FROM users WHERE id = ?', [$uid]);
     $profile = Database::fetchOne('SELECT * FROM user_profiles WHERE user_id = ?', [$uid]);
     $buyer   = Database::fetchOne('SELECT * FROM buyers WHERE user_id = ?', [$uid]);
+    $seller  = Database::fetchOne('SELECT * FROM sellers WHERE user_id = ?', [$uid]);
+    $provider= Database::fetchOne('SELECT * FROM providers WHERE user_id = ?', [$uid]);
 }
 
 // Referral link
@@ -447,6 +507,197 @@ include INC_PATH . '/header.php';
 
         </div><!-- /col-lg-8 -->
     </div><!-- /row -->
+
+    <!-- ── UPGRADE ACCOUNT ─────────────────────────────────────────────────── -->
+    <div class="mt-4" id="upgrade">
+        <h5 class="fw-700 text-navy mb-1"><i class="fas fa-layer-group me-2" style="color:var(--pg-gold);"></i>Upgrade Your Account</h5>
+        <p class="text-muted small mb-4">Your account can hold multiple roles. Add seller or provider access without creating a new account.</p>
+
+        <div class="row g-4">
+
+            <!-- ── Seller card ── -->
+            <div class="col-md-6">
+                <div class="pg-card p-4 h-100" style="border-top:4px solid <?= $seller ? '#28a745' : 'var(--pg-gold)' ?>;">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center"
+                             style="width:48px;height:48px;background:<?= $seller ? 'rgba(40,167,69,.12)' : 'var(--pg-gold-pale)' ?>;flex-shrink:0;">
+                            <i class="fas fa-tag fs-5" style="color:<?= $seller ? '#28a745' : 'var(--pg-gold)' ?>;"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-700 mb-0">Sell a Burial Plot</h6>
+                            <div class="text-muted small">List your plot or columbarium niche</div>
+                        </div>
+                        <?php if ($seller): ?>
+                            <span class="badge bg-success ms-auto">Active</span>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if ($seller): ?>
+                        <p class="text-muted small mb-3">You already have a seller account. Your listings are managed from the Seller Portal.</p>
+                        <div class="d-flex gap-2">
+                            <a href="<?= pg_url('seller/dashboard.php') ?>" class="btn btn-success btn-sm">
+                                <i class="fas fa-th-large me-1"></i>Seller Dashboard
+                            </a>
+                            <a href="<?= pg_url('seller/new_listing.php') ?>" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-plus me-1"></i>New Listing
+                            </a>
+                        </div>
+                    <?php else: ?>
+                        <ul class="list-unstyled text-muted small mb-3">
+                            <li><i class="fas fa-check text-success me-2"></i>Free to list your burial plot</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Reach verified buyers</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Guided document verification</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Enquiry management dashboard</li>
+                        </ul>
+                        <button class="btn btn-gold btn-sm" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#sellerForm">
+                            <i class="fas fa-tag me-1"></i>Become a Seller
+                        </button>
+                        <div class="collapse mt-3" id="sellerForm">
+                            <form method="POST">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="_action" value="apply_seller">
+                                <div class="mb-3">
+                                    <label class="form-label fw-600 small">Seller Type</label>
+                                    <select name="seller_type" class="form-select form-select-sm">
+                                        <option value="individual">Individual (personal plot)</option>
+                                        <option value="agent">Agent / Reseller</option>
+                                        <option value="developer">Developer</option>
+                                        <option value="estate">Estate / Legal Representative</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-600 small">Company Name <span class="text-muted fw-400">(optional)</span></label>
+                                    <input type="text" name="company_name" class="form-control form-control-sm"
+                                           placeholder="Leave blank if individual">
+                                </div>
+                                <button type="submit" class="btn btn-gold btn-sm w-100">
+                                    <i class="fas fa-check me-1"></i>Activate Seller Account
+                                </button>
+                            </form>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- ── Provider card ── -->
+            <div class="col-md-6">
+                <?php
+                $providerStatus = $provider['approval_status'] ?? null;
+                $borderColor = match($providerStatus) {
+                    'approved'  => '#28a745',
+                    'pending'   => '#ffc107',
+                    'rejected'  => '#dc3545',
+                    default     => 'var(--pg-navy)',
+                };
+                ?>
+                <div class="pg-card p-4 h-100" style="border-top:4px solid <?= $borderColor ?>;">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center"
+                             style="width:48px;height:48px;background:rgba(26,39,68,.08);flex-shrink:0;">
+                            <i class="fas fa-briefcase fs-5 text-navy"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-700 mb-0">Join as Service Provider</h6>
+                            <div class="text-muted small">Funeral homes, florists, transport &amp; more</div>
+                        </div>
+                        <?php if ($provider): ?>
+                            <span class="badge ms-auto
+                                <?= $providerStatus === 'approved' ? 'bg-success' : ($providerStatus === 'pending' ? 'bg-warning text-dark' : 'bg-danger') ?>">
+                                <?= ucfirst($providerStatus) ?>
+                            </span>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if ($provider && $providerStatus === 'approved'): ?>
+                        <p class="text-muted small mb-3">Your provider account is active. Manage your services and quotes from the Provider Portal.</p>
+                        <a href="<?= pg_url('provider/dashboard.php') ?>" class="btn btn-success btn-sm">
+                            <i class="fas fa-th-large me-1"></i>Provider Dashboard
+                        </a>
+
+                    <?php elseif ($provider && $providerStatus === 'pending'): ?>
+                        <div class="alert alert-warning py-2 small mb-3">
+                            <i class="fas fa-clock me-1"></i>
+                            Your application for <strong><?= h($provider['business_name']) ?></strong> is under review.
+                            Our team will respond within 1–2 business days.
+                        </div>
+                        <a href="<?= pg_url('provider/dashboard.php') ?>" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-eye me-1"></i>View Application
+                        </a>
+
+                    <?php elseif ($provider && $providerStatus === 'rejected'): ?>
+                        <div class="alert alert-danger py-2 small mb-3">
+                            <i class="fas fa-times-circle me-1"></i>
+                            Your previous application was not approved. Please contact support for details.
+                        </div>
+
+                    <?php else: ?>
+                        <ul class="list-unstyled text-muted small mb-3">
+                            <li><i class="fas fa-check text-success me-2"></i>Get discovered by families in need</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Receive quote requests directly</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Build trust with verified profile</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Admin approval within 1–2 days</li>
+                        </ul>
+                        <?php if ($error && str_contains($error, 'Business name')): ?>
+                            <div class="alert alert-danger small py-2"><?= h($error) ?></div>
+                        <?php endif; ?>
+                        <button class="btn btn-outline-navy btn-sm" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#providerForm"
+                                <?= ($error && str_contains($error, 'Business name')) ? '' : '' ?>>
+                            <i class="fas fa-briefcase me-1"></i>Apply as Provider
+                        </button>
+                        <div class="collapse mt-3 <?= ($error && str_contains($error, 'Business name')) ? 'show' : '' ?>" id="providerForm">
+                            <form method="POST">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="_action" value="apply_provider">
+                                <div class="mb-3">
+                                    <label class="form-label fw-600 small">Business Name <span class="text-danger">*</span></label>
+                                    <input type="text" name="business_name" class="form-control form-control-sm"
+                                           required placeholder="Registered business or trading name">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-600 small">Service Type</label>
+                                    <select name="provider_type" class="form-select form-select-sm">
+                                        <option value="funeral_home">Funeral Home</option>
+                                        <option value="transport">Hearse / Transport</option>
+                                        <option value="florist">Florist</option>
+                                        <option value="memorial_park">Memorial Park</option>
+                                        <option value="catering">Catering</option>
+                                        <option value="clergy">Clergy / Religious</option>
+                                        <option value="admin_support">Admin / Documentation</option>
+                                        <option value="multipurpose">Multi-service</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-600 small">WhatsApp Number</label>
+                                    <input type="text" name="whatsapp" class="form-control form-control-sm"
+                                           placeholder="e.g. 60123456789">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-600 small">Website <span class="text-muted fw-400">(optional)</span></label>
+                                    <input type="url" name="website" class="form-control form-control-sm"
+                                           placeholder="https://yourbusiness.com">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-600 small">Brief Description</label>
+                                    <textarea name="description" class="form-control form-control-sm" rows="2"
+                                              placeholder="Describe the services you offer…"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-navy btn-sm w-100">
+                                    <i class="fas fa-paper-plane me-1"></i>Submit Application
+                                </button>
+                                <div class="text-muted text-center mt-2" style="font-size:.72rem;">
+                                    Applications are reviewed by our team within 1–2 business days.
+                                </div>
+                            </form>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+        </div><!-- /row -->
+    </div><!-- /#upgrade -->
+
 </div><!-- /portal-content -->
 </div>
 
