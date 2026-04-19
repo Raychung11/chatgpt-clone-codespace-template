@@ -2,15 +2,15 @@ Options -Indexes
 Options -MultiViews
 
 # ── App Environment Variables ─────────────────────────────────────────────────
-# APP_URL must NOT have a trailing slash, and MUST include /plotgold
-SetEnv APP_URL https://darkorchid-jay-133576.hostingersite.com/plotgold
+# APP_URL: no trailing slash, no /plotgold — root .htaccess handles the mapping
+SetEnv APP_URL https://plotgold.com
 SetEnv APP_ENV production
 
 RewriteEngine On
 
-# Force HTTPS (enable on production)
-# RewriteCond %{HTTPS} off
-# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# Force HTTPS (handled by root .htaccess, kept here as fallback)
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # Block access to sensitive directories
 RewriteRule ^(config|inc|sql|logs|uploads/documents)/ - [F,L]

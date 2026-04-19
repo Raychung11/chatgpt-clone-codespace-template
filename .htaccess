@@ -1,0 +1,21 @@
+# public_html/.htaccess
+# Place this file one level ABOVE the plotgold/ folder (i.e. in public_html/)
+# This transparently serves plotgold.com/* from the plotgold/ subdirectory
+# so the URL stays https://plotgold.com/ — no /plotgold/ visible to users.
+
+Options -Indexes
+
+RewriteEngine On
+
+# ── Force HTTPS ───────────────────────────────────────────────────────────────
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# ── Force non-www ─────────────────────────────────────────────────────────────
+RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+RewriteRule ^(.*)$ https://%1/$1 [L,R=301]
+
+# ── Internally serve the plotgold/ app from the domain root ──────────────────
+# The browser URL stays as https://plotgold.com/... — no redirect, no /plotgold/
+RewriteCond %{REQUEST_URI} !^/plotgold/
+RewriteRule ^(.*)$ /plotgold/$1 [L,QSA]
