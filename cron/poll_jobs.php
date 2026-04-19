@@ -228,9 +228,14 @@ if (!empty($avatarJobs)) {
         if (!$result['ok']) {
             $apiErrCode = (int)($result['raw']['code'] ?? $result['raw']['status'] ?? 0);
             clog("  ERROR (code $apiErrCode): " . ($result['error'] ?? 'unknown'));
-            // Permanent BytePlus error codes — auto-fail and refund so job doesn't stay stuck
-            $permanentCodes = [50215, 50204, 50200];
-            if (in_array($apiErrCode, $permanentCodes, true)) {
+            // Give code 50215 a 5-minute grace period: BytePlus can return this
+            // transiently while the task is still being validated in their queue.
+            $jobAgeSeconds  = time() - strtotime($job['started_at'] ?: $job['created_at']);
+            $pastGrace      = ($jobAgeSeconds > 300);
+            $permanentCodes = [50204, 50200];
+            $delayedCodes   = [50215];
+            if (in_array($apiErrCode, $permanentCodes, true)
+                || (in_array($apiErrCode, $delayedCodes, true) && $pastGrace)) {
                 $errMsg = 'BytePlus rejected task (code ' . $apiErrCode . '): '
                         . ($result['error'] ?? 'permanent API error');
                 $pdo->beginTransaction();

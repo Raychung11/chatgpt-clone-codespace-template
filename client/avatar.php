@@ -130,7 +130,8 @@ if (($_GET['_action'] ?? '') === 'poll') {
     csrf_verify();
     $jobId = (int)($_GET['job_id'] ?? 0);
     $stmt  = $pdo->prepare(
-        'SELECT id, status, video_url, error_message FROM avatar_jobs WHERE id=? AND user_id=?'
+        'SELECT id, status, video_url, error_message, started_at, created_at
+         FROM avatar_jobs WHERE id=? AND user_id=?'
     );
     $stmt->execute([$jobId, $uid]);
     $job = $stmt->fetch();
@@ -185,15 +186,28 @@ if (($_GET['_action'] ?? '') === 'poll') {
                 }
             } else {
                 // API query itself failed (network error, auth error, or BytePlus rejected the query).
-                // Only auto-fail on permanent BytePlus error codes — transient errors (DNS, timeout)
-                // leave the job untouched so the next poll can retry.
                 $apiErrCode = (int)($result['raw']['code'] ?? $result['raw']['status'] ?? 0);
+
+                // 50215 "Input invalid" can fire in the first 1-2 minutes because BytePlus
+                // queues the task internally before validating it.  Give it a 5-minute grace
+                // period before treating it as a permanent failure so the cron can retry.
+                $jobAgeSeconds = time() - strtotime($job['started_at'] ?: $job['created_at']);
+                $pastGracePeriod = ($jobAgeSeconds > 300); // 5 minutes
+
+                // Codes that are permanently fatal regardless of age
                 $permanentCodes = [
-                    50215, // Input invalid for this service (task submitted with bad params)
-                    50204, // Task not found / expired
-                    50200, // req_key not supported
+                    50204, // Task not found / expired — nothing to retry
+                    50200, // req_key not supported — configuration error
                 ];
-                if (in_array($apiErrCode, $permanentCodes, true)) {
+                // Codes that are permanent only after the grace period
+                $delayedCodes = [
+                    50215, // Input invalid — wait for BytePlus to fully process before giving up
+                ];
+
+                $isFatal = in_array($apiErrCode, $permanentCodes, true)
+                    || (in_array($apiErrCode, $delayedCodes, true) && $pastGracePeriod);
+
+                if ($isFatal) {
                     $errMsg = 'BytePlus rejected task (code ' . $apiErrCode . '): '
                             . ($result['error'] ?? 'permanent API error') . '. Credits refunded.';
                     $pdo->prepare(
@@ -207,7 +221,7 @@ if (($_GET['_action'] ?? '') === 'poll') {
                     $job['status']        = 'refunded';
                     $job['error_message'] = $errMsg;
                 }
-                // else: transient error — leave status unchanged, will retry next poll
+                // else: transient or within grace period — leave status, will retry next poll
             }
         }
     }
@@ -225,7 +239,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['_action'])) {
 
     $audioMode = $_POST['audio_mode'] ?? 'upload'; // 'upload' | 'tts'
     $ttsText   = trim($_POST['tts_text'] ?? '');
-    $duration  = min(30, max(5, (int)($_POST['duration'] ?? 10)));
+    $duration  = min(10, max(5, (int)($_POST['duration'] ?? 10))); // OmniHuman 1.5 max is 10s
 
     // ── Validate portrait ────────────────────────────────────────────────────
     $portrait = $_FILES['portrait'] ?? null;
