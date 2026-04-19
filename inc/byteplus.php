@@ -38,17 +38,16 @@ function byteplus_create_task(
     $apiKey     = setting('byteplus_api_key',     BYTEPLUS_API_KEY)     ?: BYTEPLUS_API_KEY;
     $apiBase    = rtrim(setting('byteplus_api_url', BYTEPLUS_API_URL)   ?: BYTEPLUS_API_URL, '/');
 
-    // For 10-second videos a Pro model endpoint is required — Seedance Lite only
-    // supports 5 seconds and silently produces a 5s video when duration=10 is sent.
-    // Use byteplus_endpoint_id_10s for 10s jobs; fall back to the default if unset.
+    // Endpoint priority:
+    //   Seedance 2.0 specific (if configured) → Seedance 1.5 (10s/5s) → default
+    // For 10s jobs, a Pro model endpoint is required — Lite silently caps at 5s.
     if ($duration >= 10) {
-        $endpointId = setting('byteplus_endpoint_id_10s', BYTEPLUS_ENDPOINT_ID_10S) ?: BYTEPLUS_ENDPOINT_ID_10S;
-        if (!$endpointId) {
-            // Fall back to default endpoint but warn (video may still be 5s on Lite model)
-            $endpointId = setting('byteplus_endpoint_id', BYTEPLUS_ENDPOINT_ID) ?: BYTEPLUS_ENDPOINT_ID;
-        }
+        $endpointId = setting('byteplus_endpoint_id_s2_10s', '') ?: '';
+        if (!$endpointId) $endpointId = setting('byteplus_endpoint_id_10s', BYTEPLUS_ENDPOINT_ID_10S) ?: BYTEPLUS_ENDPOINT_ID_10S;
+        if (!$endpointId) $endpointId = setting('byteplus_endpoint_id', BYTEPLUS_ENDPOINT_ID) ?: BYTEPLUS_ENDPOINT_ID;
     } else {
-        $endpointId = setting('byteplus_endpoint_id', BYTEPLUS_ENDPOINT_ID) ?: BYTEPLUS_ENDPOINT_ID;
+        $endpointId = setting('byteplus_endpoint_id_s2_5s', '') ?: '';
+        if (!$endpointId) $endpointId = setting('byteplus_endpoint_id', BYTEPLUS_ENDPOINT_ID) ?: BYTEPLUS_ENDPOINT_ID;
     }
 
     if (!$apiKey) {
@@ -183,14 +182,11 @@ function byteplus_create_i2v_task(
     $apiKey     = setting('byteplus_api_key',     BYTEPLUS_API_KEY)     ?: BYTEPLUS_API_KEY;
     $apiBase    = rtrim(setting('byteplus_api_url', BYTEPLUS_API_URL)   ?: BYTEPLUS_API_URL, '/');
 
-    // Prefer a dedicated i2v endpoint; fall back to the 10s endpoint, then default
-    $endpointId = setting('byteplus_endpoint_id_i2v', '') ?: '';
-    if (!$endpointId) {
-        $endpointId = setting('byteplus_endpoint_id_10s', BYTEPLUS_ENDPOINT_ID_10S) ?: BYTEPLUS_ENDPOINT_ID_10S;
-    }
-    if (!$endpointId) {
-        $endpointId = setting('byteplus_endpoint_id', BYTEPLUS_ENDPOINT_ID) ?: BYTEPLUS_ENDPOINT_ID;
-    }
+    // Endpoint priority: Seedance 2.0 i2v → Seedance 1.5 i2v → 10s → default
+    $endpointId = setting('byteplus_endpoint_id_s2_i2v', '') ?: '';
+    if (!$endpointId) $endpointId = setting('byteplus_endpoint_id_i2v', BYTEPLUS_ENDPOINT_ID_I2V) ?: BYTEPLUS_ENDPOINT_ID_I2V;
+    if (!$endpointId) $endpointId = setting('byteplus_endpoint_id_10s', BYTEPLUS_ENDPOINT_ID_10S) ?: BYTEPLUS_ENDPOINT_ID_10S;
+    if (!$endpointId) $endpointId = setting('byteplus_endpoint_id', BYTEPLUS_ENDPOINT_ID) ?: BYTEPLUS_ENDPOINT_ID;
 
     if (!$apiKey)     return ['ok' => false, 'error' => 'BytePlus API key is not configured.',     'raw' => []];
     if (!$endpointId) return ['ok' => false, 'error' => 'BytePlus Endpoint ID is not configured.', 'raw' => []];

@@ -285,16 +285,25 @@ café with warm bokeh background, slow pan right, cinematic warm tones
 
 ---
 
-## 8. Setting Up a New Endpoint (Seedance 2.0)
+## 8. Setting Up Seedance 2.0 Endpoints
 
 1. BytePlus Console → **ModelArk** → **Model activation**
-2. Search for `seedance-2-0-pro-t2v` → Activate
-3. Go to **Online inference** → **Create endpoint**
-4. Select the activated model → Create → copy the **Endpoint ID** (`ep-XXXXXXXX`)
-5. In Motions admin panel (or `config/config.php`):
-   - `byteplus_endpoint_id` → your 5s endpoint ID
-   - `byteplus_endpoint_id_10s` → your 10s / Pro endpoint ID
-   - `byteplus_endpoint_id_i2v` → your i2v endpoint ID (for 30s Ad)
+2. Search for each model below → **Activate**
+3. Go to **Online inference** → **Create endpoint** → select model → Create → copy `ep-XXXXXXXX`
+4. In **Admin → Settings** (or `config/config.php`):
+
+| Admin Settings Key | Config Constant | Model to use | Purpose |
+|---|---|---|---|
+| `byteplus_endpoint_id_s2_5s` | `BYTEPLUS_ENDPOINT_ID_S2_5S` | `seedance-2-0-lite-t2v` | T2V 5s (Seedance 2.0 Lite) |
+| `byteplus_endpoint_id_s2_10s` | `BYTEPLUS_ENDPOINT_ID_S2_10S` | `seedance-2-0-pro-t2v` | T2V 10s (Seedance 2.0 Pro) |
+| `byteplus_endpoint_id_s2_i2v` | `BYTEPLUS_ENDPOINT_ID_S2_I2V` | `seedance-2-0-pro-i2v` | 30s Ad i2v (Seedance 2.0 Pro) |
+
+> **Priority order** (code picks first non-empty):
+> - T2V 5s: `byteplus_endpoint_id_s2_5s` → `byteplus_endpoint_id`
+> - T2V 10s: `byteplus_endpoint_id_s2_10s` → `byteplus_endpoint_id_10s` → `byteplus_endpoint_id`
+> - I2V: `byteplus_endpoint_id_s2_i2v` → `byteplus_endpoint_id_i2v` → `byteplus_endpoint_id_10s`
+
+Run `sql/migrate_seedance2.sql` once in phpMyAdmin to add these settings rows to the DB.
 
 ---
 
@@ -302,9 +311,19 @@ café with warm bokeh background, slow pan right, cinematic warm tones
 
 | Code | Meaning | Fix |
 |---|---|---|
-| `50215` | Input invalid for this service | Wrong req_key, inaccessible image URL, or corrupted task_id (float precision bug) |
+| `50215` | Input invalid for this service | See checklist below |
 | `50204` | req_key not supported | Service not activated in BytePlus Console |
 | `50200` | General API error | Check AK/SK credentials |
 | `InvalidModelID` | Endpoint doesn't exist | Create endpoint in ModelArk Console |
 | `401` | Invalid API key | Check `BYTEPLUS_API_KEY` |
 | `429` | Rate limit exceeded | Reduce request frequency; upgrade plan |
+
+### Code 50215 Checklist (OmniHuman)
+
+1. **Service not activated** — BytePlus Console → Vision AI → Model Plaza → OmniHuman 1.5 → **Activate** (most common cause)
+2. **Wrong AK/SK** — the AK/SK must belong to the account that has OmniHuman activated
+3. **Wrong `req_key`** — must be exactly `realman_avatar_picture_omni15_cv`; check Admin → Settings → BytePlus group
+4. **Missing `duration` field** — already fixed in v1.1 (now sent from avatar.php)
+5. **Corrupted task_id** — only affects `CVGetResult` queries; fixed with `JSON_BIGINT_AS_STRING`
+
+Check `logs/php_errors.log` — OmniHuman calls now log the full raw response on any error.

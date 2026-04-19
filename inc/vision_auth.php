@@ -218,8 +218,16 @@ function vision_post(string $url, array $payload, string $ak, string $sk): array
     // BytePlus wraps errors in code != 10000
     $apiCode = $decoded['code'] ?? $decoded['status_code'] ?? 10000;
     if ((int)$apiCode !== 10000 && (int)$apiCode !== 0) {
-        $msg = $decoded['message'] ?? $decoded['error_detail'] ?? "API code $apiCode";
-        return ['ok' => false, 'error' => $msg, 'raw' => $decoded];
+        // Build the most informative error message possible from the response
+        $msg = $decoded['message']
+            ?? $decoded['error_detail']
+            ?? ($decoded['data']['message'] ?? null)
+            ?? ($decoded['data']['error_detail'] ?? null)
+            ?? "API code $apiCode";
+        // Append code so admins can look it up (50215=invalid input, 50204=not activated, etc.)
+        $displayMsg = "(code $apiCode) $msg";
+        error_log('[VisionAI] API code ' . $apiCode . ': ' . json_encode($decoded));
+        return ['ok' => false, 'error' => $displayMsg, 'raw' => $decoded];
     }
 
     return ['ok' => true, 'raw' => $decoded];

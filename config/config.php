@@ -68,6 +68,10 @@ define('BYTEPLUS_ENDPOINT_ID',     getenv('BYTEPLUS_ENDPOINT_ID')     ?: '');
 // 10-second video endpoint — MUST be a Pro model endpoint (Lite only supports 5s).
 // If left empty, the 5s endpoint is used as fallback (video will still be 5s).
 define('BYTEPLUS_ENDPOINT_ID_10S', getenv('BYTEPLUS_ENDPOINT_ID_10S') ?: '');
+// Image-to-Video endpoint — used by the 30-Second Ad feature for clips 2 & 3.
+// Create an endpoint using seedance-1-5-pro-i2v-250528 or seedance-2-0-pro-i2v.
+// Falls back to BYTEPLUS_ENDPOINT_ID_10S then BYTEPLUS_ENDPOINT_ID if unset.
+define('BYTEPLUS_ENDPOINT_ID_I2V', getenv('BYTEPLUS_ENDPOINT_ID_I2V') ?: '');
 // Text LLM endpoint for prompt enhancement (e.g. doubao-1-5-pro-32k or ep-XXXXX-doubao)
 // Create a text model endpoint in ModelArk → Model activation → select a Doubao/chat model
 define('LLM_ENDPOINT_ID',          getenv('LLM_ENDPOINT_ID')          ?: '');

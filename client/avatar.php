@@ -323,7 +323,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['_action'])) {
                     $imageBase64,
                     $audioBase64,
                     $audioMode === 'tts' ? $ttsText : null,
-                    []  // No extra params — undocumented fields cause 50215
+                    ['duration' => $duration]
                 );
 
                 if ($apiResult['ok']) {
@@ -340,17 +340,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['_action'])) {
                     flash_success('Avatar video submitted! Generation typically takes 5–20 minutes for 10s videos. Stay on this page or check back later.');
                     redirect(BASE_URL . '/client/avatar.php');
                 } else {
-                    // API failed — refund
+                    // API failed — store raw response for admin diagnosis, then refund
+                    $rawJson = json_encode($apiResult['raw'] ?? []);
+                    $errMsg  = $apiResult['error'] ?? 'Unknown API error';
                     $pdo->prepare(
-                        'UPDATE avatar_jobs SET status="failed", error_message=? WHERE id=?'
-                    )->execute([$apiResult['error'], $jobId]);
+                        'UPDATE avatar_jobs SET status="failed", error_message=?, api_response=? WHERE id=?'
+                    )->execute([$errMsg, $rawJson, $jobId]);
                     wallet_refund($uid, $creditCost, 'avatar_job', $jobId,
                         'Refund: API failed for avatar job #' . $jobId);
                     $pdo->prepare(
                         'UPDATE avatar_jobs SET status="refunded", refunded_at=NOW() WHERE id=?'
                     )->execute([$jobId]);
                     $pdo->commit();
-                    flash_error('Avatar generation failed: ' . $apiResult['error'] . ' Credits refunded.');
+                    // Show the full error including BytePlus error code so the user
+                    // can report it or check the service activation in BytePlus Console.
+                    flash_error('Avatar generation failed: ' . $errMsg . ' Credits refunded. '
+                        . '(If you see code 50215: activate OmniHuman in BytePlus Console → Vision AI → Model Plaza → OmniHuman 1.5)');
                     redirect(BASE_URL . '/client/avatar.php');
                 }
                 } // end if (!$imageBase64)

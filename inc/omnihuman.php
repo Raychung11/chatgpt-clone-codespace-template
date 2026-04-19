@@ -50,7 +50,15 @@ function omnihuman_create_task(
     } else {
         $payload['image_base64'] = $imageBase64;
     }
+
+    // Merge caller extras before audio so audio fields always appear at the end
     $payload = array_merge($payload, $extra);
+
+    // duration is required by OmniHuman 1.5 (seconds, integer).
+    // Use value from $extra if provided, otherwise default to 10.
+    if (!isset($payload['duration'])) {
+        $payload['duration'] = 10;
+    }
 
     if ($audioUrl) {
         $payload['audio_url'] = $audioUrl;
@@ -63,9 +71,16 @@ function omnihuman_create_task(
     }
 
     $url    = _omnihuman_url($apiBase, 'generate');
+    error_log('[OmniHuman] submit url=' . $url . ' req_key=' . $reqKey
+        . ' has_image=' . (isset($payload['image_base64']) ? 'base64' : (isset($payload['image_url']) ? 'url' : 'none'))
+        . ' has_audio=' . (isset($payload['audio_base64']) ? 'base64' : (isset($payload['audio_url']) ? 'url' : (isset($payload['text']) ? 'tts' : 'none')))
+        . ' duration=' . $payload['duration']);
     $result = vision_post($url, $payload, $ak, $sk);
 
     if (!$result['ok']) {
+        // Log the full raw response so admins can diagnose service activation issues
+        error_log('[OmniHuman] submit failed: ' . json_encode($result['raw'])
+            . ' error=' . ($result['error'] ?? ''));
         return $result;
     }
 
@@ -80,9 +95,11 @@ function omnihuman_create_task(
            ?? null;
 
     if (!$taskId) {
-        return ['ok' => false, 'error' => 'No task_id in response.', 'raw' => $raw];
+        error_log('[OmniHuman] no task_id in response: ' . json_encode($raw));
+        return ['ok' => false, 'error' => 'No task_id in response. Raw: ' . json_encode($raw), 'raw' => $raw];
     }
 
+    error_log('[OmniHuman] task submitted ok task_id=' . $taskId);
     return ['ok' => true, 'task_id' => (string)$taskId, 'raw' => $raw];
 }
 
