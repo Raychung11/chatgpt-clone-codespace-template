@@ -75,17 +75,21 @@ BYTEPLUS_ENDPOINT_ID_10S  — ep-XXXXXXXX  (10s / Pro endpoint)
 POST https://ark.ap-southeast.bytepluses.com/api/v3/contents/generations/tasks
 ```
 
-### Text-to-Video request body
+### Text-to-Video request body (Seedance 2.0 SDK style)
+
+Parameters are **top-level fields**, not embedded as `--flags` in the prompt.
+`return_last_frame: true` returns a `last_frame_url` for chaining clips without FFmpeg.
 
 ```json
 {
   "model": "ep-XXXXXXXX-XXXXX",
   "content": [
-    {
-      "type": "text",
-      "text": "A luxury perfume bottle on white marble --ratio 16:9 --resolution 1080p --duration 10"
-    }
-  ]
+    { "type": "text", "text": "A luxury perfume bottle on white marble" }
+  ],
+  "ratio": "16:9",
+  "duration": 10,
+  "watermark": false,
+  "return_last_frame": true
 }
 ```
 
@@ -95,35 +99,24 @@ POST https://ark.ap-southeast.bytepluses.com/api/v3/contents/generations/tasks
 {
   "model": "ep-XXXXXXXX-XXXXX",
   "content": [
-    {
-      "type": "image_url",
-      "image_url": {
-        "url": "https://your-cdn.com/last-frame-of-clip1.jpg",
-        "role": "first_frame"
-      }
-    },
-    {
-      "type": "image_url",
-      "image_url": {
-        "url": "https://your-cdn.com/hero-ending-image.jpg",
-        "role": "last_frame"
-      }
-    },
-    {
-      "type": "text",
-      "text": "Shot 2 scene description --ratio 16:9 --resolution 1080p --duration 10"
-    }
-  ]
+    { "type": "text", "text": "Shot 2 scene description" },
+    { "type": "image_url", "image_url": { "url": "https://cdn.byteplus.com/last-frame-of-clip1.jpg" } }
+  ],
+  "ratio": "16:9",
+  "duration": 10,
+  "watermark": false,
+  "return_last_frame": true
 }
 ```
 
-### Prompt flags (appended to the text field)
+### API parameters
 
-| Flag | Values | Notes |
+| Parameter | Values | Notes |
 |---|---|---|
-| `--ratio` | `16:9` `9:16` `1:1` `4:3` | Aspect ratio |
-| `--resolution` | `480p` `720p` `1080p` | Output resolution |
-| `--duration` | `5` `10` | Seconds; 10s requires Pro model endpoint |
+| `ratio` | `16:9` `9:16` `1:1` `4:3` `adaptive` | Aspect ratio |
+| `duration` | `5` `10` | Seconds; 10s requires Pro model endpoint |
+| `watermark` | `true` `false` | Remove BytePlus watermark |
+| `return_last_frame` | `true` `false` | Return `last_frame_url` for i2v chaining |
 
 ### Successful response
 
@@ -181,7 +174,8 @@ GET https://ark.ap-southeast.bytepluses.com/api/v3/contents/generations/tasks/{t
     {
       "type": "video",
       "video_url": "https://cdn.byteplus.com/xxx/output.mp4",
-      "cover_image_url": "https://cdn.byteplus.com/xxx/thumb.jpg"
+      "cover_image_url": "https://cdn.byteplus.com/xxx/thumb.jpg",
+      "last_frame_url": "https://cdn.byteplus.com/xxx/last_frame.jpg"
     }
   ],
   "usage": {
@@ -189,6 +183,10 @@ GET https://ark.ap-southeast.bytepluses.com/api/v3/contents/generations/tasks/{t
     "completion_tokens": 1000
   }
 }
+```
+
+> `last_frame_url` is present when `return_last_frame: true` was sent in the request.
+> Pass it as the `image_url` in the next clip's i2v request to maintain visual continuity.
 ```
 
 ### Status values

@@ -58,16 +58,19 @@ function byteplus_create_task(
     }
 
     // ModelArk content-generation payload.
-    // Per docs, parameters are embedded as --flags in the prompt text, not a separate key.
-    // Format: "<prompt> --ratio 16:9 --resolution 720p --duration 5"
+    // Parameters (ratio, duration, watermark, return_last_frame) are top-level fields,
+    // NOT embedded as --flags in the prompt text (Seedance 2.0 SDK pattern).
     $ratio = $extra['ratio'] ?? '16:9';
-    $promptWithFlags = rtrim($prompt) . " --ratio {$ratio} --resolution {$resolution} --duration {$duration}";
 
     $payload = [
-        'model'   => $endpointId,
-        'content' => [
-            ['type' => 'text', 'text' => $promptWithFlags],
+        'model'             => $endpointId,
+        'content'           => [
+            ['type' => 'text', 'text' => $prompt],
         ],
+        'ratio'             => $ratio,
+        'duration'          => $duration,
+        'watermark'         => false,
+        'return_last_frame' => true, // returns last_frame_url in response for chaining
     ];
 
     $result = byteplus_post($apiBase . '/contents/generations/tasks', $payload, $apiKey);
@@ -127,21 +130,25 @@ function byteplus_query_task(string $task_id): array
     };
 
     // ModelArk returns content as object {"video_url":"..."} OR array [{type:"video",...}]
+    // When return_last_frame=true, content also includes last_frame_url.
     $videoUrl     = null;
     $thumbnailUrl = null;
+    $lastFrameUrl = null;
     $content      = $raw['content'] ?? null;
 
     if (is_array($content)) {
         if (isset($content['video_url'])) {
-            // Object shape: "content": {"video_url": "..."}
+            // Object shape: "content": {"video_url":"...", "last_frame_url":"..."}
             $videoUrl     = $content['video_url'] ?? null;
             $thumbnailUrl = $content['thumbnail_url'] ?? $content['cover_image_url'] ?? null;
+            $lastFrameUrl = $content['last_frame_url'] ?? null;
         } else {
-            // Array shape: "content": [{"type":"video","video_url":"..."}]
+            // Array shape: "content": [{"type":"video","video_url":"...","last_frame_url":"..."}]
             foreach ($content as $item) {
                 if (($item['type'] ?? '') === 'video' && !$videoUrl) {
                     $videoUrl     = $item['video_url'] ?? $item['url'] ?? null;
                     $thumbnailUrl = $item['cover_image_url'] ?? $item['thumbnail_url'] ?? null;
+                    $lastFrameUrl = $item['last_frame_url'] ?? null;
                 }
             }
         }
@@ -149,15 +156,17 @@ function byteplus_query_task(string $task_id): array
     // Flat fallbacks
     $videoUrl     = $videoUrl     ?? $raw['video_url']     ?? $raw['output_url']    ?? null;
     $thumbnailUrl = $thumbnailUrl ?? $raw['thumbnail_url'] ?? $raw['cover_url']     ?? null;
+    $lastFrameUrl = $lastFrameUrl ?? $raw['last_frame_url'] ?? null;
     $errorMsg     = $raw['error']['message'] ?? $raw['error_message'] ?? $raw['message'] ?? '';
 
     return [
-        'ok'            => true,
-        'status'        => $status,
-        'video_url'     => $videoUrl,
-        'thumbnail_url' => $thumbnailUrl,
-        'error_message' => $errorMsg,
-        'raw'           => $raw,
+        'ok'             => true,
+        'status'         => $status,
+        'video_url'      => $videoUrl,
+        'thumbnail_url'  => $thumbnailUrl,
+        'last_frame_url' => $lastFrameUrl,
+        'error_message'  => $errorMsg,
+        'raw'            => $raw,
     ];
 }
 
@@ -191,22 +200,23 @@ function byteplus_create_i2v_task(
     if (!$apiKey)     return ['ok' => false, 'error' => 'BytePlus API key is not configured.',     'raw' => []];
     if (!$endpointId) return ['ok' => false, 'error' => 'BytePlus Endpoint ID is not configured.', 'raw' => []];
 
-    $promptWithFlags = rtrim($prompt) . " --ratio 16:9 --resolution {$resolution} --duration {$duration}";
-
-    $content = [];
-    $content[] = [
-        'type'      => 'image_url',
-        'image_url' => ['url' => $firstFrameUrl, 'role' => 'first_frame'],
-    ];
+    // Text first, then image(s) — matches Seedance 2.0 SDK order.
+    // No 'role' field on image_url; the model uses the image as a visual anchor.
+    $content   = [];
+    $content[] = ['type' => 'text', 'text' => $prompt];
+    $content[] = ['type' => 'image_url', 'image_url' => ['url' => $firstFrameUrl]];
     if ($lastFrameUrl) {
-        $content[] = [
-            'type'      => 'image_url',
-            'image_url' => ['url' => $lastFrameUrl, 'role' => 'last_frame'],
-        ];
+        $content[] = ['type' => 'image_url', 'image_url' => ['url' => $lastFrameUrl]];
     }
-    $content[] = ['type' => 'text', 'text' => $promptWithFlags];
 
-    $payload = ['model' => $endpointId, 'content' => $content];
+    $payload = [
+        'model'             => $endpointId,
+        'content'           => $content,
+        'ratio'             => '16:9',
+        'duration'          => $duration,
+        'watermark'         => false,
+        'return_last_frame' => true,
+    ];
 
     $result = byteplus_post($apiBase . '/contents/generations/tasks', $payload, $apiKey);
     if (!$result['ok']) return $result;

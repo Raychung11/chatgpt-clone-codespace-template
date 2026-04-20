@@ -9,9 +9,9 @@ declare(strict_types=1);
  *   queued → clip1 → clip2 → clip3 → stitching → completed
  *
  * Each transition is driven by cron/poll_jobs.php calling lv_advance_job().
- * FFmpeg is required for frame extraction and video stitching.
- * If FFmpeg is unavailable, clips 2 & 3 are submitted as text-only (no
- * first_frame continuity) and stitching is skipped (clip URLs returned instead).
+ * Seedance 2.0 returns last_frame_url in the API response (return_last_frame=true),
+ * so FFmpeg is no longer needed for frame extraction — clips chain automatically.
+ * FFmpeg is still used for stitching; if unavailable, clip URLs are returned as-is.
  */
 
 require_once __DIR__ . '/byteplus.php';
@@ -202,23 +202,27 @@ function lv_advance_job(array $job, \PDO $pdo): void
                 _lv_fail($pdo, $id, $uid, (float)$job['credit_cost'], 'Clip 1 failed: ' . $q['error_message']);
                 break;
             }
-            // Completed — download, extract frame, start clip 2
-            $clip1Url   = $q['video_url'];
-            $clip1Local = BASE_PATH . "/uploads/long_video/clips/lv{$id}_clip1.mp4";
+            // Completed — get video URL and last frame URL
+            $clip1Url     = $q['video_url'];
+            $frame1Url    = $q['last_frame_url'] ?? null; // from return_last_frame API param
 
-            $downloaded = lv_download_file($clip1Url, $clip1Local);
-            $frame1Path = $downloaded ? lv_extract_last_frame($clip1Local, $id, 1) : null;
-            $frame1Url  = $frame1Path
-                ? rtrim(BASE_URL, '/') . '/uploads/long_video/frames/' . basename($frame1Path)
-                : null;
+            // Fallback: download + FFmpeg extract if API didn't return last_frame_url
+            $clip1Local  = null;
+            $frame1Path  = null;
+            if (!$frame1Url && lv_ffmpeg_available()) {
+                $clip1Local = BASE_PATH . "/uploads/long_video/clips/lv{$id}_clip1.mp4";
+                if (lv_download_file($clip1Url, $clip1Local)) {
+                    $frame1Path = lv_extract_last_frame($clip1Local, $id, 1);
+                    $frame1Url  = $frame1Path
+                        ? rtrim(BASE_URL, '/') . '/uploads/long_video/frames/' . basename($frame1Path)
+                        : null;
+                }
+            }
 
             // Submit clip 2 (i2v if frame available, otherwise t2v)
-            if ($frame1Url) {
-                $heroUrl = null;
-                $res2 = byteplus_create_i2v_task($job['prompt2'], $frame1Url, $job['resolution'] ?: '1080p', 10, $heroUrl);
-            } else {
-                $res2 = byteplus_create_task($job['prompt2'], $job['resolution'] ?: '1080p', 10);
-            }
+            $res2 = $frame1Url
+                ? byteplus_create_i2v_task($job['prompt2'], $frame1Url, $job['resolution'] ?: '1080p', 10)
+                : byteplus_create_task($job['prompt2'], $job['resolution'] ?: '1080p', 10);
 
             if ($res2['ok']) {
                 $pdo->prepare(
@@ -226,7 +230,7 @@ function lv_advance_job(array $job, \PDO $pdo): void
                      SET `status`="clip2", `clip1_url`=?, `clip1_local`=?, `frame1_path`=?,
                          `clip2_task_id`=?
                      WHERE `id`=?'
-                )->execute([$clip1Url, $downloaded ? $clip1Local : null, $frame1Path, $res2['task_id'], $id]);
+                )->execute([$clip1Url, $clip1Local, $frame1Url ?? $frame1Path, $res2['task_id'], $id]);
             } else {
                 _lv_fail($pdo, $id, $uid, (float)$job['credit_cost'], 'Clip 2 submit: ' . $res2['error']);
             }
@@ -243,26 +247,31 @@ function lv_advance_job(array $job, \PDO $pdo): void
                 break;
             }
             $clip2Url   = $q['video_url'];
-            $clip2Local = BASE_PATH . "/uploads/long_video/clips/lv{$id}_clip2.mp4";
+            $frame2Url  = $q['last_frame_url'] ?? null; // from return_last_frame API param
 
-            $downloaded = lv_download_file($clip2Url, $clip2Local);
-            $frame2Path = $downloaded ? lv_extract_last_frame($clip2Local, $id, 2) : null;
-            $frame2Url  = $frame2Path
-                ? rtrim(BASE_URL, '/') . '/uploads/long_video/frames/' . basename($frame2Path)
-                : null;
+            // Fallback: download + FFmpeg if API didn't return last_frame_url
+            $clip2Local = null;
+            $frame2Path = null;
+            if (!$frame2Url && lv_ffmpeg_available()) {
+                $clip2Local = BASE_PATH . "/uploads/long_video/clips/lv{$id}_clip2.mp4";
+                if (lv_download_file($clip2Url, $clip2Local)) {
+                    $frame2Path = lv_extract_last_frame($clip2Local, $id, 2);
+                    $frame2Url  = $frame2Path
+                        ? rtrim(BASE_URL, '/') . '/uploads/long_video/frames/' . basename($frame2Path)
+                        : null;
+                }
+            }
 
-            // Hero frame for clip 3 last_frame (optional)
+            // Optional hero frame for clip 3 (user-uploaded ending image)
             $heroFrameUrl = null;
             if ($job['hero_frame_path'] && is_file($job['hero_frame_path'])) {
                 $heroFrameUrl = rtrim(BASE_URL, '/') . '/uploads/long_video/frames/'
                     . rawurlencode(basename($job['hero_frame_path']));
             }
 
-            if ($frame2Url) {
-                $res3 = byteplus_create_i2v_task($job['prompt3'], $frame2Url, $job['resolution'] ?: '1080p', 10, $heroFrameUrl);
-            } else {
-                $res3 = byteplus_create_task($job['prompt3'], $job['resolution'] ?: '1080p', 10);
-            }
+            $res3 = $frame2Url
+                ? byteplus_create_i2v_task($job['prompt3'], $frame2Url, $job['resolution'] ?: '1080p', 10, $heroFrameUrl)
+                : byteplus_create_task($job['prompt3'], $job['resolution'] ?: '1080p', 10);
 
             if ($res3['ok']) {
                 $pdo->prepare(
@@ -270,7 +279,7 @@ function lv_advance_job(array $job, \PDO $pdo): void
                      SET `status`="clip3", `clip2_url`=?, `clip2_local`=?, `frame2_path`=?,
                          `clip3_task_id`=?
                      WHERE `id`=?'
-                )->execute([$clip2Url, $downloaded ? $clip2Local : null, $frame2Path, $res3['task_id'], $id]);
+                )->execute([$clip2Url, $clip2Local, $frame2Url ?? $frame2Path, $res3['task_id'], $id]);
             } else {
                 _lv_fail($pdo, $id, $uid, (float)$job['credit_cost'], 'Clip 3 submit: ' . $res3['error']);
             }
