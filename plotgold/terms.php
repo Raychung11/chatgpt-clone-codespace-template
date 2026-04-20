@@ -3,7 +3,7 @@ require_once __DIR__ . '/inc/bootstrap.php';
 
 $page_title       = is_lang('zh') ? '服务条款' : 'Terms of Service';
 $meta_description = 'PlotGold Malaysia Terms of Service — the rules governing use of our burial plot marketplace and funeral planning platform.';
-$lastUpdated      = '10 April 2025';
+$lastUpdated      = '20 April 2026';
 
 include INC_PATH . '/header.php';
 include INC_PATH . '/nav.php';
@@ -69,6 +69,7 @@ include INC_PATH . '/nav.php';
                         '#governing'    => '14. 适用法律',
                         '#changes'      => '15. 条款变更',
                         '#contact'      => '16. 联系我们',
+                        '#goldvault'    => '17. 黄金储存服务',
                     ] : [
                         '#acceptance'   => '1. Acceptance of Terms',
                         '#platform'     => '2. Nature of the Platform',
@@ -86,6 +87,7 @@ include INC_PATH . '/nav.php';
                         '#governing'    => '14. Governing Law',
                         '#changes'      => '15. Changes to Terms',
                         '#contact'      => '16. Contact Us',
+                        '#goldvault'    => '17. Gold Vault Storage Service',
                     ];
                     foreach ($sections as $href => $label): ?>
                     <a href="<?= $href ?>" class="nav-link py-1 px-2 text-muted rounded-2"
@@ -240,6 +242,42 @@ include INC_PATH . '/nav.php';
                     <p class="mb-0 small text-muted">如对本条款有任何疑问，请在使用本平台前联系我们。</p>
                 </div>
 
+                <h4 id="goldvault" class="fw-600 text-navy mt-5 mb-3">
+                    17. 黄金储存服务
+                    <span class="badge bg-warning text-dark ms-2" style="font-size:.65rem;vertical-align:middle;">新增</span>
+                </h4>
+                <div class="alert alert-info d-flex gap-3 mb-4">
+                    <i class="fas fa-shield-alt fa-lg mt-1 flex-shrink-0"></i>
+                    <div class="small">本条款第17条专门适用于我们的实物黄金储存服务。购买并储存黄金的用户须遵守以下附加条款。</div>
+                </div>
+
+                <p><strong>17.1 所有权</strong></p>
+                <p>PlotGold Malaysia作为客户购买实物黄金的保管方。客户在任何时候保留对所储存黄金的完全所有权。PlotGold Malaysia对所储存黄金不持有任何受益权益。所有权通过购买时签发的数字证书证明。</p>
+
+                <p><strong>17.2 储存服务</strong></p>
+                <p>金库储存服务作为向购买实物黄金客户的免费补充服务提供。不收取任何储存费用。公司保留在提前30天书面通知后终止该服务的权利。终止服务后，将以物理方式返还黄金或协助客户转移至第三方保管方。</p>
+
+                <p><strong>17.3 黄金价格风险</strong></p>
+                <p>黄金的市场价值会波动。PlotGold Malaysia不对黄金未来价值作任何声明或保证。客户在购买时接受全部市场风险。本服务不提供任何固定回报、资本保值保证或收益承诺。</p>
+
+                <p><strong>17.4 实物提取</strong></p>
+                <p>客户可随时申请提取其黄金的实物形式，最低提取量为1克。提取申请将在<strong>7个工作日</strong>内处理。提取时可能适用交付费用，具体金额将在提取时告知。</p>
+
+                <p><strong>17.5 保险与保全</strong></p>
+                <p>储存黄金的金库经过审计，提供防火及安全保障，并投保最高<strong>1000万令吉</strong>的保险。如发生损失，赔偿上限以保险赔付为准。客户可要求查阅当前的保险证明。</p>
+
+                <p><strong>17.6 伊斯兰教法合规性</strong></p>
+                <p>本黄金储存服务基于<em>Qabdh</em>（推定占有）原则，与马来西亚国家银行黄金伊斯兰教法准则一致。每位客户的持有量可追溯至特定序列号或批次，黄金不进行混合或共用。</p>
+
+                <p><strong>17.7 监管声明</strong></p>
+                <div class="alert alert-light border mb-3">
+                    <p class="mb-2 fw-600 small">重要监管声明</p>
+                    <p class="mb-0 small">本黄金储存服务依据马来西亚公司委员会（SSM）授权的零售销售模式运营。本服务<strong>不构成</strong>《2007年资本市场和服务法》下的受管制投资产品，<strong>不受</strong>马来西亚证券委员会（SC）或马来西亚国家银行（BNM）监管。客户应注意黄金价值会随市场情况变化而波动。</p>
+                </div>
+
+                <p><strong>17.8 个人数据保护</strong></p>
+                <p>黄金账户的个人数据依据《2010年个人数据保护法》（PDPA）处理，仅用于所有权记录及提取处理目的。数据保留期限最少7年，以符合SSM要求。</p>
+
                 <?php else: ?>
                 <!-- ── English Version ────────────────────────────── -->
 
@@ -379,6 +417,42 @@ include INC_PATH . '/nav.php';
                     <p class="mb-1 small"><i class="fab fa-whatsapp me-2 text-success"></i><?= h(get_setting('site_phone', '+60 11-XXXX XXXX')) ?></p>
                     <p class="mb-0 small text-muted">If you have any questions about these Terms, please contact us before using the Platform.</p>
                 </div>
+
+                <h4 id="goldvault" class="fw-600 text-navy mt-5 mb-3">
+                    17. Gold Vault Storage Service
+                    <span class="badge bg-warning text-dark ms-2" style="font-size:.65rem;vertical-align:middle;">New</span>
+                </h4>
+                <div class="alert alert-info d-flex gap-3 mb-4">
+                    <i class="fas fa-shield-alt fa-lg mt-1 flex-shrink-0"></i>
+                    <div class="small">This Section 17 applies specifically to our physical gold vault storage service. Users who purchase and store gold with us are subject to the following additional terms.</div>
+                </div>
+
+                <p><strong>17.1 Ownership</strong></p>
+                <p>PlotGold Malaysia acts as custodian for physical gold purchased from us. The customer retains full legal ownership of their stored gold at all times. PlotGold Malaysia holds no beneficial interest in stored gold. Ownership is evidenced by the digital certificate issued to the customer upon purchase.</p>
+
+                <p><strong>17.2 Storage Service</strong></p>
+                <p>Vault storage is provided as a complimentary service to customers who purchase physical gold from PlotGold Malaysia. No storage fee is charged. We reserve the right to discontinue this service with 30 days' written notice, after which gold will be returned in physical form or transferred to a third-party custodian at the customer's direction.</p>
+
+                <p><strong>17.3 Gold Price Risk</strong></p>
+                <p>The market value of gold fluctuates. PlotGold Malaysia makes no representation or guarantee regarding the future value of gold. Customers accept full market risk at the point of purchase. No fixed returns, capital guarantees, or yield of any kind are offered or implied by this service.</p>
+
+                <p><strong>17.4 Physical Redemption</strong></p>
+                <p>Customers may request physical redemption of their gold at any time, subject to a minimum redemption quantity of <strong>1 gram</strong>. Redemption will be processed within <strong>7 business days</strong>. A delivery fee may apply at the time of redemption and will be disclosed before processing.</p>
+
+                <p><strong>17.5 Insurance &amp; Security</strong></p>
+                <p>Our gold vaults are audited, fireproof, and secured. Stored gold is insured up to <strong>RM 10,000,000</strong>. In the event of loss, compensation is limited to insurance proceeds. Customers may request a copy of current insurance certificates upon written request.</p>
+
+                <p><strong>17.6 Shariah Compliance</strong></p>
+                <p>This gold storage service operates on a <em>Qabdh</em> (constructive possession) basis consistent with Bank Negara Malaysia's Shariah Standards on Gold. Each customer's holding is traceable to a specific serial or lot number. Gold is not commingled or pooled between customers.</p>
+
+                <p><strong>17.7 Regulatory Disclosure</strong></p>
+                <div class="alert alert-light border mb-3">
+                    <p class="mb-2 fw-600 small">Important Regulatory Statement</p>
+                    <p class="mb-0 small">This gold vault storage service operates under a retail sale model authorised by the Companies Commission of Malaysia (SSM). This service does <strong>not</strong> constitute a regulated investment product under the Capital Markets and Services Act 2007 and is <strong>not</strong> regulated by the Securities Commission Malaysia (SC) or Bank Negara Malaysia (BNM). Customers should be aware that the value of gold can rise and fall in line with market conditions.</p>
+                </div>
+
+                <p><strong>17.8 Personal Data</strong></p>
+                <p>Personal data collected for gold accounts is processed under the Personal Data Protection Act 2010 (PDPA) solely for ownership record-keeping and redemption processing. Data is retained for a minimum of 7 years in compliance with SSM requirements.</p>
 
                 <?php endif; ?>
 
