@@ -129,14 +129,15 @@ function omnihuman_query_task(string $taskId): array
     $data = $raw['Result'] ?? $raw['data'] ?? $raw;
 
     // Normalise status
-    // Official status values: in_queue, generating, done, failed (BytePlus docs)
+    // Official status values from api_config.json:
+    //   in_queue | generating | done | not_found | expired
     $providerStatus = strtolower($data['status'] ?? $data['Status'] ?? 'unknown');
     $status = match (true) {
-        in_array($providerStatus, ['done', 'succeed', 'succeeded', 'success', 'completed'],    true) => 'completed',
-        in_array($providerStatus, ['failed', 'error', 'cancelled', 'fail', 'not_found'],       true) => 'failed',
-        in_array($providerStatus, ['running', 'processing', 'in_progress', 'generating'],      true) => 'processing',
-        in_array($providerStatus, ['in_queue', 'queued', 'pending', 'waiting', 'initialized'], true) => 'queued',
-        default                                                                                       => 'queued',
+        in_array($providerStatus, ['done', 'succeed', 'succeeded', 'success', 'completed'],           true) => 'completed',
+        in_array($providerStatus, ['failed', 'error', 'cancelled', 'fail', 'not_found', 'expired'],   true) => 'failed',
+        in_array($providerStatus, ['running', 'processing', 'in_progress', 'generating'],             true) => 'processing',
+        in_array($providerStatus, ['in_queue', 'queued', 'pending', 'waiting', 'initialized'],        true) => 'queued',
+        default                                                                                             => 'queued',
     };
 
     // Extract video URL.

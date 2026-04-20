@@ -312,7 +312,11 @@ This Clone Avatar flow uses **different req_keys** from OmniHuman 1.5:
 |---|---|---|
 | OmniHuman 1.5 (current) | `realman_avatar_picture_omni15_cv` | One-shot talking-head from portrait + audio |
 | Clone Avatar — train | `realman_avatar_training_task` | Train a custom avatar from a 3–5 min video |
-| Clone Avatar — generate | *(uses `resource_id`, not req_key)* | Render the trained avatar with any audio |
+| Clone Avatar — generate | `realman_avatar_creation_task` | Render the trained avatar with any audio |
+
+All three use `action=CVSubmitTask` + `action=CVGetResult` on `cv.byteplusapi.com`,
+`Service=cv`, `Region=ap-singapore-1`, `Version=2024-06-06`.
+Config reference: `clone-avatar-training/config/api_config.json`
 
 **When OmniHuman returns code 50215:** This is most commonly caused by the training video not meeting the requirements in §3 above (resolution, bitrate, duration, single face, etc.) — not a code bug. See §9 for the full error cheatsheet.
 

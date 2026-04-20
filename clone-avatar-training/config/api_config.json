@@ -1,0 +1,35 @@
+{
+  "endpoint": "https://cv.byteplusapi.com",
+  "service": "cv",
+  "region": "ap-singapore-1",
+  "version": "2024-06-06",
+  "services": {
+    "create_avatar": {
+      "action": "CVSubmitTask",
+      "req_key": "realman_avatar_training_task",
+      "description": "Create Clone Avatar — https://docs.byteplus.com/en/docs/byteplus-vision/create-clone-avatar"
+    },
+    "generate_video": {
+      "action": "CVSubmitTask",
+      "req_key": "realman_avatar_creation_task",
+      "description": "Generate Clone Avatar video — https://docs.byteplus.com/en/docs/byteplus-vision/generate-clone-avatar-video"
+    }
+  },
+  "error_codes": {
+    "10000": "Success",
+    "50215": "Input invalid for this service",
+    "50217": "Cancel not allowed: task already been executed",
+    "50400": "Access Denied",
+    "50429": "QPS Limit Exceeded",
+    "50430": "Concurrent Limit Exceeded",
+    "50500": "Internal Error",
+    "50501": "Internal RPC Error"
+  },
+  "task_status": {
+    "in_queue": "Task submitted, waiting in queue",
+    "generating": "Task being processed",
+    "done": "Task completed (check code for success/failure)",
+    "not_found": "Task not found or expired",
+    "expired": "Task expired"
+  }
+}
