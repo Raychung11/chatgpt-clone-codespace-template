@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($initStock > 0) {
                     Database::insert(
                         'INSERT INTO stock_transactions (stock_item_id, transaction_type, quantity, stock_before, stock_after, notes, created_by) VALUES (?,?,?,?,?,?,?)',
-                        [$newId, 'in', $initStock, 0, $initStock, 'Initial stock entry', auth_id()]
+                        [$newId, 'in', $initStock, 0, $initStock, 'Initial stock entry', auth_user_id()]
                     );
                 }
                 flash_set(FLASH_SUCCESS, 'Stock item created.');
@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             Database::insert(
                 'INSERT INTO stock_transactions (stock_item_id, transaction_type, quantity, stock_before, stock_after, reference_type, reference_id, notes, created_by)
                  VALUES (?,?,?,?,?,?,?,?,?)',
-                [$itemId, $txType, $qty, $before, $after, $refType ?: null, $refId, $txNotes, auth_id()]
+                [$itemId, $txType, $qty, $before, $after, $refType ?: null, $refId, $txNotes, auth_user_id()]
             );
 
             // Fire alert when stock drops at or below threshold and not already pending
@@ -115,8 +115,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            activity_log(auth_id(), 'stock_' . $txType, 'stock_items', $itemId,
-                ['qty' => $qty, 'before' => $before, 'after' => $after]);
+            activity_log(auth_user_id(), 'stock_' . $txType, 'stock_items', $itemId,
+                "qty={$qty} before={$before} after={$after}");
 
             $label = match($txType) {
                 'in'  => 'Stock added',
@@ -131,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $alertId = clean_int($_POST['alert_id'] ?? 0);
             Database::query(
                 'UPDATE stock_alerts SET is_acknowledged=1, acknowledged_by=?, acknowledged_at=NOW() WHERE id=?',
-                [auth_id(), $alertId]
+                [auth_user_id(), $alertId]
             );
             flash_set(FLASH_SUCCESS, 'Alert acknowledged.');
             break;
@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 'acknowledge_all':
             Database::query(
                 'UPDATE stock_alerts SET is_acknowledged=1, acknowledged_by=?, acknowledged_at=NOW() WHERE is_acknowledged=0',
-                [auth_id()]
+                [auth_user_id()]
             );
             flash_set(FLASH_SUCCESS, 'All alerts acknowledged.');
             break;
@@ -149,60 +149,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect('admin/stock_control.php' . (isset($_POST['tab']) ? '?tab=' . clean($_POST['tab']) : ''));
 }
 
-// ── Load data ─────────────────────────────────────────────────────────────────
+// ── Load data (wrapped so page loads even before migration runs) ──────────────
 $editId   = clean_int($_GET['edit'] ?? 0);
-$editItem = $editId ? Database::fetchOne('SELECT * FROM stock_items WHERE id = ?', [$editId]) : null;
-
 $activeTab = clean($_GET['tab'] ?? 'overview');
 
-$items = Database::fetchAll('
-    SELECT s.*,
-        (SELECT COUNT(*) FROM stock_alerts a WHERE a.stock_item_id = s.id AND a.is_acknowledged = 0) AS open_alerts,
-        (SELECT COUNT(*) FROM stock_transactions t WHERE t.stock_item_id = s.id) AS tx_count
-    FROM stock_items s
-    ORDER BY s.is_active DESC, s.name ASC
-');
+$migrationMissing = false;
 
-$openAlerts = Database::fetchAll('
-    SELECT a.*, s.name AS item_name, s.unit, s.min_stock, s.current_stock
-    FROM stock_alerts a
-    JOIN stock_items s ON a.stock_item_id = s.id
-    WHERE a.is_acknowledged = 0
-    ORDER BY a.triggered_at DESC
-');
+try {
+    $editItem = $editId ? Database::fetchOne('SELECT * FROM stock_items WHERE id = ?', [$editId]) : null;
 
-$allAlerts = Database::fetchAll('
-    SELECT a.*, s.name AS item_name, s.unit,
-           u.full_name AS ack_by_name
-    FROM stock_alerts a
-    JOIN stock_items s ON a.stock_item_id = s.id
-    LEFT JOIN users u ON a.acknowledged_by = u.id
-    ORDER BY a.triggered_at DESC
-    LIMIT 200
-');
+    $items = Database::fetchAll('
+        SELECT s.*,
+            (SELECT COUNT(*) FROM stock_alerts a WHERE a.stock_item_id = s.id AND a.is_acknowledged = 0) AS open_alerts,
+            (SELECT COUNT(*) FROM stock_transactions t WHERE t.stock_item_id = s.id) AS tx_count
+        FROM stock_items s
+        ORDER BY s.is_active DESC, s.name ASC
+    ');
 
-$history = Database::fetchAll('
-    SELECT t.*, s.name AS item_name, s.unit,
-           u.full_name AS by_name
-    FROM stock_transactions t
-    JOIN stock_items s ON t.stock_item_id = s.id
-    LEFT JOIN users u ON t.created_by = u.id
-    ORDER BY t.created_at DESC
-    LIMIT 150
-');
+    $openAlerts = Database::fetchAll('
+        SELECT a.*, s.name AS item_name, s.unit, s.min_stock, s.current_stock
+        FROM stock_alerts a
+        JOIN stock_items s ON a.stock_item_id = s.id
+        WHERE a.is_acknowledged = 0
+        ORDER BY a.triggered_at DESC
+    ');
+
+    $allAlerts = Database::fetchAll('
+        SELECT a.*, s.name AS item_name, s.unit,
+               u.full_name AS ack_by_name
+        FROM stock_alerts a
+        JOIN stock_items s ON a.stock_item_id = s.id
+        LEFT JOIN users u ON a.acknowledged_by = u.id
+        ORDER BY a.triggered_at DESC
+        LIMIT 200
+    ');
+
+    $history = Database::fetchAll('
+        SELECT t.*, s.name AS item_name, s.unit,
+               u.full_name AS by_name
+        FROM stock_transactions t
+        JOIN stock_items s ON t.stock_item_id = s.id
+        LEFT JOIN users u ON t.created_by = u.id
+        ORDER BY t.created_at DESC
+        LIMIT 150
+    ');
+
+    $parkSections = Database::fetchAll('
+        SELECT ps.id, ps.name, mp.name AS park_name, ps.available_plots
+        FROM park_sections ps
+        JOIN memorial_parks mp ON ps.park_id = mp.id
+        ORDER BY mp.name, ps.name
+    ');
+} catch (\Throwable $e) {
+    $migrationMissing = true;
+    $editItem = null;
+    $items = $openAlerts = $allAlerts = $history = $parkSections = [];
+}
 
 // Summary stats
 $totalItems    = count($items);
 $lowStockCount = count(array_filter($items, fn($i) => $i['is_active'] && (float)$i['current_stock'] <= (float)$i['min_stock']));
 $unackCount    = count($openAlerts);
-
-// Park sections for entity_id dropdown
-$parkSections = Database::fetchAll('
-    SELECT ps.id, ps.name, mp.name AS park_name, ps.available_plots
-    FROM park_sections ps
-    JOIN memorial_parks mp ON ps.park_id = mp.id
-    ORDER BY mp.name, ps.name
-');
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 $page_title = 'Stock Control';
@@ -220,6 +227,16 @@ include __DIR__ . '/inc/header.php';
 </div>
 
 <?php render_flash(); ?>
+
+<?php if ($migrationMissing): ?>
+<div class="alert alert-warning">
+    <i class="fas fa-database me-2"></i>
+    <strong>Migration required.</strong>
+    The stock control tables don't exist yet. Run
+    <code>mysql -u user -p plotgold &lt; sql/006_stock_control.sql</code>
+    on your database, then reload this page.
+</div>
+<?php endif; ?>
 
 <?php if ($unackCount > 0): ?>
 <div class="alert alert-danger d-flex align-items-center gap-3 mb-4" role="alert">
