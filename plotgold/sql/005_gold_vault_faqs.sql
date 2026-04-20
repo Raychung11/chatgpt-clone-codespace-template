@@ -33,7 +33,7 @@ INSERT IGNORE INTO faqs (question, answer, category, sort_order, is_active) VALU
 -- ── REDEMPTION ───────────────────────────────────────────────────────────────
 
 ('How do I get my physical gold back?',
- 'Simply submit a redemption request through your dashboard. The minimum redemption quantity is 1 gram. We will process your request within 7 business days. You can choose to collect in person or have it delivered (delivery fee applies). There is no lock-in period — you can redeem at any time.',
+ 'Simply submit a redemption request through your dashboard. The minimum redemption quantity is 0.25 gram. We will process your request within 7 business days. You can choose to collect in person or have it delivered (delivery fee applies). There is no lock-in period — you can redeem at any time.',
  'Gold Vault', 6, 1),
 
 ('Can I sell my gold back to PlotGold?',
@@ -73,7 +73,7 @@ INSERT IGNORE INTO faqs (question, answer, category, sort_order, is_active) VALU
  'Gold Vault', 14, 1),
 
 ('What type of gold do you sell?',
- 'We sell PAMP-certified investment-grade physical gold (999.9 purity). PAMP is one of the world\'s most recognised gold refiners and its products are accepted globally. Gold is stored in bar or wafer form and can be redeemed as 1g, 5g, 10g, or 50g PAMP wafers.',
+ 'We sell PAMP-certified investment-grade physical gold (999.9 purity). PAMP is one of the world\'s most recognised gold refiners and its products are accepted globally. Gold is stored in bar or wafer form and can be redeemed as 0.25g, 1g, 5g, 10g, or 50g PAMP wafers.',
  'Gold Vault', 15, 1),
 
 ('Is there a limit to how much gold I can store?',

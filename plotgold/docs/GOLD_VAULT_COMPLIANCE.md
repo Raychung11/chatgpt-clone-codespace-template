@@ -84,7 +84,7 @@ Vaults are insured up to RM10,000,000 and are fireproof and audited.
 
 **Redemption Clause**
 > "Customers may request physical redemption of their gold at any time,
-> subject to a minimum redemption quantity of 1 gram. Redemption will be
+> subject to a minimum redemption quantity of 0.25 gram. Redemption will be
 > processed within [X] business days."
 
 **Shariah Compliance Clause**
@@ -101,7 +101,7 @@ User selects: "RM1,500 Gold Savings Plan"
 → Equivalent: ~4.23g of gold (at current price)
 → Stored: FREE in insured, audited vault
 → Dashboard: Live weight + live MYR value tracking
-→ Redeem: Physical 1g wafer OR keep as digital holding
+→ Redeem: Physical 0.25g wafer OR keep as digital holding
 → Compliance: ✅ Shariah compliant + ✅ PDPA safe + ✅ SSM only
 ```
 
@@ -162,7 +162,7 @@ Add the following trust badges to the gold vault product pages:
 >
 > When you buy gold from us, it's yours — legally, physically, completely.
 > We store it in our fireproof, audited vault at no charge, because that's
-> just good service. Redeem as a physical 1g wafer anytime you want.
+> just good service. Redeem as a physical 0.25g wafer anytime you want.
 > No fees. No lock-in. No fine print.
 
 ---

@@ -261,7 +261,7 @@ include INC_PATH . '/nav.php';
                 <p>黄金的市场价值会波动。PlotGold Malaysia不对黄金未来价值作任何声明或保证。客户在购买时接受全部市场风险。本服务不提供任何固定回报、资本保值保证或收益承诺。</p>
 
                 <p><strong>17.4 实物提取</strong></p>
-                <p>客户可随时申请提取其黄金的实物形式，最低提取量为1克。提取申请将在<strong>7个工作日</strong>内处理。提取时可能适用交付费用，具体金额将在提取时告知。</p>
+                <p>客户可随时申请提取其黄金的实物形式，最低提取量为<strong>0.25克</strong>。提取申请将在<strong>7个工作日</strong>内处理。提取时可能适用交付费用，具体金额将在提取时告知。</p>
 
                 <p><strong>17.5 保险与保全</strong></p>
                 <p>储存黄金的金库经过审计，提供防火及安全保障，并投保最高<strong>1000万令吉</strong>的保险。如发生损失，赔偿上限以保险赔付为准。客户可要求查阅当前的保险证明。</p>
@@ -437,7 +437,7 @@ include INC_PATH . '/nav.php';
                 <p>The market value of gold fluctuates. PlotGold Malaysia makes no representation or guarantee regarding the future value of gold. Customers accept full market risk at the point of purchase. No fixed returns, capital guarantees, or yield of any kind are offered or implied by this service.</p>
 
                 <p><strong>17.4 Physical Redemption</strong></p>
-                <p>Customers may request physical redemption of their gold at any time, subject to a minimum redemption quantity of <strong>1 gram</strong>. Redemption will be processed within <strong>7 business days</strong>. A delivery fee may apply at the time of redemption and will be disclosed before processing.</p>
+                <p>Customers may request physical redemption of their gold at any time, subject to a minimum redemption quantity of <strong>0.25 gram</strong>. Redemption will be processed within <strong>7 business days</strong>. A delivery fee may apply at the time of redemption and will be disclosed before processing.</p>
 
                 <p><strong>17.5 Insurance &amp; Security</strong></p>
                 <p>Our gold vaults are audited, fireproof, and secured. Stored gold is insured up to <strong>RM 10,000,000</strong>. In the event of loss, compensation is limited to insurance proceeds. Customers may request a copy of current insurance certificates upon written request.</p>
