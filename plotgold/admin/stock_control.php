@@ -213,8 +213,12 @@ $unackCount    = count($openAlerts);
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 $page_title = 'Stock Control';
-include __DIR__ . '/inc/header.php';
+$body_class = 'admin-layout';
+include INC_PATH . '/header.php';
 ?>
+<div class="d-flex">
+<?php include __DIR__ . '/inc/sidebar.php'; ?>
+<div class="admin-main">
 
 <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
@@ -226,7 +230,7 @@ include __DIR__ . '/inc/header.php';
     </button>
 </div>
 
-<?php render_flash(); ?>
+<?= render_flash() ?>
 
 <?php if ($migrationMissing): ?>
 <div class="alert alert-warning">
@@ -759,4 +763,6 @@ document.getElementById('entityTypeSelect').addEventListener('change', function 
 });
 </script>
 
-<?php include __DIR__ . '/inc/footer.php'; ?>
+</div><!-- /.admin-main -->
+</div><!-- /.d-flex -->
+<?php include INC_PATH . '/footer.php'; ?>
