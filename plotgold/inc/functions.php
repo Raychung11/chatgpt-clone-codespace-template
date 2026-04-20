@@ -236,6 +236,62 @@ function activity_log(?int $userId, string $action, ?string $entityType = null, 
     }
 }
 
+// ── Stock Control Helpers ─────────────────────────────────────────────────────
+
+/**
+ * Deduct stock for a sale and fire a low-stock alert if needed.
+ * Returns ['ok' => bool, 'error' => string|null].
+ * Pass $allowOversell=false to block the transaction when stock would go negative.
+ */
+function stock_deduct(int $stockItemId, float $qty, string $refType = '', int $refId = 0, bool $allowOversell = false): array
+{
+    try {
+        $item = Database::fetchOne('SELECT * FROM stock_items WHERE id = ? AND is_active = 1', [$stockItemId]);
+        if (!$item) return ['ok' => false, 'error' => 'Stock item not found or inactive.'];
+
+        $before = (float)$item['current_stock'];
+        $after  = $before - $qty;
+
+        if (!$allowOversell && $after < 0) {
+            return ['ok' => false, 'error' => "Insufficient stock — only {$before} {$item['unit']} available (requested {$qty})."];
+        }
+
+        $after = max(0, $after);
+        Database::query('UPDATE stock_items SET current_stock = ? WHERE id = ?', [$after, $stockItemId]);
+        Database::insert(
+            'INSERT INTO stock_transactions (stock_item_id, transaction_type, quantity, stock_before, stock_after, reference_type, reference_id) VALUES (?,?,?,?,?,?,?)',
+            [$stockItemId, 'out', $qty, $before, $after, $refType ?: null, $refId ?: null]
+        );
+
+        if ($item['notify_admin'] && $after <= (float)$item['min_stock']) {
+            $existing = Database::fetchOne('SELECT id FROM stock_alerts WHERE stock_item_id = ? AND is_acknowledged = 0', [$stockItemId]);
+            if (!$existing) {
+                Database::insert(
+                    'INSERT INTO stock_alerts (stock_item_id, stock_at_trigger, min_stock_at_trigger) VALUES (?,?,?)',
+                    [$stockItemId, $after, $item['min_stock']]
+                );
+            }
+        }
+
+        return ['ok' => true, 'error' => null, 'stock_after' => $after];
+    } catch (\Throwable $e) {
+        return ['ok' => false, 'error' => 'Stock update failed: ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Check if a stock item has enough quantity. Returns true if safe to proceed.
+ */
+function stock_check(int $stockItemId, float $qty): bool
+{
+    try {
+        $item = Database::fetchOne('SELECT current_stock FROM stock_items WHERE id = ? AND is_active = 1', [$stockItemId]);
+        return $item && (float)$item['current_stock'] >= $qty;
+    } catch (\Throwable) {
+        return true; // fail open — don't block sales on a DB error
+    }
+}
+
 function ip_address(): string
 {
     $headers = ['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR'];

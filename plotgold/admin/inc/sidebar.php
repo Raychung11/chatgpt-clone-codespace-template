@@ -8,6 +8,7 @@ try { $pendingReview    = (int)(Database::fetchOne("SELECT COUNT(*) c FROM listi
 try { $openEnquiries    = (int)(Database::fetchOne("SELECT COUNT(*) c FROM enquiries   WHERE status = 'new'")['c']            ?? 0); } catch (\Throwable $e) { $openEnquiries    = 0; }
 try { $pendingQuotes    = (int)(Database::fetchOne("SELECT COUNT(*) c FROM quotations  WHERE status = 'in_review'")['c']      ?? 0); } catch (\Throwable $e) { $pendingQuotes    = 0; }
 try { $pendingProviders = (int)(Database::fetchOne("SELECT COUNT(*) c FROM providers   WHERE approval_status = 'pending'")['c'] ?? 0); } catch (\Throwable $e) { $pendingProviders = 0; }
+try { $stockAlerts     = (int)(Database::fetchOne("SELECT COUNT(*) c FROM stock_alerts WHERE is_acknowledged = 0")['c']                       ?? 0); } catch (\Throwable $e) { $stockAlerts     = 0; }
 
 $sections = [
     'Overview' => [
@@ -18,6 +19,8 @@ $sections = [
         ['icon' => 'fa-search-plus',     'label' => 'Review Queue',        'file' => 'listing_review.php', 'url' => 'admin/listing_review.php',
          'badge' => $pendingReview ?: null, 'badge_class' => 'bg-danger'],
         ['icon' => 'fa-tree',            'label' => 'Memorial Parks',      'file' => 'memorial_parks.php', 'url' => 'admin/memorial_parks.php'],
+        ['icon' => 'fa-boxes',           'label' => 'Stock Control',        'file' => 'stock_control.php',  'url' => 'admin/stock_control.php',
+         'badge' => $stockAlerts ?: null, 'badge_class' => 'bg-danger'],
     ],
     'Providers & Quotes' => [
         ['icon' => 'fa-briefcase',       'label' => 'Providers',           'file' => 'providers.php',      'url' => 'admin/providers.php',
