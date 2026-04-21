@@ -47,6 +47,7 @@ require_once __DIR__ . '/../inc/byteplus.php';
 require_once __DIR__ . '/../inc/vision_auth.php';
 require_once __DIR__ . '/../inc/omnihuman.php';
 require_once __DIR__ . '/../inc/long_video.php';
+require_once __DIR__ . '/../inc/clone_avatar_api.php';
 
 $pdo = db();
 
@@ -320,6 +321,126 @@ if (!empty($avatarJobs)) {
     }
 } else {
     clog('No avatar jobs to poll.');
+}
+
+// ── Poll clone_avatar_jobs ────────────────────────────────────────────────────
+$caTableExists = false;
+try {
+    $pdo->query('SELECT 1 FROM `clone_avatar_jobs` LIMIT 1');
+    $caTableExists = true;
+} catch (\Throwable $e) { /* table not yet created — run sql/migrate_clone_avatar.sql */ }
+
+if ($caTableExists) {
+    // Auto-timeout jobs stuck > 30 minutes (generation should finish in ~60 s)
+    $caTimeout = $pdo->prepare(
+        'SELECT id, user_id, credit_cost FROM `clone_avatar_jobs`
+         WHERE `status` IN ("queued","processing")
+           AND `created_at` < DATE_SUB(NOW(), INTERVAL 30 MINUTE)'
+    );
+    $caTimeout->execute();
+    foreach ($caTimeout->fetchAll() as $stuck) {
+        clog("Clone Avatar job #{$stuck['id']} timed out — refunding.");
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare(
+                'UPDATE clone_avatar_jobs SET status="refunded", error_message="Timed out after 30 minutes", refunded_at=NOW() WHERE id=?'
+            )->execute([$stuck['id']]);
+            wallet_refund((int)$stuck['user_id'], (float)$stuck['credit_cost'],
+                'clone_avatar_job', (int)$stuck['id'],
+                'Auto-refund: clone avatar job #' . $stuck['id'] . ' timed out');
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            clog("  Timeout refund DB error: " . $e->getMessage());
+        }
+    }
+
+    $caStmt = $pdo->prepare(
+        'SELECT * FROM `clone_avatar_jobs`
+         WHERE `status` IN ("queued","processing")
+           AND `api_task_id` IS NOT NULL
+         ORDER BY `created_at` ASC
+         LIMIT 20'
+    );
+    $caStmt->execute();
+    $caJobs = $caStmt->fetchAll();
+
+    if (!empty($caJobs)) {
+        clog('Found ' . count($caJobs) . ' clone avatar job(s) to poll.');
+        foreach ($caJobs as $job) {
+            $jobId  = (int)$job['id'];
+            $taskId = $job['api_task_id'];
+            $userId = (int)$job['user_id'];
+            clog("Checking clone avatar job #$jobId (task_id: $taskId)");
+
+            $result = clone_avatar_query_task($taskId);
+
+            if (!$result['ok']) {
+                $apiErrCode = (int)($result['raw']['code'] ?? 0);
+                clog("  ERROR (code $apiErrCode): " . ($result['error'] ?? 'unknown'));
+                $jobAge     = time() - strtotime($job['started_at'] ?: $job['created_at']);
+                $pastGrace  = ($jobAge > 300);
+                if (in_array($apiErrCode, [50204, 50200], true)
+                    || ($apiErrCode === 50215 && $pastGrace)) {
+                    $errMsg = 'BytePlus rejected task (code ' . $apiErrCode . ')';
+                    $pdo->beginTransaction();
+                    try {
+                        $pdo->prepare(
+                            'UPDATE clone_avatar_jobs SET status="failed", error_message=?, api_response=? WHERE id=?'
+                        )->execute([$errMsg, json_encode($result['raw']), $jobId]);
+                        wallet_refund($userId, (float)$job['credit_cost'], 'clone_avatar_job', $jobId,
+                            'Auto-refund: clone avatar job #' . $jobId . ' — code ' . $apiErrCode);
+                        $pdo->prepare('UPDATE clone_avatar_jobs SET status="refunded", refunded_at=NOW() WHERE id=?')->execute([$jobId]);
+                        $pdo->commit();
+                        clog("  ✗ PERMANENT ERROR — refunded to user #$userId");
+                    } catch (\Throwable $e) {
+                        if ($pdo->inTransaction()) $pdo->rollBack();
+                        clog("  DB ERROR: " . $e->getMessage());
+                    }
+                }
+                continue;
+            }
+
+            $status   = $result['status'];
+            $videoUrl = $result['video_url'];
+            $errorMsg = $result['error'];
+            clog("  Status: $status");
+
+            if ($status === 'queued' || $status === 'processing') {
+                $pdo->prepare(
+                    'UPDATE clone_avatar_jobs SET status=?, started_at=COALESCE(started_at,NOW()) WHERE id=?'
+                )->execute([$status, $jobId]);
+                continue;
+            }
+
+            $pdo->beginTransaction();
+            try {
+                if ($status === 'completed' && $videoUrl) {
+                    $pdo->prepare(
+                        'UPDATE clone_avatar_jobs
+                         SET status="completed", completed_at=NOW(), video_url=?, api_response=?
+                         WHERE id=?'
+                    )->execute([$videoUrl, json_encode($result['raw']), $jobId]);
+                    $pdo->commit();
+                    clog("  ✓ COMPLETED — video: $videoUrl");
+                } elseif ($status === 'failed') {
+                    $pdo->prepare(
+                        'UPDATE clone_avatar_jobs SET status="failed", error_message=?, api_response=? WHERE id=?'
+                    )->execute([$errorMsg, json_encode($result['raw']), $jobId]);
+                    wallet_refund($userId, (float)$job['credit_cost'], 'clone_avatar_job', $jobId,
+                        'Auto-refund: clone avatar job #' . $jobId . ' failed at API');
+                    $pdo->prepare('UPDATE clone_avatar_jobs SET status="refunded", refunded_at=NOW() WHERE id=?')->execute([$jobId]);
+                    $pdo->commit();
+                    clog("  ✗ FAILED — refunded to user #$userId");
+                }
+            } catch (\Throwable $e) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                clog("  DB ERROR: " . $e->getMessage());
+            }
+        }
+    } else {
+        clog('No clone avatar jobs to poll.');
+    }
 }
 
 // ── Poll long_video_jobs (30-Second Ad) ──────────────────────────────────────
