@@ -5,7 +5,8 @@ declare(strict_types=1);
  * client/clone-avatar.php
  * Clone Avatar — generate a talking-head video using a BytePlus-trained avatar + audio.
  *
- * Admin must set clone_avatar_resource_id in Settings before users can submit jobs.
+ * Each user stores their own resource_id (returned after training in the Python scripts).
+ * Falls back to the admin-configured clone_avatar_resource_id setting if user has none set.
  * Audio can be a public URL or an uploaded MP3/WAV file (auto-served from uploads/).
  */
 
@@ -25,7 +26,24 @@ $pdo  = db();
 
 $balance     = wallet_balance($uid);
 $creditCost  = (float)(setting('clone_avatar_credit_cost', '10') ?: '10');
-$resourceId  = trim(setting('clone_avatar_resource_id', '') ?: '');
+
+// Per-user resource_id; fall back to admin-configured default
+$userRow    = $pdo->prepare('SELECT clone_avatar_resource_id FROM users WHERE id=?');
+$userRow->execute([$uid]);
+$userResourceId = trim((string)($userRow->fetchColumn() ?: ''));
+$adminResourceId = trim(setting('clone_avatar_resource_id', '') ?: '');
+$resourceId = $userResourceId ?: $adminResourceId;
+
+// ── AJAX: save_resource_id ────────────────────────────────────────────────────
+if (($_GET['_action'] ?? '') === 'save_resource_id') {
+    csrf_verify();
+    $rid = trim($_POST['resource_id'] ?? '');
+    if ($rid && !preg_match('/^[\w\-]+$/', $rid)) {
+        json_response(['ok' => false, 'error' => 'Invalid resource ID format.']);
+    }
+    $pdo->prepare('UPDATE users SET clone_avatar_resource_id=? WHERE id=?')->execute([$rid ?: null, $uid]);
+    json_response(['ok' => true, 'resource_id' => $rid]);
+}
 
 // ── AJAX: cancel ──────────────────────────────────────────────────────────────
 if (($_GET['_action'] ?? '') === 'cancel') {
@@ -179,8 +197,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['_action'])) {
 
     $errors = [];
 
+    // Re-read user resource_id in case it was just saved
+    $freshRow = $pdo->prepare('SELECT clone_avatar_resource_id FROM users WHERE id=?');
+    $freshRow->execute([$uid]);
+    $resourceId = trim((string)($freshRow->fetchColumn() ?: '')) ?: $adminResourceId;
+
     if (!$resourceId) {
-        $errors[] = 'Clone Avatar is not configured yet. Please contact the admin.';
+        $errors[] = 'No Avatar ID set. Enter your resource_id above before submitting.';
     }
 
     if ($balance < $creditCost) {
@@ -273,7 +296,7 @@ $jobs = $pdo->prepare(
 $jobs->execute([$uid]);
 $jobs = $jobs->fetchAll();
 
-$configured = (bool)$resourceId;
+$configured = (bool)$resourceId; // true if user or admin has a resource_id
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -308,12 +331,26 @@ $configured = (bool)$resourceId;
         <p class="text-muted" style="margin-top:4px">Generate a video of your trained avatar speaking any audio.</p>
     </div>
 
-    <?php if (!$configured): ?>
-        <div class="ca-notice">
-            <strong>Not configured.</strong> An admin must set the Clone Avatar Resource ID in
-            <a href="<?= BASE_URL ?>/admin/settings.php">Settings</a> before jobs can be submitted.
+    <!-- ── Avatar ID card ────────────────────────────────────────────────── -->
+    <div class="card ca-form mb-4">
+        <div class="card-header"><span class="card-title">Your Avatar ID</span></div>
+        <p class="text-muted text-sm" style="padding:0 0 10px">
+            After training an avatar with the Python scripts, paste the <code>resource_id</code>
+            from <code>output/avatar_result.json</code> here.
+            <?php if ($adminResourceId && !$userResourceId): ?>
+                A shared avatar is active (set by admin).
+            <?php endif; ?>
+        </p>
+        <div style="display:flex;gap:10px;align-items:flex-end">
+            <div style="flex:1">
+                <input type="text" id="inputResourceId" class="form-control"
+                       placeholder="e.g. 250623-zhibo-linyunzhi"
+                       value="<?= e($userResourceId) ?>">
+            </div>
+            <button class="btn btn-secondary" onclick="saveResourceId()">Save</button>
         </div>
-    <?php endif; ?>
+        <div id="ridMsg" class="form-hint" style="margin-top:6px"></div>
+    </div>
 
     <!-- ── Submit form ─────────────────────────────────────────────────── -->
     <div class="card ca-form mb-5">
@@ -469,6 +506,28 @@ function pollJob(jobId, auto = false) {
         }
     })
     .catch(() => { if (btn) btn.textContent = 'Refresh'; });
+}
+
+function saveResourceId() {
+    const rid = document.getElementById('inputResourceId').value.trim();
+    const msg = document.getElementById('ridMsg');
+    msg.textContent = 'Saving…';
+    fetch(BASE + '/client/clone-avatar.php?_action=save_resource_id', {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'resource_id=' + encodeURIComponent(rid),
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.ok) {
+            msg.textContent = rid ? '✅ Saved — ' + rid : '✅ Cleared.';
+            msg.style.color = 'var(--color-success, green)';
+        } else {
+            msg.textContent = '❌ ' + (d.error || 'Error');
+            msg.style.color = 'var(--color-danger, red)';
+        }
+    })
+    .catch(() => { msg.textContent = '❌ Network error'; });
 }
 
 function jobAction(action, jobId) {
