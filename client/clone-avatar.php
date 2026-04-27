@@ -28,9 +28,14 @@ $balance     = wallet_balance($uid);
 $creditCost  = (float)(setting('clone_avatar_credit_cost', '10') ?: '10');
 
 // Per-user resource_id; fall back to admin-configured default
-$userRow    = $pdo->prepare('SELECT clone_avatar_resource_id FROM users WHERE id=?');
-$userRow->execute([$uid]);
-$userResourceId = trim((string)($userRow->fetchColumn() ?: ''));
+$userResourceId  = '';
+try {
+    $userRow = $pdo->prepare('SELECT clone_avatar_resource_id FROM users WHERE id=?');
+    $userRow->execute([$uid]);
+    $userResourceId = trim((string)($userRow->fetchColumn() ?: ''));
+} catch (\Throwable $e) {
+    // Column doesn't exist yet — run sql/migrate_clone_avatar_per_user.sql
+}
 $adminResourceId = trim(setting('clone_avatar_resource_id', '') ?: '');
 $resourceId = $userResourceId ?: $adminResourceId;
 
@@ -41,7 +46,11 @@ if (($_GET['_action'] ?? '') === 'save_resource_id') {
     if ($rid && !preg_match('/^[\w\-]+$/', $rid)) {
         json_response(['ok' => false, 'error' => 'Invalid resource ID format.']);
     }
-    $pdo->prepare('UPDATE users SET clone_avatar_resource_id=? WHERE id=?')->execute([$rid ?: null, $uid]);
+    try {
+        $pdo->prepare('UPDATE users SET clone_avatar_resource_id=? WHERE id=?')->execute([$rid ?: null, $uid]);
+    } catch (\Throwable $e) {
+        json_response(['ok' => false, 'error' => 'DB migration not applied. Run sql/migrate_clone_avatar_per_user.sql first.']);
+    }
     json_response(['ok' => true, 'resource_id' => $rid]);
 }
 
@@ -290,13 +299,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['_action'])) {
 }
 
 // ── Load recent jobs ──────────────────────────────────────────────────────────
-$jobs = $pdo->prepare(
-    'SELECT * FROM clone_avatar_jobs WHERE user_id=? ORDER BY created_at DESC LIMIT 20'
-);
-$jobs->execute([$uid]);
-$jobs = $jobs->fetchAll();
+$jobs = [];
+try {
+    $jStmt = $pdo->prepare('SELECT * FROM clone_avatar_jobs WHERE user_id=? ORDER BY created_at DESC LIMIT 20');
+    $jStmt->execute([$uid]);
+    $jobs = $jStmt->fetchAll();
+} catch (\Throwable $e) {
+    // Table doesn't exist yet — run sql/migrate_clone_avatar.sql
+}
 
-$configured = (bool)$resourceId; // true if user or admin has a resource_id
+$configured   = (bool)$resourceId;
+$tablesMissing = false;
+try {
+    $pdo->query('SELECT 1 FROM clone_avatar_jobs LIMIT 1');
+} catch (\Throwable $e) {
+    $tablesMissing = true;
+}
+$colMissing = false;
+try {
+    $pdo->query('SELECT clone_avatar_resource_id FROM users LIMIT 1');
+} catch (\Throwable $e) {
+    $colMissing = true;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -325,6 +349,16 @@ $configured = (bool)$resourceId; // true if user or admin has a resource_id
 <div class="container" style="max-width:860px;padding-top:32px">
 
     <?= render_flash() ?>
+
+    <?php if ($tablesMissing || $colMissing): ?>
+    <div class="ca-notice" style="background:#fff3cd;border-color:#ffc107">
+        <strong>Database migration required.</strong> Please run the following in phpMyAdmin before using this page:
+        <ul style="margin:8px 0 0 20px;font-size:.875rem">
+            <?php if ($tablesMissing): ?><li><code>sql/migrate_clone_avatar.sql</code> — creates the <code>clone_avatar_jobs</code> table</li><?php endif; ?>
+            <?php if ($colMissing): ?><li><code>sql/migrate_clone_avatar_per_user.sql</code> — adds <code>users.clone_avatar_resource_id</code> column</li><?php endif; ?>
+        </ul>
+    </div>
+    <?php endif; ?>
 
     <div class="page-header">
         <h1 class="page-title">Clone Avatar</h1>
