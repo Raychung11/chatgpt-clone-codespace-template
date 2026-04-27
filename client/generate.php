@@ -649,6 +649,9 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
                             📋 Use Template
                         </button>
                     <?php endif; ?>
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="openGuide()">
+                        💡 Prompt Guide
+                    </button>
                     <button type="button" class="enhance-btn" id="enhanceBtn" onclick="enhancePrompt()">
                         ✨ Enhance with AI
                     </button>
@@ -1181,5 +1184,230 @@ async function runGenDebug() {
     </div>
 </div>
 
+<!-- ── Prompt Guide Modal ──────────────────────────────────────────────────── -->
+<div id="guideModal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);overflow-y:auto">
+<div style="max-width:780px;margin:40px auto 60px;background:var(--color-surface);border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.3);overflow:hidden">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--color-border)">
+        <h2 style="margin:0;font-size:1.1rem">💡 Seedance Prompt Guide</h2>
+        <button onclick="closeGuide()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--color-muted)">✕</button>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:0;border-bottom:2px solid var(--color-border);overflow-x:auto">
+        <?php foreach (['Formula','Camera','Sound','Style','Examples'] as $i => $tab): ?>
+        <button class="guide-tab <?= $i===0?'guide-tab-active':'' ?>"
+                onclick="switchGuideTab(<?= $i ?>)"
+                id="gtab<?= $i ?>"
+                style="padding:10px 20px;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;white-space:nowrap;font-size:.9rem;color:var(--color-muted)">
+            <?= $tab ?>
+        </button>
+        <?php endforeach; ?>
+    </div>
+
+    <div style="padding:24px">
+
+    <!-- Tab 0: Formula -->
+    <div id="gpanel0">
+        <div style="background:var(--color-surface2);border-radius:8px;padding:16px;margin-bottom:20px">
+            <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--color-muted);margin-bottom:8px">Prompt Formula</div>
+            <div style="font-size:1rem;font-weight:600;line-height:1.8">
+                Subject &nbsp;+&nbsp; Movement &nbsp;+&nbsp; Environment
+                <span style="color:var(--color-muted)">(optional)</span> &nbsp;+&nbsp;
+                Camera movement <span style="color:var(--color-muted)">(optional)</span> &nbsp;+&nbsp;
+                Aesthetic style <span style="color:var(--color-muted)">(optional)</span> &nbsp;+&nbsp;
+                Sound <span style="color:var(--color-muted)">(optional)</span>
+            </div>
+        </div>
+        <div style="font-size:.85rem;color:var(--color-muted);margin-bottom:14px">Click any example to insert it into your prompt.</div>
+        <?php
+        $formulaExamples = [
+            'A man with a weathered face dressed in medieval pirate costume stands on a black reef by the sea. His expression is passionate and he raises his hands powerfully toward the sky. The camera slowly dolly-in from a medium shot. Epic orchestral background music.',
+            'A model gracefully showcases the cheongsam she is wearing, exuding elegance. Medium shot, camera slowly circles from front to right. Clean studio background.',
+            'In a violent storm, huge waves roll up on the sea. The seawater rushes into the city and destroys houses. The camera captures the vast destruction from a drone aerial shot. Thunderous sound effects.',
+            'A short-haired girl is sketching at the street corner, wearing a light-colored shirt and a pinafore. The camera remains at medium shot, slowly circling from the front to the right. Gentle acoustic guitar background music.',
+        ];
+        foreach ($formulaExamples as $ex): ?>
+        <div class="guide-example" onclick="insertGuidePrompt(this)">
+            <?= e($ex) ?>
+        </div>
+        <?php endforeach; ?>
+    </div>
+
+    <!-- Tab 1: Camera -->
+    <div id="gpanel1" style="display:none">
+        <?php
+        $cameraGroups = [
+            'Camera Angle' => [
+                'High-angle shot (birds-eye view, looking down at subject)',
+                'Eye-level shot (flat position, 45mm lens level with subject)',
+                'Low-angle shot (camera below subject looking up)',
+                'Over-the-shoulder shot (shooting from behind character A toward character B)',
+                'Surveillance fisheye perspective (fixed wide-angle, room distorted toward center)',
+            ],
+            'Shot Size' => [
+                'Wide shot / Full shot (entire subject small in vast environment)',
+                'Medium shot (waist-up, subject fills most of frame)',
+                'Close-up shot (face or object fills frame)',
+                'Extreme close-up / Big close-up (eyes, lips, hands only)',
+                'Bust / Half-length portrait (chest and up)',
+            ],
+            'Camera Movement' => [
+                'Slowly dolly-in from a medium shot to a close-up',
+                'Dolly-out while zooming in (Hitchcock zoom — background expands, subject stays)',
+                'Camera pans left to right following subject motion',
+                'Camera rises up revealing a wider landscape',
+                'Slow 360° orbit around the subject',
+                'Handheld follow shot — camera tracks subject through crowd',
+            ],
+        ];
+        foreach ($cameraGroups as $group => $items): ?>
+        <div style="margin-bottom:18px">
+            <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--color-muted);font-weight:700;margin-bottom:8px"><?= e($group) ?></div>
+            <?php foreach ($items as $item): ?>
+            <div class="guide-example" onclick="insertGuidePrompt(this)"><?= e($item) ?></div>
+            <?php endforeach; ?>
+        </div>
+        <?php endforeach; ?>
+    </div>
+
+    <!-- Tab 2: Sound -->
+    <div id="gpanel2" style="display:none">
+        <?php
+        $soundGroups = [
+            'Dialogue — specify character + emotion + pace + language' => [
+                'A man speaks in a calm emotional state, with an even tone and a normal speaking pace: "Let\'s begin with what matters most."',
+                'In a gentle emotional state, with a soft tone and slow speaking pace: "You can take your time. I\'m not rushing you."',
+                'Two people converse in English in a warm bookstore. Man: "Did you ever read this one before?" Woman: "No, but… I think I want to, with you."',
+                'Four people around a table speak in English. First person: "So what\'s our next step?" Second: "We need a clearer direction." Third: "Agreed, let\'s break it down." Fourth: "Okay, let\'s start from the beginning."',
+            ],
+            'Voiceover' => [
+                'A deep, calm male voiceover narrates: "In the vast silence of the universe, our world is but a fleeting moment." The scene slowly transitions from night to dawn.',
+                'A clear, confident female commercial voiceover with a refined tone says: "Rich color. Smooth texture. One swipe delivers radiant lips." Clean studio product shot.',
+            ],
+            'Background Music (BGM)' => [
+                'Accompanied by a heart-stirring epic symphony as background music, featuring a theme melody full of strength and hope.',
+                'The background music is a snippet of a fast-paced pop song. The character claps hands in time with the drumbeats.',
+                'A gentle, nostalgic melodious guitar solo plays softly, with a complex emotion of faint reminiscence intertwined with happiness.',
+            ],
+            'Sound Effects (SFX)' => [
+                'Rain outside the window getting heavier, raindrops flowing down the glass, ambient city sounds.',
+                'At dusk, a large explosion with a fireball soaring into the sky — thunderous boom and debris sound effects.',
+            ],
+        ];
+        foreach ($soundGroups as $group => $items): ?>
+        <div style="margin-bottom:18px">
+            <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--color-muted);font-weight:700;margin-bottom:8px"><?= e($group) ?></div>
+            <?php foreach ($items as $item): ?>
+            <div class="guide-example" onclick="insertGuidePrompt(this)"><?= e($item) ?></div>
+            <?php endforeach; ?>
+        </div>
+        <?php endforeach; ?>
+    </div>
+
+    <!-- Tab 3: Style -->
+    <div id="gpanel3" style="display:none">
+        <?php
+        $styleGroups = [
+            'Cinematic & Film References' => [
+                'In the style of the Japanese drama "Little Forest" — warm, quiet, rural, natural lighting.',
+                'In the style of Hayao Miyazaki\'s anime — lush backgrounds, gentle motion, painterly.',
+                'In the style of Disney\'s 2D animated movies — expressive characters, saturated colors.',
+                'Pixar-style 3D animation — soft volumetric lighting, emotionally expressive characters.',
+                'Dark Fantasy, Cthulhu style, body horror aesthetics, extremely realistic 8K material details.',
+                'Solarpunk with a Ghibli content style — full of vitality, highly saturated colors.',
+            ],
+            'Lighting & Mood' => [
+                'Soft diffused warm lighting, clean blurred background, high-end e-commerce aesthetic.',
+                'Neon reflections from nighttime cityscape, wet alley, blue and red alternating light.',
+                'Golden hour sunlight casting long shadows, cinematic warm tones.',
+                'Cool blue studio light, clinical precision, high-tech laboratory aesthetic.',
+            ],
+            'Narrative Tension' => [
+                'The camera maintains a frontal perspective and slowly dolly-in, smooth motion, stable composition, steady lighting.',
+                'Shot transition: medium shot → cut to close-up → cut back to medium shot. Reverse-shot dialogue editing.',
+                'Time-lapse photography speed — plants grow, flowers bloom rapidly.',
+                'Slow motion — water splashes horizontally across the frame in detail.',
+            ],
+        ];
+        foreach ($styleGroups as $group => $items): ?>
+        <div style="margin-bottom:18px">
+            <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--color-muted);font-weight:700;margin-bottom:8px"><?= e($group) ?></div>
+            <?php foreach ($items as $item): ?>
+            <div class="guide-example" onclick="insertGuidePrompt(this)"><?= e($item) ?></div>
+            <?php endforeach; ?>
+        </div>
+        <?php endforeach; ?>
+    </div>
+
+    <!-- Tab 4: Full Examples -->
+    <div id="gpanel4" style="display:none">
+        <div style="font-size:.85rem;color:var(--color-muted);margin-bottom:14px">Full production-ready prompts. Click to insert.</div>
+        <?php
+        $fullExamples = [
+            'Commercial (Product)' => 'High-end lipstick e-commerce commercial. Three continuous shots: first, an extremely slow smooth push-in showcasing the lipstick overall appearance under soft warm lighting with a clean blurred background; second, a close-up of the model holding the lipstick near her face, natural luminous skin tone, calm confident expression; third, close-up of the lipstick on a clean tabletop, minimal environment, delicate lighting. Clear, confident female voiceover with a refined tone says: "Rich color. Smooth texture. One swipe delivers radiant lips. Lightweight, comfortable, and effortlessly elegant."',
+            'Cinematic Drama' => 'In a warm, softly lit independent bookstore, two Americans — a man and a woman — stand shoulder to shoulder, flipping through the same book. The light falls across the pages and their faces. The camera makes an extremely subtle dolly-in, creating a quiet and intimate atmosphere. English dialogue — Man: "Did you ever read this one before?" Woman: "No, but… I think I want to, with you."',
+            'Documentary Voiceover' => 'Generate a video with voiceover: A deep, calm male voice says, "In the vast silence of the universe, our world is but a fleeting moment. Yet, within it, life thrives against all odds." The scene slowly transitions from night to dawn, with the stars gradually disappearing and the sun rising from behind the mountains.',
+            'Action / Thriller' => 'In a wet late-night alley, neon signs flashing blue and red. A man, about 35 years old, with short messy black hair and light stubble, stands with his back against a brick wall, wearing a black leather trench coat. His eyes are vigilant, brows furrowed. The camera starts with a medium shot above the chest, slowly zooms in at a steady speed, approaching his face, finally reaching an extreme close-up showing only the area from his eyes to his nose bridge.',
+            'Nature / Landscape' => 'A grand epic aerial video. The camera passes through magnificent mountains shrouded in clouds and ancient castles. Accompanied by a heart-stirring epic symphony as background music, featuring a theme melody full of strength and hope. Golden hour lighting, cinematic 4K quality.',
+            'Fantasy / VFX' => 'She inadvertently touched the old Christmas ball with her finger. Instantly the inside lit up with soft golden light. This light spread out like ripples — wherever it reached, tiny light spots condensed in the air. The light wrapped around the girl, her clothes reshaped into Christmas attire. The Christmas tree grew from the ground, colored lights lit up one by one, snowflakes condensed and fell outside the window. The entire scene transformed into a Christmas-themed bedroom.',
+        ];
+        foreach ($fullExamples as $label => $ex): ?>
+        <div style="margin-bottom:4px">
+            <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--color-muted);font-weight:700;margin-bottom:4px"><?= e($label) ?></div>
+            <div class="guide-example" onclick="insertGuidePrompt(this)"><?= e($ex) ?></div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+
+    </div><!-- /padding -->
+</div><!-- /modal box -->
+</div><!-- /modal backdrop -->
+
+<style>
+.guide-tab-active { color: var(--color-primary) !important; border-bottom-color: var(--color-primary) !important; font-weight: 600; }
+.guide-example {
+    background: var(--color-surface2);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    font-size: .85rem;
+    line-height: 1.6;
+    cursor: pointer;
+    transition: border-color .15s;
+}
+.guide-example:hover { border-color: var(--color-primary); }
+</style>
+
+<script>
+function openGuide()  { document.getElementById('guideModal').style.display = ''; }
+function closeGuide() { document.getElementById('guideModal').style.display = 'none'; }
+
+// Close on backdrop click
+document.getElementById('guideModal').addEventListener('click', function(e) {
+    if (e.target === this) closeGuide();
+});
+
+function switchGuideTab(idx) {
+    for (let i = 0; i < 5; i++) {
+        document.getElementById('gpanel' + i).style.display = i === idx ? '' : 'none';
+        const t = document.getElementById('gtab' + i);
+        t.classList.toggle('guide-tab-active', i === idx);
+        t.style.borderBottomColor = i === idx ? 'var(--color-primary)' : 'transparent';
+    }
+}
+
+function insertGuidePrompt(el) {
+    const ta = document.getElementById('prompt');
+    if (!ta) return;
+    const current = ta.value.trim();
+    ta.value = current ? current + ' ' + el.textContent.trim() : el.textContent.trim();
+    if (typeof updateCharCount === 'function') updateCharCount(ta);
+    closeGuide();
+    ta.focus();
+    ta.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+</script>
 </body>
 </html>
