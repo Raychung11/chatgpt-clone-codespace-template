@@ -72,9 +72,10 @@ define('BYTEPLUS_ENDPOINT_ID_10S', getenv('BYTEPLUS_ENDPOINT_ID_10S') ?: '');
 // Create an endpoint using seedance-1-5-pro-i2v-250528 or seedance-2-0-pro-i2v.
 // Falls back to BYTEPLUS_ENDPOINT_ID_10S then BYTEPLUS_ENDPOINT_ID if unset.
 define('BYTEPLUS_ENDPOINT_ID_I2V', getenv('BYTEPLUS_ENDPOINT_ID_I2V') ?: '');
-// Text LLM endpoint for prompt enhancement (e.g. doubao-1-5-pro-32k or ep-XXXXX-doubao)
-// Create a text model endpoint in ModelArk → Model activation → select a Doubao/chat model
-define('LLM_ENDPOINT_ID',          getenv('LLM_ENDPOINT_ID')          ?: '');
+// Text LLM for prompt enhancement — Seed 2.0 Lite is a direct model ID, no endpoint needed.
+// Seed 2.0 Lite: seed-2-0-lite-260228  |  Seed 2.0 Pro: seed-2-0-260228
+// Or use a custom Doubao endpoint: ep-XXXXX-doubao
+define('LLM_ENDPOINT_ID',          getenv('LLM_ENDPOINT_ID')          ?: 'seed-2-0-lite-260228');
 
 // ── BytePlus Vision AI — OmniHuman (AK/SK auth, separate from ModelArk) ──────
 // Console: https://console.byteplus.com/ai/overview  (Vision AI → Model Plaza → OmniHuman)
