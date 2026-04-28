@@ -57,6 +57,40 @@ require_once 'includes/header.php';
         </a>
     </div>
 
+    <!-- AI Tools Quick Access -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="glass-card rounded-4 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="text-white fw-semibold mb-0"><i class="bi bi-magic me-2 text-primary"></i>AI Tools</h5>
+                    <a href="/modules/" class="text-primary small text-decoration-none">View all <i class="bi bi-arrow-right ms-1"></i></a>
+                </div>
+                <div class="row g-3">
+                    <?php
+                    $tools = [
+                        ['Email Writer',          '/modules/email-writer.php',     'bi-envelope-paper',   '#6366f1', 'rgba(99,102,241,0.15)'],
+                        ['Social Post Generator', '/modules/social-post.php',      'bi-share',            '#10b981', 'rgba(16,185,129,0.15)'],
+                        ['Invoice Generator',     '/modules/invoice-generator.php','bi-receipt',          '#f59e0b', 'rgba(245,158,11,0.15)'],
+                        ['Leave Request',         '/modules/leave-request.php',    'bi-calendar-check',   '#ef4444', 'rgba(239,68,68,0.15)'],
+                    ];
+                    foreach ($tools as [$name, $url, $icon, $color, $bg]):
+                    ?>
+                    <div class="col-6 col-md-3">
+                        <a href="<?= $url ?>" class="text-decoration-none">
+                            <div class="d-flex align-items-center gap-3 p-3 rounded-3" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);transition:all .2s" onmouseover="this.style.borderColor='<?= $color ?>50'" onmouseout="this.style.borderColor='rgba(255,255,255,0.07)'">
+                                <div style="width:38px;height:38px;border-radius:10px;background:<?= $bg ?>;color:<?= $color ?>;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                    <i class="bi <?= $icon ?>"></i>
+                                </div>
+                                <div class="text-white small fw-semibold"><?= $name ?></div>
+                            </div>
+                        </a>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Stats Cards -->
     <div class="row g-3 mb-5">
         <div class="col-sm-6 col-lg-3">

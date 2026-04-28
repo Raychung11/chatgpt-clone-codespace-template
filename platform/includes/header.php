@@ -62,6 +62,13 @@ try {
                 <li class="nav-item">
                     <a class="nav-link <?= $currentPage === 'contact' ? 'active' : '' ?>" href="/contact.php">Contact</a>
                 </li>
+                <?php if ($isLoggedIn): ?>
+                <li class="nav-item">
+                    <a class="nav-link <?= str_contains($_SERVER['PHP_SELF'], '/modules/') ? 'active' : '' ?>" href="/modules/">
+                        <i class="bi bi-magic me-1"></i>AI Tools
+                    </a>
+                </li>
+                <?php endif; ?>
             </ul>
             <div class="d-flex gap-2 align-items-center">
                 <?php if ($isLoggedIn): ?>

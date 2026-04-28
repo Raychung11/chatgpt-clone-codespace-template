@@ -820,3 +820,35 @@ CREATE TABLE IF NOT EXISTS supplier_invoices (
   FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE CASCADE,
   FOREIGN KEY (po_id) REFERENCES purchase_orders(id) ON DELETE SET NULL
 );
+
+-- ============================================================
+-- Customer AI Modules
+-- ============================================================
+
+-- Leave requests submitted via customer module (linked to users, not employees)
+CREATE TABLE IF NOT EXISTS user_leave_requests (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  user_id     INT NOT NULL,
+  leave_type  ENUM('annual','sick','unpaid','parental','bereavement','other') NOT NULL DEFAULT 'annual',
+  start_date  DATE NOT NULL,
+  end_date    DATE NOT NULL,
+  days_count  DECIMAL(4,1) NOT NULL DEFAULT 1,
+  reason      TEXT,
+  status      ENUM('pending','approved','rejected','cancelled') DEFAULT 'pending',
+  reviewed_by INT DEFAULT NULL,
+  reviewed_at DATETIME DEFAULT NULL,
+  review_note TEXT,
+  created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id)     REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- AI tool usage log (optional analytics)
+CREATE TABLE IF NOT EXISTS ai_usage_log (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT NOT NULL,
+  module     VARCHAR(50) NOT NULL,
+  tokens_est INT DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

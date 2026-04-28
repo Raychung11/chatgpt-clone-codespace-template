@@ -14,6 +14,9 @@ define('DB_USER', 'your_db_user');       // From Hostinger hPanel
 define('DB_PASS', 'your_db_password');   // From Hostinger hPanel
 define('DB_CHARSET', 'utf8mb4');
 
+// Anthropic Claude API (get from console.anthropic.com)
+define('ANTHROPIC_API_KEY', 'sk-ant-YOUR_KEY_HERE');
+
 // Stripe Keys (get from dashboard.stripe.com)
 define('STRIPE_PUBLIC_KEY', 'pk_test_YOUR_KEY_HERE');
 define('STRIPE_SECRET_KEY', 'sk_test_YOUR_KEY_HERE');

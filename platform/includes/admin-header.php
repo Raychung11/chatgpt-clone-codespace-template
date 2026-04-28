@@ -101,7 +101,7 @@ function adminBadge(string $sql): int {
         </a>
         <a href="/admin/leave.php" class="admin-nav-link <?= $adminPage === 'leave' ? 'active' : '' ?>">
             <i class="bi bi-calendar3"></i> Leave
-            <?php $n = adminBadge('SELECT COUNT(*) as n FROM leave_requests WHERE status="pending"');
+            <?php $n = adminBadge('SELECT COUNT(*) as n FROM leave_requests WHERE status="pending"') + adminBadge('SELECT COUNT(*) as n FROM user_leave_requests WHERE status="pending"');
             if ($n > 0) echo "<span class='badge bg-warning text-dark ms-auto'>$n</span>"; ?>
         </a>
         <a href="/admin/payroll.php" class="admin-nav-link <?= $adminPage === 'payroll' ? 'active' : '' ?>">
