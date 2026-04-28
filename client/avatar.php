@@ -917,8 +917,34 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
         }
         .audio-preview { width: 100%; margin-top: 10px; }
         .mode-tabs { display: flex; gap: 0; border: 1px solid var(--color-border); border-radius: var(--radius); overflow: hidden; margin-bottom: 14px; }
-        .mode-tab { flex: 1; padding: 9px; text-align: center; cursor: pointer; font-size: .85rem; font-weight: 600; border: none; background: transparent; color: var(--color-muted); transition: all .15s; }
+        .mode-tab { flex: 1; padding: 9px 6px; text-align: center; cursor: pointer; font-size: .82rem; font-weight: 600; border: none; background: transparent; color: var(--color-muted); transition: all .15s; white-space: nowrap; }
         .mode-tab.active { background: var(--color-primary); color: #fff; }
+        /* Recorder */
+        .rec-btn { width: 72px; height: 72px; border-radius: 50%; font-size: 1.8rem; padding: 0; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; transition: background .2s, transform .1s; border: none; cursor: pointer; }
+        .rec-btn:active { transform: scale(.93); }
+        .rec-btn.idle     { background: var(--color-primary); color: #fff; }
+        .rec-btn.recording{ background: #ef4444; color: #fff; animation: recPulse 1.2s ease-in-out infinite; }
+        @keyframes recPulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4)} 50%{box-shadow:0 0 0 12px rgba(239,68,68,0)} }
+        .rec-waveform { height: 36px; display: flex; align-items: center; justify-content: center; gap: 3px; margin: 8px 0; }
+        .rec-bar { width: 4px; background: var(--color-primary); border-radius: 2px; height: 6px; transition: height .1s; }
+        /* Info column — collapsible on mobile */
+        .avatar-info-col summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: .82rem; font-weight: 600; color: var(--color-muted); padding: 10px 0; user-select: none; }
+        .avatar-info-col summary::-webkit-details-marker { display: none; }
+        .avatar-info-col details[open] summary .chevron { transform: rotate(180deg); }
+        .avatar-info-col .chevron { transition: transform .2s; display: inline-block; }
+        .how-steps { display: flex; flex-direction: column; gap: 6px; padding: 4px 0 12px; }
+        .how-step  { display: flex; gap: 10px; align-items: flex-start; font-size: .83rem; color: var(--color-muted); }
+        .how-step-n{ min-width: 22px; height: 22px; border-radius: 50%; background: var(--color-primary); color: #fff; font-size: .72rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+        @media (max-width: 700px) {
+            .avatar-layout { grid-template-columns: 1fr !important; }
+            .avatar-info-col { order: 2; }
+            .avatar-info-col details { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 0 14px; margin-bottom: 10px; }
+        }
+        @media (min-width: 701px) {
+            .avatar-info-col details { open: true; }
+            .avatar-info-col details > :not(summary) { display: block !important; }
+            .avatar-info-col summary .chevron { display: none; }
+        }
         .job-card { display: flex; gap: 14px; align-items: flex-start; }
         .job-portrait { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--color-surface2); }
         .job-info { flex: 1; min-width: 0; }
@@ -995,7 +1021,7 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
         <div class="alert alert--error"><?= $errors['balance'] ?></div>
     <?php endif; ?>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
+    <div class="avatar-layout" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
 
         <!-- ── Upload form ─────────────────────────────────────────────────── -->
         <div class="card">
@@ -1031,17 +1057,43 @@ if (($_GET['_action'] ?? '') === 'debug_test') {
                 <div class="form-group" style="margin-top:16px">
                     <label class="form-label">Voice Input <span style="color:var(--color-danger)">*</span></label>
                     <div class="mode-tabs">
-                        <button type="button" class="mode-tab active" onclick="setAudioMode('upload')" id="tabUpload">
-                            🎵 Upload Audio
+                        <button type="button" class="mode-tab active" onclick="setAudioMode('record')" id="tabRecord">
+                            🎙️ Record
+                        </button>
+                        <button type="button" class="mode-tab" onclick="setAudioMode('upload')" id="tabUpload">
+                            🎵 Upload
                         </button>
                         <button type="button" class="mode-tab" onclick="setAudioMode('tts')" id="tabTts">
-                            💬 Text-to-Speech
+                            💬 Text
                         </button>
                     </div>
+                    <!-- record mode still submits as 'upload' using the hidden file input -->
                     <input type="hidden" name="audio_mode" id="audioMode" value="upload">
 
+                    <!-- Record panel -->
+                    <div id="panelRecord">
+                        <div style="text-align:center;padding:14px 0 8px">
+                            <div id="recStatus" style="font-size:.83rem;color:var(--color-muted);margin-bottom:10px">
+                                Tap the mic to start recording
+                            </div>
+                            <div id="recTimer" style="font-size:2rem;font-weight:900;color:var(--color-primary);margin-bottom:10px;display:none;letter-spacing:2px">
+                                0:00
+                            </div>
+                            <div class="rec-waveform" id="recWaveform">
+                                <?php for ($i = 0; $i < 18; $i++): ?>
+                                <div class="rec-bar" id="recBar<?= $i ?>"></div>
+                                <?php endfor; ?>
+                            </div>
+                            <button type="button" id="recBtn" class="rec-btn idle" onclick="toggleRecording()">
+                                🎙️
+                            </button>
+                            <div id="recNote" style="font-size:.75rem;color:var(--color-muted)">Max 3 minutes</div>
+                            <audio id="recPlayback" class="audio-preview" controls style="display:none;margin-top:12px;width:100%"></audio>
+                        </div>
+                    </div>
+
                     <!-- Upload panel -->
-                    <div id="panelUpload">
+                    <div id="panelUpload" style="display:none">
                         <?php if (!empty($errors['audio'])): ?>
                             <div class="alert alert--error" style="margin-bottom:8px"><?= e($errors['audio']) ?></div>
                         <?php endif; ?>
@@ -1115,26 +1167,39 @@ Example: Welcome to our platform! We help businesses create stunning AI marketin
             </form>
         </div>
 
-        <!-- ── How it works ────────────────────────────────────────────────── -->
-        <div>
-            <div class="card mb-4">
-                <div class="card-header"><span class="card-title">How it works</span></div>
-                <ol style="margin:0 0 0 20px;line-height:2;font-size:.88rem;color:var(--color-muted)">
-                    <li><strong style="color:var(--color-text)">Upload a portrait</strong> — clear frontal photo of a real person</li>
-                    <li><strong style="color:var(--color-text)">Add voice</strong> — upload an MP3/WAV recording OR type text for AI speech</li>
-                    <li><strong style="color:var(--color-text)">Generate</strong> — OmniHuman 1.5 lip-syncs the person to your audio</li>
-                    <li><strong style="color:var(--color-text)">Download</strong> — get your talking avatar video in minutes</li>
-                </ol>
+        <!-- ── Info column ─────────────────────────────────────────────────── -->
+        <div class="avatar-info-col">
+            <!-- How it works — always open on desktop, collapsible on mobile -->
+            <div class="card mb-3">
+                <details open>
+                    <summary style="padding:12px 16px">
+                        <span style="color:var(--color-text);font-weight:700;font-size:.88rem">How it works</span>
+                        <span class="chevron" style="margin-left:auto;font-size:.7rem;color:var(--color-muted)">▼</span>
+                    </summary>
+                    <div class="how-steps" style="padding:0 16px 14px">
+                        <div class="how-step"><div class="how-step-n">1</div><span><strong style="color:var(--color-text)">Upload a portrait</strong> — clear frontal photo</span></div>
+                        <div class="how-step"><div class="how-step-n">2</div><span><strong style="color:var(--color-text)">Record or upload voice</strong> — or type for AI speech</span></div>
+                        <div class="how-step"><div class="how-step-n">3</div><span><strong style="color:var(--color-text)">Generate</strong> — OmniHuman 1.5 lip-syncs the face to your audio</span></div>
+                        <div class="how-step"><div class="how-step-n">4</div><span><strong style="color:var(--color-text)">Download</strong> — get your talking avatar video in minutes</span></div>
+                    </div>
+                </details>
             </div>
+
+            <!-- Tips — collapsed by default on mobile -->
             <div class="card">
-                <div class="card-header"><span class="card-title">Tips for best results</span></div>
-                <ul style="margin:0 0 0 20px;line-height:2;font-size:.84rem;color:var(--color-muted)">
-                    <li>Use a <strong style="color:var(--color-text)">well-lit frontal photo</strong> with clear face visibility</li>
-                    <li>Avoid hats, sunglasses, or heavy obstructions</li>
-                    <li>Audio should be <strong style="color:var(--color-text)">clear speech</strong> with minimal background noise</li>
-                    <li>MP3 at 128kbps+ gives best results</li>
-                    <li>Keep TTS text natural and conversational</li>
-                </ul>
+                <details>
+                    <summary style="padding:12px 16px">
+                        <span style="color:var(--color-text);font-weight:700;font-size:.88rem">Tips for best results</span>
+                        <span class="chevron" style="margin-left:auto;font-size:.7rem;color:var(--color-muted)">▼</span>
+                    </summary>
+                    <ul style="margin:0 0 0 18px;line-height:1.9;font-size:.82rem;color:var(--color-muted);padding:0 16px 14px 34px">
+                        <li>Use a <strong style="color:var(--color-text)">well-lit frontal photo</strong> with clear face visibility</li>
+                        <li>Avoid hats, sunglasses, or heavy obstructions</li>
+                        <li>Audio should be <strong style="color:var(--color-text)">clear speech</strong>, minimal background noise</li>
+                        <li>When recording: hold phone 20–30 cm from your mouth</li>
+                        <li>MP3 at 128 kbps+ gives best results</li>
+                    </ul>
+                </details>
             </div>
         </div>
     </div>
@@ -1250,6 +1315,13 @@ Example: Welcome to our platform! We help businesses create stunning AI marketin
 </div>
 
 <script>
+// ── Init: open info details on desktop, set default tab ──────────────────────
+(function() {
+    if (window.innerWidth > 700) {
+        document.querySelectorAll('.avatar-info-col details').forEach(d => d.open = true);
+    }
+})();
+
 // ── File upload previews ──────────────────────────────────────────────────────
 function previewFile(input, previewId, textId, type) {
     const file = input.files[0];
@@ -1286,16 +1358,119 @@ function zoneDrop(e, field) {
 
 // ── Audio mode toggle ─────────────────────────────────────────────────────────
 function setAudioMode(mode) {
-    document.getElementById('audioMode').value = mode;
+    // 'record' feeds into the same audio file input — backend treats it as 'upload'
+    document.getElementById('audioMode').value = (mode === 'record') ? 'upload' : mode;
+    document.getElementById('panelRecord').style.display = mode === 'record' ? 'block' : 'none';
     document.getElementById('panelUpload').style.display = mode === 'upload' ? 'block' : 'none';
     document.getElementById('panelTts').style.display    = mode === 'tts'    ? 'block' : 'none';
+    document.getElementById('tabRecord').classList.toggle('active', mode === 'record');
     document.getElementById('tabUpload').classList.toggle('active', mode === 'upload');
     document.getElementById('tabTts').classList.toggle('active',    mode === 'tts');
-    // Clear the inactive field so validation doesn't fire
-    if (mode === 'tts') {
-        const inp = document.getElementById('audioInput');
-        inp.value = '';
+    if (mode === 'tts') document.getElementById('audioInput').value = '';
+    if (mode === 'upload') stopRecording(); // stop mic if switching away
+}
+
+// ── Voice Recorder ────────────────────────────────────────────────────────────
+let mediaRecorder = null;
+let recChunks     = [];
+let recInterval   = null;
+let recSeconds    = 0;
+let recStream     = null;
+let recAnimFrame  = null;
+let recAnalyser   = null;
+
+async function toggleRecording() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        stopRecording();
+    } else {
+        await startRecording();
     }
+}
+
+async function startRecording() {
+    try {
+        recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+        alert('Microphone access denied. Please allow microphone access in your browser settings.');
+        return;
+    }
+
+    // Waveform visualiser
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source   = audioCtx.createMediaStreamSource(recStream);
+    recAnalyser    = audioCtx.createAnalyser();
+    recAnalyser.fftSize = 64;
+    source.connect(recAnalyser);
+    const dataArr = new Uint8Array(recAnalyser.frequencyBinCount);
+    const bars    = document.querySelectorAll('.rec-bar');
+    function animWave() {
+        recAnalyser.getByteFrequencyData(dataArr);
+        bars.forEach((b, i) => {
+            const val = (dataArr[i % dataArr.length] || 0) / 255;
+            b.style.height = Math.max(4, Math.round(val * 36)) + 'px';
+        });
+        recAnimFrame = requestAnimationFrame(animWave);
+    }
+    animWave();
+
+    recChunks = [];
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '');
+    mediaRecorder = new MediaRecorder(recStream, mimeType ? { mimeType } : {});
+
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+        cancelAnimationFrame(recAnimFrame);
+        document.querySelectorAll('.rec-bar').forEach(b => b.style.height = '6px');
+        audioCtx.close();
+        recStream.getTracks().forEach(t => t.stop());
+
+        const blob = new Blob(recChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+        const ext  = (mediaRecorder.mimeType || '').includes('mp4') ? 'mp4' : 'webm';
+        const file = new File([blob], 'recording.' + ext, { type: blob.type });
+        const dt   = new DataTransfer();
+        dt.items.add(file);
+        document.getElementById('audioInput').files = dt.files;
+
+        const url = URL.createObjectURL(blob);
+        const pb  = document.getElementById('recPlayback');
+        pb.src    = url;
+        pb.style.display = 'block';
+
+        const btn = document.getElementById('recBtn');
+        btn.textContent = '🎙️';
+        btn.className   = 'rec-btn idle';
+        document.getElementById('recTimer').style.display = 'none';
+        document.getElementById('recStatus').textContent = 'Recording saved. Preview below or re-record.';
+        document.getElementById('recNote').textContent = 'Tap mic to re-record';
+    };
+
+    mediaRecorder.start();
+    recSeconds = 0;
+    clearInterval(recInterval);
+    recInterval = setInterval(() => {
+        recSeconds++;
+        const m = Math.floor(recSeconds / 60);
+        const s = recSeconds % 60;
+        document.getElementById('recTimer').textContent = m + ':' + String(s).padStart(2, '0');
+        if (recSeconds >= 180) stopRecording();
+    }, 1000);
+
+    const btn = document.getElementById('recBtn');
+    btn.textContent = '⏹';
+    btn.className   = 'rec-btn recording';
+    document.getElementById('recTimer').style.display = 'block';
+    document.getElementById('recTimer').textContent = '0:00';
+    document.getElementById('recStatus').textContent = 'Recording… tap to stop';
+    document.getElementById('recPlayback').style.display = 'none';
+    document.getElementById('recNote').textContent = 'Max 3 minutes';
+}
+
+function stopRecording() {
+    clearInterval(recInterval);
+    cancelAnimationFrame(recAnimFrame);
+    if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
 }
 
 // ── Video modal ───────────────────────────────────────────────────────────────
