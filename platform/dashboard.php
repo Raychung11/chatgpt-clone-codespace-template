@@ -53,7 +53,7 @@ require_once 'includes/header.php';
             <p class="text-muted mb-0">Welcome back, <?= htmlspecialchars($user['name']) ?>!</p>
         </div>
         <a href="/marketplace.php" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-2"></i>Add Agent
+            <i class="bi bi-plus-circle me-2"></i>Add Capsule
         </a>
     </div>
 
@@ -99,7 +99,7 @@ require_once 'includes/header.php';
                     <div class="stat-icon bg-primary bg-opacity-15 text-primary"><i class="bi bi-grid fs-5"></i></div>
                     <div>
                         <div class="fs-4 fw-bold text-white"><?= count($subscriptions) + count($purchases) ?></div>
-                        <div class="text-muted small">Active Agents</div>
+                        <div class="text-muted small">Active Capsules</div>
                     </div>
                 </div>
             </div>
@@ -148,14 +148,14 @@ require_once 'includes/header.php';
         <!-- My Agents -->
         <div class="col-lg-8">
             <div class="glass-card rounded-4 p-4">
-                <h5 class="text-white fw-semibold mb-4"><i class="bi bi-cpu me-2 text-primary"></i>My AI Agents</h5>
+                <h5 class="text-white fw-semibold mb-4"><i class="bi bi-cpu me-2 text-primary"></i>My Capsules</h5>
 
                 <?php if (empty($subscriptions) && empty($purchases)): ?>
                 <div class="text-center py-5">
                     <i class="bi bi-box-seam fs-1 text-muted mb-3 d-block"></i>
-                    <h6 class="text-white">No agents yet</h6>
-                    <p class="text-muted small">Browse the marketplace to find your first AI agent.</p>
-                    <a href="/marketplace.php" class="btn btn-primary btn-sm">Browse Marketplace</a>
+                    <h6 class="text-white">No capsules yet</h6>
+                    <p class="text-muted small">Browse the Capsule Store to deploy your first Capsule.</p>
+                    <a href="/marketplace.php" class="btn btn-primary btn-sm">Browse Capsule Store</a>
                 </div>
                 <?php else: ?>
 

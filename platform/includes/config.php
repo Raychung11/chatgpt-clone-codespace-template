@@ -4,7 +4,7 @@
 // Edit these values before deploying to Hostinger
 // ============================================================
 
-define('SITE_NAME', 'AI101 Platform');
+define('SITE_NAME', 'AiServe');
 define('SITE_URL', 'https://yourdomain.com'); // Change to your domain
 
 // Database (Hostinger MySQL)

@@ -19,7 +19,7 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= isset($pageTitle) ? htmlspecialchars($pageTitle) . ' | ' . SITE_NAME : SITE_NAME ?></title>
-    <meta name="description" content="<?= isset($pageDesc) ? htmlspecialchars($pageDesc) : '101 AI Agents built for modern SMEs. Automate customer service, sales, HR, finance and more.' ?>">
+    <meta name="description" content="<?= isset($pageDesc) ? htmlspecialchars($pageDesc) : 'AiServe — the Business Operating System for SMEs. Deploy AI Capsules to automate customer service, sales, HR, finance and more.' ?>">
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -51,7 +51,7 @@ try {
                     <a class="nav-link <?= $currentPage === 'index' ? 'active' : '' ?>" href="/">Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= $currentPage === 'marketplace' ? 'active' : '' ?>" href="/marketplace.php">Marketplace</a>
+                    <a class="nav-link <?= $currentPage === 'marketplace' ? 'active' : '' ?>" href="/marketplace.php">Capsule Store</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link <?= $currentPage === 'pricing' ? 'active' : '' ?>" href="/pricing.php">Pricing</a>

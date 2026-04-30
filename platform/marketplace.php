@@ -3,7 +3,7 @@ require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
 
-$pageTitle = 'Marketplace - Browse 101 AI Agents';
+$pageTitle = 'Capsule Store — AiServe';
 
 // Filters
 $cat     = $_GET['cat']    ?? '';
@@ -66,10 +66,10 @@ require_once 'includes/header.php';
         <div class="row align-items-center g-4">
             <div class="col-lg-6">
                 <h1 class="fw-bold text-white mb-2">
-                    <?= $currentCategory ? htmlspecialchars($currentCategory['name']) : 'AI Agent Marketplace' ?>
+                    <?= $currentCategory ? htmlspecialchars($currentCategory['name']) : 'Capsule Store' ?>
                 </h1>
                 <p class="text-muted mb-0">
-                    <?= $total ?> agents available
+                    <?= $total ?> capsules available
                     <?= $q ? " matching \"<strong class='text-white'>$q</strong>\"" : '' ?>
                 </p>
             </div>
@@ -78,7 +78,7 @@ require_once 'includes/header.php';
                     <?php if ($cat): ?><input type="hidden" name="cat" value="<?= htmlspecialchars($cat) ?>"><?php endif; ?>
                     <input type="search" name="q" value="<?= htmlspecialchars($q) ?>"
                            class="form-control bg-dark border-secondary text-white"
-                           placeholder="Search AI agents...">
+                           placeholder="Search capsules...">
                     <button class="btn btn-primary px-4"><i class="bi bi-search"></i></button>
                 </form>
             </div>
@@ -144,7 +144,7 @@ require_once 'includes/header.php';
             <?php if (empty($products)): ?>
             <div class="text-center py-5">
                 <i class="bi bi-search fs-1 text-muted mb-3 d-block"></i>
-                <h5 class="text-white">No agents found</h5>
+                <h5 class="text-white">No capsules found</h5>
                 <p class="text-muted">Try adjusting your search or filters</p>
                 <a href="/marketplace.php" class="btn btn-outline-primary">Clear Filters</a>
             </div>

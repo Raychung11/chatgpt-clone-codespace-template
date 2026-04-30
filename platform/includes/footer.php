@@ -6,7 +6,7 @@
                 <a href="/" class="navbar-brand fw-bold fs-5 text-white mb-3 d-inline-block">
                     <i class="bi bi-cpu-fill me-2 text-primary"></i><?= SITE_NAME ?>
                 </a>
-                <p class="text-muted small">101 AI agents built for modern SMEs. Automate your business operations and grow faster with the power of artificial intelligence.</p>
+                <p class="text-muted small">The Business Operating System for SMEs. Deploy AI Capsules to automate operations, grow revenue, and run your business on autopilot.</p>
                 <div class="d-flex gap-3 mt-3">
                     <a href="#" class="text-muted fs-5"><i class="bi bi-twitter-x"></i></a>
                     <a href="#" class="text-muted fs-5"><i class="bi bi-linkedin"></i></a>
@@ -17,7 +17,7 @@
             <div class="col-6 col-lg-2">
                 <h6 class="text-white fw-semibold mb-3">Platform</h6>
                 <ul class="list-unstyled small">
-                    <li class="mb-2"><a href="/marketplace.php" class="text-muted text-decoration-none">Marketplace</a></li>
+                    <li class="mb-2"><a href="/marketplace.php" class="text-muted text-decoration-none">Capsule Store</a></li>
                     <li class="mb-2"><a href="#pricing" class="text-muted text-decoration-none">Pricing</a></li>
                     <li class="mb-2"><a href="/register.php" class="text-muted text-decoration-none">Free Trial</a></li>
                     <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Documentation</a></li>

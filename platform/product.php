@@ -20,7 +20,7 @@ $reviews   = DB::fetchAll('SELECT r.*, u.name FROM reviews r JOIN users u ON r.u
 $related   = DB::fetchAll('SELECT * FROM products WHERE category_id=? AND id!=? AND is_active=1 LIMIT 3', [$product['category_id'], $product['id']]);
 $isOwned   = Auth::owns($product['id']);
 
-$pageTitle = $product['name'] . ' - AI Agent';
+$pageTitle = $product['name'] . ' — AiServe Capsule';
 $pageDesc  = $product['tagline'];
 
 require_once 'includes/header.php';
@@ -76,7 +76,7 @@ require_once 'includes/header.php';
                 </div>
 
                 <!-- Description -->
-                <h5 class="text-white fw-semibold mb-3">About This Agent</h5>
+                <h5 class="text-white fw-semibold mb-3">About This Capsule</h5>
                 <p class="text-muted"><?= nl2br(htmlspecialchars($product['description'])) ?></p>
 
                 <!-- Features -->
@@ -108,7 +108,7 @@ require_once 'includes/header.php';
                 <?php if ($product['demo_url']): ?>
                 <div class="glass-card rounded-4 p-4 mt-5">
                     <h5 class="text-white fw-semibold mb-2"><i class="bi bi-play-circle me-2 text-primary"></i>Try the Live Demo</h5>
-                    <p class="text-muted small mb-3">Test this AI agent with real data — no account required.</p>
+                    <p class="text-muted small mb-3">Try this Capsule with real data — no account required.</p>
                     <a href="<?= htmlspecialchars($product['demo_url']) ?>" target="_blank" rel="noopener" class="btn btn-outline-primary">
                         <i class="bi bi-box-arrow-up-right me-2"></i>Launch Demo
                     </a>
@@ -121,7 +121,7 @@ require_once 'includes/header.php';
                 <div class="pricing-sticky-card rounded-4 p-4 sticky-top" style="top:80px">
                     <?php if ($isOwned): ?>
                     <div class="alert alert-success mb-4">
-                        <i class="bi bi-check-circle-fill me-2"></i>You already have access to this agent!
+                        <i class="bi bi-check-circle-fill me-2"></i>You already have access to this Capsule!
                     </div>
                     <a href="/dashboard.php" class="btn btn-success w-100 mb-2">
                         <i class="bi bi-grid me-2"></i>Go to Dashboard
@@ -211,7 +211,7 @@ require_once 'includes/header.php';
 <?php if ($related): ?>
 <section class="py-5">
     <div class="container">
-        <h4 class="text-white fw-bold mb-4">Related AI Agents</h4>
+        <h4 class="text-white fw-bold mb-4">Related Capsules</h4>
         <div class="row g-4">
             <?php foreach ($related as $rp): ?>
             <div class="col-md-4">

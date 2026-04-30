@@ -3,8 +3,8 @@ require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
 
-$pageTitle = '101 AI Agents for Modern SMEs';
-$pageDesc  = 'Discover and deploy 101 AI agents to automate your business. Customer service, sales, HR, finance and more.';
+$pageTitle = 'AiServe — Business Operating System for SMEs';
+$pageDesc  = 'AiServe is the Business Operating System for SMEs. Deploy AI Capsules to automate operations, grow revenue, and run your business automatically.';
 
 $featuredProducts = DB::fetchAll(
     'SELECT p.*, c.name as cat_name, c.icon as cat_icon, c.color as cat_color
@@ -27,17 +27,17 @@ require_once 'includes/header.php';
         <div class="row align-items-center g-5">
             <div class="col-lg-6">
                 <span class="badge bg-primary-soft text-primary mb-3 px-3 py-2 rounded-pill fs-6">
-                    <i class="bi bi-stars me-1"></i> <?= $stats['products'] ?>+ AI Agents Ready to Deploy
+                    <i class="bi bi-stars me-1"></i> <?= $stats['products'] ?>+ AI Capsules Ready to Deploy
                 </span>
                 <h1 class="display-4 fw-bold text-white lh-sm mb-4">
-                    Supercharge Your SME with <span class="text-gradient">AI Automation</span>
+                    Run Your Business with <span class="text-gradient">AI Automation</span>
                 </h1>
                 <p class="lead text-muted mb-5">
-                    Browse 101 purpose-built AI agents for customer service, sales, HR, finance, and more. Deploy in minutes. No coding required.
+                    Deploy plug-and-play AI Capsules across every department. Customer service, sales, HR, finance — running automatically.
                 </p>
                 <div class="d-flex flex-wrap gap-3">
                     <a href="/marketplace.php" class="btn btn-primary btn-lg px-5 shadow">
-                        <i class="bi bi-grid me-2"></i>Explore Marketplace
+                        <i class="bi bi-grid me-2"></i>Explore Capsule Store
                     </a>
                     <a href="/register.php" class="btn btn-outline-light btn-lg px-5">
                         Start Free Trial <i class="bi bi-arrow-right ms-1"></i>
@@ -46,7 +46,7 @@ require_once 'includes/header.php';
                 <div class="d-flex gap-4 mt-5">
                     <div>
                         <div class="fs-4 fw-bold text-white"><?= $stats['products'] ?>+</div>
-                        <div class="text-muted small">AI Agents</div>
+                        <div class="text-muted small">Capsules</div>
                     </div>
                     <div class="vr bg-secondary opacity-25"></div>
                     <div>
@@ -110,8 +110,8 @@ require_once 'includes/header.php';
 <section class="py-6">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="fw-bold text-white">AI Agents for Every Business Need</h2>
-            <p class="text-muted">Browse by category and find the perfect AI agent for your team</p>
+            <h2 class="fw-bold text-white">Capsules for Every Business Need</h2>
+            <p class="text-muted">Browse by category and deploy the right Capsule for your business</p>
         </div>
         <div class="row g-3">
             <?php foreach ($categories as $cat): ?>
@@ -121,7 +121,7 @@ require_once 'includes/header.php';
                         <i class="bi <?= $cat['icon'] ?> fs-4"></i>
                     </div>
                     <h6 class="text-white fw-semibold mb-1"><?= htmlspecialchars($cat['name']) ?></h6>
-                    <div class="text-muted small"><?= $cat['product_count'] ?> agents</div>
+                    <div class="text-muted small"><?= $cat['product_count'] ?> capsules</div>
                 </a>
             </div>
             <?php endforeach; ?>
@@ -134,7 +134,7 @@ require_once 'includes/header.php';
     <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-5">
             <div>
-                <h2 class="fw-bold text-white mb-1">Featured AI Agents</h2>
+                <h2 class="fw-bold text-white mb-1">Featured Capsules</h2>
                 <p class="text-muted mb-0">Hand-picked top performers across all categories</p>
             </div>
             <a href="/marketplace.php" class="btn btn-outline-primary">View All <i class="bi bi-arrow-right ms-1"></i></a>
@@ -193,12 +193,12 @@ require_once 'includes/header.php';
             <div class="col-md-4">
                 <div class="step-circle mb-4">1</div>
                 <h5 class="text-white fw-semibold">Browse & Choose</h5>
-                <p class="text-muted small">Explore our marketplace of 101 AI agents. Filter by category, price, or use case to find your perfect match.</p>
+                <p class="text-muted small">Browse our Capsule Store. Filter by department, business type, or use case to find the right Capsule for your business.</p>
             </div>
             <div class="col-md-4">
                 <div class="step-circle mb-4">2</div>
                 <h5 class="text-white fw-semibold">Try Before You Buy</h5>
-                <p class="text-muted small">Every agent comes with a live demo. Test it with your real data before committing to a subscription.</p>
+                <p class="text-muted small">Every Capsule comes with a live demo. Test it with your real data before committing to a subscription.</p>
             </div>
             <div class="col-md-4">
                 <div class="step-circle mb-4">3</div>
@@ -220,14 +220,14 @@ require_once 'includes/header.php';
             <div class="col-md-4">
                 <div class="pricing-card rounded-4 p-4 h-100">
                     <div class="text-muted small fw-semibold mb-2 text-uppercase tracking-wide">Starter</div>
-                    <div class="display-5 fw-bold text-white mb-1">$49<span class="fs-6 text-muted fw-normal">/mo</span></div>
-                    <p class="text-muted small mb-4">Perfect for small businesses just getting started with AI.</p>
+                    <div class="display-5 fw-bold text-white mb-1">RM3,500<span class="fs-6 text-muted fw-normal">/mo</span></div>
+                    <p class="text-muted small mb-4">BOS Core + Customer Service Capsule. Solve your #1 pain immediately.</p>
                     <ul class="list-unstyled small mb-4">
-                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>1 AI Agent</li>
-                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Up to 1,000 interactions/mo</li>
-                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Email support</li>
-                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Basic analytics</li>
-                        <li class="mb-2 text-muted opacity-50"><i class="bi bi-x-circle me-2"></i>Custom integrations</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>BOS Core Platform</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Customer Service Capsule</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>FAQ automation</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Multi-language support</li>
+                        <li class="mb-2 text-muted opacity-50"><i class="bi bi-x-circle me-2"></i>Sales &amp; Marketing Capsules</li>
                     </ul>
                     <a href="/register.php" class="btn btn-outline-primary w-100">Get Started</a>
                 </div>
@@ -236,14 +236,14 @@ require_once 'includes/header.php';
                 <div class="pricing-card pricing-card-featured rounded-4 p-4 h-100 position-relative">
                     <div class="badge bg-primary position-absolute top-0 start-50 translate-middle px-3 py-2">Most Popular</div>
                     <div class="text-primary small fw-semibold mb-2 text-uppercase">Growth</div>
-                    <div class="display-5 fw-bold text-white mb-1">$149<span class="fs-6 text-muted fw-normal">/mo</span></div>
-                    <p class="text-muted small mb-4">For growing SMEs ready to automate multiple departments.</p>
+                    <div class="display-5 fw-bold text-white mb-1">RM10,000<span class="fs-6 text-muted fw-normal">/mo</span></div>
+                    <p class="text-muted small mb-4">BOS Core + 3 Capsules. Automate customer service, sales, and marketing.</p>
                     <ul class="list-unstyled small mb-4">
-                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Up to 5 AI Agents</li>
-                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>10,000 interactions/mo</li>
-                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Priority support</li>
-                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Advanced analytics</li>
-                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Custom integrations</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>BOS Core Platform</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Customer Service Capsule</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Sales Conversion Capsule</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Marketing Automation Capsule</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Advanced analytics + reports</li>
                     </ul>
                     <a href="/register.php" class="btn btn-primary w-100">Start Free Trial</a>
                 </div>
@@ -251,16 +251,16 @@ require_once 'includes/header.php';
             <div class="col-md-4">
                 <div class="pricing-card rounded-4 p-4 h-100">
                     <div class="text-muted small fw-semibold mb-2 text-uppercase">Enterprise</div>
-                    <div class="display-5 fw-bold text-white mb-1">$399<span class="fs-6 text-muted fw-normal">/mo</span></div>
-                    <p class="text-muted small mb-4">Full access for large teams with dedicated support.</p>
+                    <div class="display-5 fw-bold text-white mb-1">RM22,500<span class="fs-6 text-muted fw-normal">/mo</span></div>
+                    <p class="text-muted small mb-4">All Capsules + AI Decision Layer. Your full Business Operating System.</p>
                     <ul class="list-unstyled small mb-4">
-                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Unlimited AI Agents</li>
-                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Unlimited interactions</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>All 6 Capsules included</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>AI Decision Layer</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Custom workflows</li>
                         <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Dedicated account manager</li>
                         <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>White-label options</li>
-                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Custom AI training</li>
                     </ul>
-                    <a href="#contact" class="btn btn-outline-primary w-100">Contact Sales</a>
+                    <a href="/contact.php" class="btn btn-outline-primary w-100">Contact Sales</a>
                 </div>
             </div>
         </div>
@@ -326,7 +326,7 @@ require_once 'includes/header.php';
                 <p class="text-muted mb-5">Join <?= number_format($stats['customers'] ?: 500) ?>+ SMEs already saving time and money with AI. Start your 14-day free trial today.</p>
                 <div class="d-flex flex-wrap justify-content-center gap-3">
                     <a href="/register.php" class="btn btn-primary btn-lg px-5">Start Free Trial</a>
-                    <a href="/marketplace.php" class="btn btn-outline-light btn-lg px-5">Browse Agents</a>
+                    <a href="/marketplace.php" class="btn btn-outline-light btn-lg px-5">Browse Capsules</a>
                 </div>
             </div>
         </div>
