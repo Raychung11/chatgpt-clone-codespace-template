@@ -30,8 +30,8 @@ define('ADMIN_EMAIL', 'admin@yourdomain.com');
 
 // App settings
 define('TRIAL_DAYS', 14);
-define('CURRENCY', 'USD');
-define('CURRENCY_SYMBOL', '$');
+define('CURRENCY', 'MYR');
+define('CURRENCY_SYMBOL', 'RM');
 
 // Error reporting (set to 0 in production)
 error_reporting(E_ALL);
