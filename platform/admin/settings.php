@@ -27,7 +27,7 @@ foreach ($rows as $r) $s[$r['key']] = $r['value'];
 /* Defaults */
 $s = array_merge([
     'site_name'        => SITE_NAME,
-    'site_tagline'     => '101 AI Agents for Modern SMEs',
+    'site_tagline'     => 'The Business Operating System for SMEs',
     'site_email'       => ADMIN_EMAIL,
     'site_phone'       => '',
     'site_address'     => '',

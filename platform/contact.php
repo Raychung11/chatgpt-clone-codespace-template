@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = 'Contact Us';
-$pageDesc  = 'Get in touch with the AI101 team. We\'re here to help you automate smarter.';
+$pageDesc  = 'Get in touch with the AiServe team. We\'re here to help you automate smarter.';
 require_once 'includes/header.php';
 ?>
 
@@ -78,7 +78,7 @@ require_once 'includes/header.php';
           </div>
           <div>
             <div class="fw-semibold small mb-1">Email</div>
-            <a href="mailto:hello@ai101platform.com" class="text-muted text-decoration-none small">hello@ai101platform.com</a>
+            <a href="mailto:hello@aiserve.ai" class="text-muted text-decoration-none small">hello@aiserve.ai</a>
           </div>
         </div>
 

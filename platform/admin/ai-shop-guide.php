@@ -56,11 +56,11 @@ $cfg = array_merge([
     'delay'       => 3,
     'auto_open'   => [],
     'kb'          => [
-        'products'  => 'We offer 101 AI agents for SMEs covering HR, CRM, Marketing, Finance, and more. Each is available as a monthly or yearly subscription.',
+        'products'  => 'We offer AI Capsules for SMEs covering HR, CRM, Marketing, Finance, and more. Each is available as a monthly or yearly subscription.',
         'pricing'   => 'Plans start from $49/month. Yearly plans save 20%. A 14-day free trial is available for all products.',
         'shipping'  => 'All products are digital — instant access after purchase. No physical shipping.',
         'returns'   => 'We offer a 14-day money-back guarantee on all plans. Contact support within 14 days for a full refund.',
-        'about'     => 'AI101 is a marketplace of AI agents designed to help SMEs automate their business operations and grow faster.',
+        'about'     => 'AiServe is the Business Operating System for SMEs — deploy AI Capsules to automate operations and grow faster.',
     ],
 ], $cfg);
 
@@ -105,7 +105,7 @@ if (empty($unanswered)) {
         ['question'=>'Is there an API available?','asked_count'=>112],
         ['question'=>'How do I integrate with my existing software?','asked_count'=>54],
         ['question'=>'Do you support multiple languages?','asked_count'=>38],
-        ['question'=>'Can I white-label the AI agents?','asked_count'=>27],
+        ['question'=>'Can I white-label the AI Capsules?','asked_count'=>27],
     ];
 }
 

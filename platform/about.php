@@ -3,7 +3,7 @@ require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
 $pageTitle = 'About Us';
-$pageDesc  = 'Learn about AI101 — built by founders who know SME pain. Our mission, team, and journey.';
+$pageDesc  = 'Learn about AiServe — built by founders who know SME pain. Our mission, team, and journey.';
 require_once 'includes/header.php';
 ?>
 
@@ -39,7 +39,7 @@ require_once 'includes/header.php';
           <div class="row g-3 text-center">
             <div class="col-6">
               <div class="fw-bold fs-2 text-gradient">101</div>
-              <div class="text-muted small">AI Agents</div>
+              <div class="text-muted small">AI Capsules</div>
             </div>
             <div class="col-6">
               <div class="fw-bold fs-2 text-gradient">500+</div>
@@ -81,7 +81,7 @@ require_once 'includes/header.php';
           </div>
           <h5 class="fw-bold mb-2">Innovation</h5>
           <p class="text-muted small mb-0">
-            We ship new agents and features every week. Our engineering team monitors industry trends so your toolkit stays ahead of the curve — always.
+            We ship new Capsules and features every week. Our engineering team monitors industry trends so your toolkit stays ahead of the curve — always.
           </p>
         </div>
       </div>
@@ -105,7 +105,7 @@ require_once 'includes/header.php';
           </div>
           <h5 class="fw-bold mb-2">Simplicity</h5>
           <p class="text-muted small mb-0">
-            No PhD required. Each agent is ready to deploy in minutes, with plain-language configuration and contextual help at every step.
+            No PhD required. Each Capsule is ready to deploy in minutes, with plain-language configuration and contextual help at every step.
           </p>
         </div>
       </div>
@@ -120,7 +120,7 @@ require_once 'includes/header.php';
       <span class="badge bg-primary-soft text-primary px-3 py-2 rounded-pill section-badge mb-3">
         <i class="bi bi-person-badge me-1"></i>The Team
       </span>
-      <h2 class="fw-bold display-6 mb-3">Meet the People Behind AI101</h2>
+      <h2 class="fw-bold display-6 mb-3">Meet the People Behind AiServe</h2>
       <p class="text-muted">Passionate builders, designers, and operators on a mission.</p>
     </div>
     <div class="row g-4">
@@ -163,10 +163,10 @@ require_once 'includes/header.php';
       <div class="col-lg-8">
         <?php
         $timeline = [
-          ['year'=>'2022', 'title'=>'Founded', 'desc'=>'AI101 was born in a shared coworking space. Three co-founders, one whiteboard, and a clear vision: democratize AI for SMEs.', 'icon'=>'bi-rocket-takeoff', 'color'=>'#6366f1'],
-          ['year'=>'2023', 'title'=>'First 10 Agents Launched', 'desc'=>'We launched our first 10 AI agents focused on customer service and sales automation. 47 SMEs signed up in month one.', 'icon'=>'bi-cpu', 'color'=>'#06b6d4'],
+          ['year'=>'2022', 'title'=>'Founded', 'desc'=>'AiServe was born in a shared coworking space. Three co-founders, one whiteboard, and a clear vision: democratize AI for SMEs.', 'icon'=>'bi-rocket-takeoff', 'color'=>'#6366f1'],
+          ['year'=>'2023', 'title'=>'First 10 Capsules Launched', 'desc'=>'We launched our first 10 AI Capsules focused on customer service and sales automation. 47 SMEs signed up in month one.', 'icon'=>'bi-cpu', 'color'=>'#06b6d4'],
           ['year'=>'2024', 'title'=>'100+ Customers', 'desc'=>'We crossed 100 paying customers, raised a seed round, and expanded our team to 22 people across 4 countries.', 'icon'=>'bi-people-fill', 'color'=>'#10b981'],
-          ['year'=>'2025', 'title'=>'101 Agents Launched', 'desc'=>'We hit our milestone: 101 specialised AI agents across 8 business categories. 500+ SMEs now run on AI101.', 'icon'=>'bi-trophy-fill', 'color'=>'#f59e0b'],
+          ['year'=>'2025', 'title'=>'BOS Platform Launched', 'desc'=>'We launched the full Business Operating System with 101 specialised AI Capsules across 8 business categories. 500+ SMEs now run on AiServe.', 'icon'=>'bi-trophy-fill', 'color'=>'#f59e0b'],
         ];
         foreach ($timeline as $i => $item):
         ?>

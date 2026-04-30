@@ -1,6 +1,6 @@
 <?php
 // ============================================================
-// AI101 Platform - Configuration
+// AiServe Platform - Configuration
 // Edit these values before deploying to Hostinger
 // ============================================================
 

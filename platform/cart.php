@@ -74,7 +74,7 @@ require_once 'includes/header.php';
 <section class="py-5">
   <div class="container py-3">
     <h1 class="fw-bold mb-1 fs-2"><i class="bi bi-cart3 me-2 text-primary"></i>Your Cart</h1>
-    <p class="text-muted mb-5">Review your selected AI agents before checkout.</p>
+    <p class="text-muted mb-5">Review your selected Capsules before checkout.</p>
 
     <?php if (empty($cartItems)): ?>
     <!-- Empty state -->
@@ -82,9 +82,9 @@ require_once 'includes/header.php';
       <div class="glass-card rounded-4 p-5 d-inline-block">
         <div class="display-1 mb-3">🛒</div>
         <h3 class="fw-bold mb-2">Your cart is empty</h3>
-        <p class="text-muted mb-4">You haven't added any AI agents yet. Browse our marketplace to find the perfect tools for your business.</p>
+        <p class="text-muted mb-4">You haven't added any Capsules yet. Browse the Capsule Store to find the perfect tools for your business.</p>
         <a href="/marketplace.php" class="btn btn-primary px-5">
-          <i class="bi bi-shop me-2"></i>Browse Marketplace
+          <i class="bi bi-shop me-2"></i>Browse Capsule Store
         </a>
       </div>
     </div>

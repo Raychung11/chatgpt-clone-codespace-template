@@ -45,7 +45,7 @@ require_once 'includes/header.php';
                 <p class="text-muted mb-4">Join thousands of SMEs automating their business with AI. No credit card required.</p>
                 <ul class="list-unstyled">
                     <?php $benefits = [
-                        ['icon'=>'bi-check-circle-fill','color'=>'text-success','text'=>'Access to all 101 AI agents'],
+                        ['icon'=>'bi-check-circle-fill','color'=>'text-success','text'=>'Access to all AI Capsules'],
                         ['icon'=>'bi-check-circle-fill','color'=>'text-success','text'=>'14-day free trial, no card needed'],
                         ['icon'=>'bi-check-circle-fill','color'=>'text-success','text'=>'Cancel anytime, no questions asked'],
                         ['icon'=>'bi-check-circle-fill','color'=>'text-success','text'=>'Dedicated onboarding support'],
