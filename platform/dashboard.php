@@ -68,14 +68,18 @@ require_once 'includes/header.php';
                 <div class="row g-3">
                     <?php
                     $tools = [
-                        ['Email Writer',          '/modules/email-writer.php',     'bi-envelope-paper',   '#6366f1', 'rgba(99,102,241,0.15)'],
-                        ['Social Post Generator', '/modules/social-post.php',      'bi-share',            '#10b981', 'rgba(16,185,129,0.15)'],
-                        ['Invoice Generator',     '/modules/invoice-generator.php','bi-receipt',          '#f59e0b', 'rgba(245,158,11,0.15)'],
-                        ['Leave Request',         '/modules/leave-request.php',    'bi-calendar-check',   '#ef4444', 'rgba(239,68,68,0.15)'],
+                        ['Email Writer',    '/modules/email-writer.php',       'bi-envelope-paper',    '#6366f1', 'rgba(99,102,241,0.15)'],
+                        ['Social Posts',    '/modules/social-post.php',        'bi-share',             '#10b981', 'rgba(16,185,129,0.15)'],
+                        ['Sales Proposal',  '/modules/sales-proposal.php',     'bi-file-earmark-text', '#f97316', 'rgba(249,115,22,0.15)'],
+                        ['Ad Copy',         '/modules/ad-copy.php',            'bi-megaphone',         '#ec4899', 'rgba(236,72,153,0.15)'],
+                        ['Invoice',         '/modules/invoice-generator.php',  'bi-receipt',           '#f59e0b', 'rgba(245,158,11,0.15)'],
+                        ['Customer Reply',  '/modules/customer-reply.php',     'bi-chat-dots',         '#14b8a6', 'rgba(20,184,166,0.15)'],
+                        ['Job Description', '/modules/job-description.php',    'bi-person-badge',      '#06b6d4', 'rgba(6,182,212,0.15)'],
+                        ['Meeting Minutes', '/modules/meeting-minutes.php',    'bi-journal-text',      '#8b5cf6', 'rgba(139,92,246,0.15)'],
                     ];
                     foreach ($tools as [$name, $url, $icon, $color, $bg]):
                     ?>
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-3 col-lg-3">
                         <a href="<?= $url ?>" class="text-decoration-none">
                             <div class="d-flex align-items-center gap-3 p-3 rounded-3" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);transition:all .2s" onmouseover="this.style.borderColor='<?= $color ?>50'" onmouseout="this.style.borderColor='rgba(255,255,255,0.07)'">
                                 <div style="width:38px;height:38px;border-radius:10px;background:<?= $bg ?>;color:<?= $color ?>;display:flex;align-items:center;justify-content:center;flex-shrink:0">

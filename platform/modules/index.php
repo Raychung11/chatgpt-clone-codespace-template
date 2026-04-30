@@ -11,71 +11,54 @@ require_once '../includes/header.php';
 <div class="container py-5">
     <div class="mb-5">
         <h2 class="text-white fw-bold mb-1"><i class="bi bi-cpu-fill me-2 text-primary"></i>AI Tools</h2>
-        <p class="text-muted">Powerful AI-powered tools to automate your business tasks</p>
+        <p class="text-muted">12 AI-powered tools to automate your everyday business tasks</p>
     </div>
 
-    <div class="row g-4">
-
-        <!-- Email Writer -->
-        <div class="col-md-6 col-lg-3">
-            <div class="glass-card rounded-4 p-4 h-100 d-flex flex-column">
-                <div class="cat-icon mb-3" style="width:52px;height:52px;border-radius:14px;background:rgba(99,102,241,0.15);color:#6366f1;display:flex;align-items:center;justify-content:center">
-                    <i class="bi bi-envelope-paper fs-4"></i>
+    <?php
+    $groups = [
+        'Communication' => [
+            ['Email Writer',        '/modules/email-writer.php',       'bi-envelope-paper', '#6366f1', 'Write professional emails in seconds — sales, follow-ups, proposals.'],
+            ['Social Post Generator','/modules/social-post.php',       'bi-share',          '#10b981', 'Platform-ready posts for Facebook, Instagram, LinkedIn & Twitter.'],
+            ['Customer Reply',       '/modules/customer-reply.php',    'bi-chat-dots',      '#14b8a6', 'Reply to complaints, enquiries, and reviews with confidence.'],
+            ['Ad Copy Writer',       '/modules/ad-copy.php',           'bi-megaphone',      '#ec4899', 'High-converting ad copy for Google, Facebook, TikTok & LinkedIn.'],
+        ],
+        'Sales & Operations' => [
+            ['Sales Proposal',       '/modules/sales-proposal.php',    'bi-file-earmark-text','#f97316','Draft a professional proposal that wins the deal.'],
+            ['Invoice Generator',    '/modules/invoice-generator.php', 'bi-receipt',        '#f59e0b', 'Create professional invoices and print or save as PDF.'],
+            ['Product Description',  '/modules/product-description.php','bi-bag',           '#6366f1', 'SEO-ready product copy for your website, Shopee, or Amazon.'],
+            ['SOP Generator',        '/modules/sop-generator.php',     'bi-list-ol',        '#3b82f6', 'Turn rough process notes into a full Standard Operating Procedure.'],
+        ],
+        'HR & People' => [
+            ['Job Description',      '/modules/job-description.php',   'bi-person-badge',   '#06b6d4', 'Create compelling JDs that attract the right talent.'],
+            ['Leave Request',        '/modules/leave-request.php',     'bi-calendar-check', '#ef4444', 'Submit leave requests with AI-drafted messages and track history.'],
+            ['Performance Review',   '/modules/performance-review.php','bi-star-half',      '#84cc16', 'Generate balanced, professional reviews for any staff member.'],
+            ['Meeting Minutes',      '/modules/meeting-minutes.php',   'bi-journal-text',   '#8b5cf6', 'Transform rough notes into structured meeting minutes instantly.'],
+        ],
+    ];
+    foreach ($groups as $groupName => $tools):
+    ?>
+    <div class="mb-5">
+        <h6 class="text-muted fw-semibold mb-3 text-uppercase" style="font-size:11px;letter-spacing:.08em"><?= $groupName ?></h6>
+        <div class="row g-3">
+            <?php foreach ($tools as [$name, $url, $icon, $color, $desc]): ?>
+            <div class="col-sm-6 col-lg-3">
+                <div class="glass-card rounded-4 p-4 h-100 d-flex flex-column" style="transition:border-color .2s" onmouseover="this.style.borderColor='<?= $color ?>44'" onmouseout="this.style.borderColor=''">
+                    <div class="mb-3" style="width:48px;height:48px;border-radius:13px;background:<?= $color ?>18;color:<?= $color ?>;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                        <i class="bi <?= $icon ?> fs-5"></i>
+                    </div>
+                    <h6 class="text-white fw-semibold mb-2"><?= $name ?></h6>
+                    <p class="text-muted small mb-4 flex-grow-1" style="font-size:12.5px"><?= $desc ?></p>
+                    <a href="<?= $url ?>" class="btn btn-sm w-100" style="background:<?= $color ?>18;border:1px solid <?= $color ?>33;color:<?= $color ?>">
+                        <i class="bi bi-magic me-1"></i>Open Tool
+                    </a>
                 </div>
-                <h5 class="text-white fw-semibold mb-2">AI Email Writer</h5>
-                <p class="text-muted small mb-4 flex-grow-1">Write professional emails in seconds. Sales, follow-ups, complaints, proposals — just describe it.</p>
-                <a href="/modules/email-writer.php" class="btn btn-primary w-100">
-                    <i class="bi bi-magic me-2"></i>Open Tool
-                </a>
             </div>
+            <?php endforeach; ?>
         </div>
-
-        <!-- Social Post Generator -->
-        <div class="col-md-6 col-lg-3">
-            <div class="glass-card rounded-4 p-4 h-100 d-flex flex-column">
-                <div class="cat-icon mb-3" style="width:52px;height:52px;border-radius:14px;background:rgba(16,185,129,0.15);color:#10b981;display:flex;align-items:center;justify-content:center">
-                    <i class="bi bi-share fs-4"></i>
-                </div>
-                <h5 class="text-white fw-semibold mb-2">Social Post Generator</h5>
-                <p class="text-muted small mb-4 flex-grow-1">Generate platform-ready posts for Facebook, Instagram, LinkedIn, and Twitter from a single prompt.</p>
-                <a href="/modules/social-post.php" class="btn btn-success w-100">
-                    <i class="bi bi-magic me-2"></i>Open Tool
-                </a>
-            </div>
-        </div>
-
-        <!-- Invoice Generator -->
-        <div class="col-md-6 col-lg-3">
-            <div class="glass-card rounded-4 p-4 h-100 d-flex flex-column">
-                <div class="cat-icon mb-3" style="width:52px;height:52px;border-radius:14px;background:rgba(245,158,11,0.15);color:#f59e0b;display:flex;align-items:center;justify-content:center">
-                    <i class="bi bi-receipt fs-4"></i>
-                </div>
-                <h5 class="text-white fw-semibold mb-2">Invoice Generator</h5>
-                <p class="text-muted small mb-4 flex-grow-1">Create professional invoices with AI-formatted layouts. Fill in the details and print or save as PDF.</p>
-                <a href="/modules/invoice-generator.php" class="btn btn-warning w-100">
-                    <i class="bi bi-magic me-2"></i>Open Tool
-                </a>
-            </div>
-        </div>
-
-        <!-- Leave Request -->
-        <div class="col-md-6 col-lg-3">
-            <div class="glass-card rounded-4 p-4 h-100 d-flex flex-column">
-                <div class="cat-icon mb-3" style="width:52px;height:52px;border-radius:14px;background:rgba(239,68,68,0.15);color:#ef4444;display:flex;align-items:center;justify-content:center">
-                    <i class="bi bi-calendar-check fs-4"></i>
-                </div>
-                <h5 class="text-white fw-semibold mb-2">Leave Request</h5>
-                <p class="text-muted small mb-4 flex-grow-1">Submit leave requests with AI-drafted messages. Track status and view your leave history in one place.</p>
-                <a href="/modules/leave-request.php" class="btn btn-danger w-100">
-                    <i class="bi bi-magic me-2"></i>Open Tool
-                </a>
-            </div>
-        </div>
-
     </div>
+    <?php endforeach; ?>
 
-    <!-- Back to dashboard -->
-    <div class="mt-5">
+    <div class="mt-2">
         <a href="/dashboard.php" class="text-muted text-decoration-none small">
             <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
         </a>
