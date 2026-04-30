@@ -219,3 +219,141 @@ CURRENCY_SYMBOL    // "$"
 - **Never** use `$_SESSION` directly — always use `Auth::` methods
 - **Don't** create new CSS files — add to `style.css` or `admin.css`
 - **Don't** touch `app.py` or `requirements.txt` — that's the separate Streamlit project
+
+---
+
+# AiServe BOS Capsule Business Model
+## Version: 1.0 | Author: Ray Chung | Company: SLV Group Sdn Bhd
+## Added to project context: 2026-04-30
+
+---
+
+## Business Vision
+
+AiServe is a **Business Operating System (BOS)** for SMEs powered by modular AI **Capsules**.
+
+> We do NOT sell chatbots. We sell a system that runs the business automatically.
+
+---
+
+## System Structure
+
+```
+AiServe = BOS Core + Capsules
+├── BOS Core   → Platform / Entry / Lock-in System
+└── Capsules   → Revenue Engine (Recurring)
+```
+
+---
+
+## BOS Core (The "Machine")
+
+Components:
+- WhatsApp AI Inbox (multi-user, multi-device)
+- CRM (Customer Database)
+- Automation Engine
+- Conversation Memory
+- Dashboard (Admin + Analytics)
+
+Objectives:
+- Centralize all customer communication
+- Replace manual customer service
+- Capture structured business data
+- Become the daily operating interface
+
+BOS Core Pricing: **RM2,000 – RM5,000 / month** (mandatory subscription)
+
+---
+
+## Capsule System (The "Recurring Engine")
+
+Capsules = Plug & Play · Industry-specific · Monthly subscription · Continuously improved
+
+| Capsule | Purpose | Price/month |
+|---------|---------|-------------|
+| Customer Service | FAQ automation, multi-language, lead classification | RM1,500 – RM3,000 |
+| Sales Conversion | Auto follow-up, quote generation, closing scripts, upsell | RM3,000 – RM8,000 |
+| Daily Reporting | Sales reports, inventory, cash flow, AI anomaly detection | RM1,500 – RM4,000 |
+| HR & Admin | Leave application, payroll query, staff FAQ, training | RM1,500 – RM3,500 |
+| Marketing Automation | Broadcast automation, segmentation, campaign scheduling | RM2,000 – RM6,000 |
+| AI Decision | Sales forecasting, churn prediction, business insights | RM5,000 – RM15,000 |
+
+---
+
+## Packaging / Pricing Plans
+
+| Plan | Capsules Included | Price/month |
+|------|-------------------|-------------|
+| Starter | BOS Core + Customer Service | RM3,500 |
+| Growth | BOS Core + Customer Service + Sales + Marketing | RM8,000 – RM12,000 |
+| Enterprise | All Capsules + Custom workflows + AI Decision Layer | RM15,000 – RM30,000 |
+
+---
+
+## Lock-in Mechanism (Critical)
+
+- All customer data stored inside AiServe
+- Workflow automations NOT exportable
+- API access controlled by AiServe
+- WhatsApp deeply integrated
+- Customer becomes dependent on: Data + Automation + AI logic
+
+---
+
+## Target Market
+
+- Primary: SMEs (F&B, Travel, Furniture, Clinics)
+- Secondary: Multi-branch businesses, Franchises
+
+---
+
+## Go-To-Market Strategy
+
+1. **Entry**: Sell Customer Service Capsule first → solve immediate pain
+2. **Expand**: Upsell Sales → Marketing → Reporting Capsules
+3. **Retain**: Monthly insights reports + continuous AI improvement + data dependency
+
+---
+
+## Scaling Phases
+
+- **Phase 1**: Direct Sales — close high-ticket clients (RM10k+/month)
+- **Phase 2**: Template Standardization — build industry-specific capsule templates
+- **Phase 3**: Marketplace — Capsule Store + Partner Ecosystem (Subscription + Commission)
+
+---
+
+## Future Vision: 5-Layer OS for SMEs
+
+1. Communication Layer (WhatsApp)
+2. Automation Layer (AI)
+3. Data Layer (CRM + Analytics)
+4. Decision Layer (AI Insights)
+5. Marketplace Layer
+
+---
+
+## Revenue Philosophy
+
+- Entry Low → Lock Customer
+- Expand Modules → Increase ARPU
+- Subscription → Predictable Revenue
+- Data → Long-term Value
+
+---
+
+## How This Affects Platform Development
+
+When building features, always think in terms of:
+- **Capsules** (not just "products" or "agents") — each product IS a Capsule
+- **BOS Core** — the platform itself is the lock-in mechanism
+- **ARPU expansion** — every new Capsule is an upsell opportunity
+- **Lock-in** — prioritize features that make customers depend on the system
+- **SME-first** — simple, industry-specific, 1-click deployment
+- **Subscription** — favour recurring revenue features over one-time tools
+
+Terminology in code/UI:
+- "Products" in DB/admin = Capsules in customer-facing UI
+- "Subscriptions" = active Capsule deployments
+- "Dashboard" = BOS Dashboard
+- "Modules/Tools" = Capsule features the customer uses
