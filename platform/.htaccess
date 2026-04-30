@@ -4,6 +4,9 @@
 Options -Indexes
 ServerSignature Off
 
+# Serve index.php for directory requests (fixes /modules/, /admin/, etc.)
+DirectoryIndex index.php index.html
+
 # Enable mod_rewrite
 RewriteEngine On
 
@@ -11,13 +14,9 @@ RewriteEngine On
 # RewriteCond %{HTTPS} off
 # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-# Remove trailing slash
+# Remove trailing slash only for non-directories
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)/$ /$1 [L,R=301]
-
-# Serve clean URLs (optional)
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
 
 # Security Headers
 <IfModule mod_headers.c>
