@@ -6,6 +6,7 @@ $member  = current_member();
 $credits = $member ? get_credits($member['koperasi_id']) : 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $buyer_name          = trim($_POST['buyer_name']          ?? '');
     $buyer_contact       = trim($_POST['buyer_contact']       ?? '');
     $category            = trim($_POST['category']            ?? '');
@@ -261,6 +262,7 @@ html_body_open();
     <div class="card p-4">
         <h6 class="mb-3 fw-bold" style="color:#1a5276">📝 Submit Your Request</h6>
         <form method="post">
+            <?= csrf_field() ?>
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label fw-semibold">Your Name *</label>

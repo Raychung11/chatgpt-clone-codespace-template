@@ -1,24 +1,22 @@
-# Koponix – Apache config for Hostinger shared hosting
-Options -Indexes
-
-# Protect sensitive files
-<FilesMatch "(config\.php|functions\.php|setup\.php)$">
+# ── Block sensitive files ──────────────────────────────────────
+<FilesMatch "^\.env|setup\.php|composer\.json|composer\.lock|package\.json">
     Order Allow,Deny
-    Allow from all
+    Deny from all
 </FilesMatch>
 
-# Block direct access to ajax directory listing
-<IfModule mod_autoindex.c>
-    Options -Indexes
+# ── Security headers ───────────────────────────────────────────
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
-# PHP settings (Hostinger shared)
-<IfModule mod_php8.c>
-    php_value session.cookie_httponly 1
-    php_value session.cookie_samesite Strict
-    php_value display_errors 0
-    php_value log_errors 1
+# ── Hide PHP errors from public ────────────────────────────────
+<IfModule mod_php.c>
+    php_flag display_errors Off
+    php_flag log_errors On
 </IfModule>
 
-# Default page
-DirectoryIndex index.php
+# ── Prevent directory listing ──────────────────────────────────
+Options -Indexes

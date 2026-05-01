@@ -68,9 +68,17 @@ function gen_short_id(): string {
     return substr(str_replace('-', '', gen_uuid()), 0, 8);
 }
 
-// ── Password ─────────────────────────────────────────────────
+// ── Password (bcrypt, backward-compat with old SHA256 hashes) ─
 function hash_password(string $password): string {
-    return hash('sha256', $password);
+    return password_hash($password, PASSWORD_BCRYPT, ['cost' => 11]);
+}
+
+function verify_password(string $password, string $hash): bool {
+    // Detect old SHA256 hashes (64 hex chars) and support them during migration
+    if (strlen($hash) === 64 && ctype_xdigit($hash)) {
+        return hash_equals(hash('sha256', $password), $hash);
+    }
+    return password_verify($password, $hash);
 }
 
 // ── Constants helpers ────────────────────────────────────────
@@ -213,10 +221,16 @@ function get_member_by_kop_id(string $kop_id): ?array {
 
 function authenticate_member(string $kop_id, string $password): ?array {
     $member = get_member_by_kop_id($kop_id);
-    if ($member && $member['password_hash'] === hash_password($password)) {
-        return $member;
+    if (!$member || !verify_password($password, $member['password_hash'])) {
+        return null;
     }
-    return null;
+    // Auto-upgrade old SHA256 hash to bcrypt on successful login
+    if (strlen($member['password_hash']) === 64 && ctype_xdigit($member['password_hash'])) {
+        $new_hash = hash_password($password);
+        update_member_password($kop_id, $new_hash);
+        $member['password_hash'] = $new_hash;
+    }
+    return $member;
 }
 
 function save_member(array $data): string {
@@ -579,6 +593,142 @@ function get_flash(): ?array {
     $f = $_SESSION['flash'] ?? null;
     unset($_SESSION['flash']);
     return $f;
+}
+
+// ── CSRF Protection ───────────────────────────────────────────
+function csrf_token(): string {
+    session_start_safe();
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function csrf_field(): string {
+    return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') . '">';
+}
+
+function verify_csrf(): void {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
+    $token = $_POST['csrf_token'] ?? '';
+    if (!$token || !hash_equals(csrf_token(), $token)) {
+        http_response_code(403);
+        die('<div style="font-family:sans-serif;padding:2rem;text-align:center">'
+            . '<h2>⚠️ Invalid Request</h2>'
+            . '<p>Security token mismatch. Please <a href="javascript:history.back()">go back</a> and try again.</p>'
+            . '</div>');
+    }
+}
+
+// ── Admin Rate Limiting ───────────────────────────────────────
+function check_admin_rate_limit(): ?int {
+    session_start_safe();
+    $attempts  = (int)($_SESSION['admin_attempts']  ?? 0);
+    $last_fail = (int)($_SESSION['admin_last_fail'] ?? 0);
+    $max       = defined('ADMIN_MAX_ATTEMPTS') ? ADMIN_MAX_ATTEMPTS : 5;
+    $lockout   = defined('ADMIN_LOCKOUT_SEC')  ? ADMIN_LOCKOUT_SEC  : 900;
+    if ($attempts >= $max) {
+        $remaining = $lockout - (time() - $last_fail);
+        if ($remaining > 0) return $remaining;
+        $_SESSION['admin_attempts'] = 0; // reset after lockout expires
+    }
+    return null;
+}
+
+function record_admin_fail(): void {
+    session_start_safe();
+    $_SESSION['admin_attempts'] = (int)($_SESSION['admin_attempts'] ?? 0) + 1;
+    $_SESSION['admin_last_fail'] = time();
+}
+
+function reset_admin_rate_limit(): void {
+    session_start_safe();
+    unset($_SESSION['admin_attempts'], $_SESSION['admin_last_fail']);
+}
+
+// ── Email Notifications ───────────────────────────────────────
+function send_notification_email(string $to, string $subject, string $body_html): bool {
+    if (!$to || NOTIFY_EMAIL !== '1') return false;
+    $from    = defined('SITE_EMAIL') ? SITE_EMAIL : 'noreply@koponix.my';
+    $name    = defined('SITE_NAME')  ? SITE_NAME  : 'Koponix';
+    $headers = implode("\r\n", [
+        'MIME-Version: 1.0',
+        'Content-Type: text/html; charset=UTF-8',
+        "From: {$name} <{$from}>",
+        "Reply-To: {$from}",
+        'X-Mailer: Koponix Platform',
+    ]);
+    $wrapped = '<!DOCTYPE html><html><body style="font-family:Inter,sans-serif;background:#f0f4f8;padding:20px">'
+        . '<div style="max-width:560px;margin:auto;background:#fff;border-radius:12px;padding:28px;box-shadow:0 2px 8px rgba(0,0,0,.08)">'
+        . '<div style="font-size:1.3rem;font-weight:800;color:#1a5276;margin-bottom:16px">🤝 Koponix</div>'
+        . $body_html
+        . '<hr style="margin:24px 0;border:none;border-top:1px solid #eee">'
+        . '<div style="font-size:.75rem;color:#aaa">Koponix — ' . (defined('KOPERASI_NAME') ? KOPERASI_NAME : '') . '<br>'
+        . '<a href="' . (defined('SITE_URL') ? SITE_URL : '') . '" style="color:#2e86c1">' . (defined('SITE_URL') ? SITE_URL : '') . '</a></div>'
+        . '</div></body></html>';
+    return @mail($to, $subject, $wrapped, $headers);
+}
+
+function notify_listing_approved(array $seller): void {
+    $m = get_member_by_kop_id($seller['koperasi_id']);
+    if (!$m || empty($m['email'])) return;
+    $title = htmlspecialchars($seller['service_title'], ENT_QUOTES, 'UTF-8');
+    send_notification_email(
+        $m['email'],
+        '✅ Your listing has been approved — Koponix',
+        "<h2 style='color:#1e8449'>✅ Listing Approved!</h2>
+        <p>Hi <strong>{$m['name']}</strong>,</p>
+        <p>Your listing <strong>\"{$title}\"</strong> has been reviewed and is now <strong>live</strong> on the Koponix marketplace.</p>
+        <p>Members can now find and contact you through your listing.</p>
+        <p><a href='" . SITE_URL . "/find_services.php' style='background:#1a5276;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block'>View Marketplace →</a></p>"
+    );
+}
+
+function notify_listing_rejected(array $seller, string $reason): void {
+    $m = get_member_by_kop_id($seller['koperasi_id']);
+    if (!$m || empty($m['email'])) return;
+    $title  = htmlspecialchars($seller['service_title'], ENT_QUOTES, 'UTF-8');
+    $reason = htmlspecialchars($reason, ENT_QUOTES, 'UTF-8');
+    send_notification_email(
+        $m['email'],
+        '❌ Action required on your Koponix listing',
+        "<h2 style='color:#c0392b'>❌ Listing Needs Revision</h2>
+        <p>Hi <strong>{$m['name']}</strong>,</p>
+        <p>Your listing <strong>\"{$title}\"</strong> could not be approved at this time.</p>
+        <p><strong>Reason:</strong> {$reason}</p>
+        <p>Please log in, edit your listing to address the issue, and resubmit for review.</p>
+        <p><a href='" . SITE_URL . "/member_portal.php?tab=listings' style='background:#1a5276;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block'>Edit My Listings →</a></p>"
+    );
+}
+
+function notify_new_message(string $recipient_kop_id, string $sender_name, string $conv_id): void {
+    $m = get_member_by_kop_id($recipient_kop_id);
+    if (!$m || empty($m['email'])) return;
+    $sender = htmlspecialchars($sender_name, ENT_QUOTES, 'UTF-8');
+    send_notification_email(
+        $m['email'],
+        "💬 New message from {$sender_name} — Koponix",
+        "<h2 style='color:#1a5276'>💬 You have a new message</h2>
+        <p>Hi <strong>{$m['name']}</strong>,</p>
+        <p><strong>{$sender}</strong> has sent you a message on Koponix.</p>
+        <p><a href='" . SITE_URL . "/messages.php?conv=" . urlencode($conv_id) . "' style='background:#1a5276;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block'>Read Message →</a></p>
+        <p style='color:#888;font-size:.85rem'>Log in to reply. You can disable email notifications in your profile settings.</p>"
+    );
+}
+
+function notify_referral_bonus(string $referrer_kop_id, string $new_member_name, int $credits): void {
+    $m = get_member_by_kop_id($referrer_kop_id);
+    if (!$m || empty($m['email'])) return;
+    $new_name = htmlspecialchars($new_member_name, ENT_QUOTES, 'UTF-8');
+    send_notification_email(
+        $m['email'],
+        "🎉 You earned {$credits} credits! — Koponix Referral",
+        "<h2 style='color:#e67e22'>🎉 Referral Bonus Credited!</h2>
+        <p>Hi <strong>{$m['name']}</strong>,</p>
+        <p><strong>{$new_name}</strong> just joined Koponix using your referral code.</p>
+        <p>You've been credited <strong style='font-size:1.3rem;color:#e67e22'>{$credits} credits</strong> (RM " . number_format($credits, 2) . ")!</p>
+        <p><a href='" . SITE_URL . "/member_portal.php?tab=credits' style='background:#e67e22;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block'>View My Credits →</a></p>"
+    );
 }
 
 // ── Escape ───────────────────────────────────────────────────

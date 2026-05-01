@@ -1,0 +1,15 @@
+# Environment & secrets
+koponix-php/.env
+
+# Uploaded files (large binaries, not tracked)
+koponix-php/uploads/sellers/
+koponix-php/uploads/avatars/
+
+# Setup protection flag
+koponix-php/.setup_done
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

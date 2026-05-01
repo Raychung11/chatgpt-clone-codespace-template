@@ -9,6 +9,9 @@ $prof_success   = '';
 $prof_errors    = [];
 $tab            = $_GET['tab'] ?? 'login';
 
+// ── CSRF check for all POST actions ──────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST') verify_csrf();
+
 // ── Handle Login ──────────────────────────────────────────────
 if (isset($_POST['action']) && $_POST['action'] === 'login') {
     $kop_id  = trim($_POST['koperasi_id'] ?? '');
@@ -93,7 +96,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'change_password' && is_logg
     $new    = $_POST['new_password']     ?? '';
     $new2   = $_POST['new_password2']    ?? '';
 
-    if (hash_password($cur) !== $member['password_hash']) {
+    if (!verify_password($cur, $member['password_hash'])) {
         $pw_errors[] = 'Current password is incorrect.';
     } elseif (strlen($new) < 6) {
         $pw_errors[] = 'New password must be at least 6 characters.';
@@ -130,6 +133,7 @@ html_body_open();
             <?php endif; ?>
             <form method="post">
                 <input type="hidden" name="action" value="login">
+                <?= csrf_field() ?>
                 <div class="mb-3">
                     <label class="form-label">Koperasi Member ID</label>
                     <input type="text" name="koperasi_id" class="form-control"
@@ -155,6 +159,7 @@ html_body_open();
             <?php endif; ?>
             <form method="post">
                 <input type="hidden" name="action" value="register">
+                <?= csrf_field() ?>
                 <div class="mb-2">
                     <label class="form-label">Full Name</label>
                     <input type="text" name="name" class="form-control"
@@ -503,6 +508,7 @@ document.getElementById('getCoachingBtn').addEventListener('click', async () => 
             <?php endif; ?>
             <form method="post" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="update_profile">
+                <?= csrf_field() ?>
                 <div class="mb-2">
                     <label class="form-label small fw-semibold">Full Name</label>
                     <input type="text" name="profile_name" class="form-control form-control-sm"
@@ -540,6 +546,7 @@ document.getElementById('getCoachingBtn').addEventListener('click', async () => 
             <?php endif; ?>
             <form method="post">
                 <input type="hidden" name="action" value="change_password">
+                <?= csrf_field() ?>
                 <div class="mb-2">
                     <label class="form-label small">Current Password</label>
                     <input type="password" name="current_password" class="form-control form-control-sm" required>

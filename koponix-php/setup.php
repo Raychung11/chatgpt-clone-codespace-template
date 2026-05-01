@@ -6,6 +6,20 @@
 // ============================================================
 require_once __DIR__ . '/functions.php';
 
+// One-run protection: refuse to run if .setup_done exists
+$setup_flag = __DIR__ . '/.setup_done';
+if (file_exists($setup_flag)) {
+    http_response_code(403);
+    die('<!DOCTYPE html><html><head><title>Setup</title>'
+        . '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"></head>'
+        . '<body class="p-4"><div class="container" style="max-width:500px">'
+        . '<div class="alert alert-danger"><strong>Setup already completed.</strong><br>'
+        . 'Delete <code>setup.php</code> from your server. If you need to re-run setup, '
+        . 'delete <code>.setup_done</code> first.</div>'
+        . '<a href="index.php" class="btn btn-primary">Go to Koponix</a>'
+        . '</div></body></html>');
+}
+
 $errors = [];
 $done   = [];
 
@@ -174,6 +188,12 @@ try {
 
 } catch (PDOException $e) {
     $errors[] = 'Database error: ' . $e->getMessage();
+}
+
+// Mark setup as done (only if no errors)
+if (empty($errors)) {
+    file_put_contents($setup_flag, date('Y-m-d H:i:s'));
+    $done[] = 'Setup flag created: <code>.setup_done</code>';
 }
 ?>
 <!DOCTYPE html>

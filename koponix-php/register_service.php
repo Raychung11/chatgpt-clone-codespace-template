@@ -4,6 +4,7 @@ require_once __DIR__ . '/layout.php';
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $name          = trim($_POST['name']          ?? '');
     $kop_id        = trim($_POST['koperasi_id']   ?? '');
     $category      = trim($_POST['category']      ?? '');
@@ -53,6 +54,7 @@ html_body_open();
 
 <div class="card p-4" style="max-width:740px">
 <form method="post" enctype="multipart/form-data">
+    <?= csrf_field() ?>
     <div class="row g-3">
         <div class="col-md-6">
             <label class="form-label fw-semibold">Full Name *</label>

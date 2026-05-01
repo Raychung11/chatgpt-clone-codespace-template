@@ -20,6 +20,7 @@ if (!$seller || $seller['koperasi_id'] !== $kop_id) {
 
 // ── Handle form submit ────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $category      = trim($_POST['category']      ?? '');
     $service_title = trim($_POST['service_title'] ?? '');
     $area          = trim($_POST['area']          ?? '');
@@ -77,6 +78,7 @@ html_body_open();
 <div class="col-lg-8">
 <div class="card p-4">
 <form method="post" enctype="multipart/form-data">
+    <?= csrf_field() ?>
     <div class="row g-3">
         <div class="col-md-6">
             <label class="form-label fw-semibold">Service Category *</label>

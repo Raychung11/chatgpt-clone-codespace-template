@@ -2,12 +2,28 @@
 require_once __DIR__ . '/layout.php';
 
 session_start_safe();
-$admin_error = '';
+
+// CSRF check for all POST requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST') verify_csrf();
+
+$admin_error  = '';
+$admin_locked = null;
+
 if (isset($_POST['admin_login'])) {
-    if (hash_password($_POST['admin_pw'] ?? '') === ADMIN_PASSWORD_HASH) {
-        $_SESSION['admin_auth'] = true;
+    $admin_locked = check_admin_rate_limit();
+    if ($admin_locked) {
+        $admin_error = 'Too many failed attempts. Try again in ' . ceil($admin_locked / 60) . ' minute(s).';
     } else {
-        $admin_error = 'Incorrect admin password.';
+        $kop_id = trim($_POST['admin_kop_id'] ?? '');
+        $pw     = $_POST['admin_pw'] ?? '';
+        $m      = authenticate_member($kop_id, $pw);
+        if ($m && ($m['role'] ?? '') === 'admin') {
+            $_SESSION['admin_auth'] = true;
+            reset_admin_rate_limit();
+        } else {
+            record_admin_fail();
+            $admin_error = 'Invalid Member ID or password.';
+        }
     }
 }
 if (isset($_GET['admin_logout'])) {
@@ -23,12 +39,19 @@ if ($is_admin && isset($_POST['action'])) {
     $tab = $_POST['tab'] ?? 'overview';
 
     if ($act === 'approve_seller') {
+        $seller_row = get_seller_by_id($id);
         approve_seller($id, trim($_POST['note'] ?? ''));
+        if ($seller_row) notify_listing_approved($seller_row);
         flash('Listing approved and set to active.');
     } elseif ($act === 'reject_seller') {
         $note = trim($_POST['note'] ?? '');
         if (!$note) { flash('Please enter a rejection reason.', 'error'); }
-        else { reject_seller($id, $note); flash('Listing rejected.', 'error'); }
+        else {
+            $seller_row = get_seller_by_id($id);
+            reject_seller($id, $note);
+            if ($seller_row) notify_listing_rejected($seller_row, $note);
+            flash('Listing rejected.', 'error');
+        }
     } elseif ($act === 'activate_seller') {
         update_seller_status($id, 'active');
         flash('Listing activated.');
@@ -106,14 +129,28 @@ html_body_open();
 <?php if (!$is_admin): ?>
 <!-- ── Login ── -->
 <div class="card p-4" style="max-width:380px">
-    <h5>Admin Login</h5>
+    <h5>🛡️ Admin Login</h5>
     <?php if ($admin_error): ?><div class="alert alert-danger py-2 small"><?= e($admin_error) ?></div><?php endif; ?>
+    <?php
+    $remaining_sec = check_admin_rate_limit();
+    if ($remaining_sec):
+    ?>
+    <div class="alert alert-warning py-2 small">
+        ⏱️ Account locked. Try again in <strong><?= ceil($remaining_sec / 60) ?> minute(s)</strong>.
+    </div>
+    <?php endif; ?>
     <form method="post">
+        <?= csrf_field() ?>
         <div class="mb-3">
-            <label class="form-label">Admin Password</label>
-            <input type="password" name="admin_pw" class="form-control" required autofocus>
+            <label class="form-label">Admin Member ID</label>
+            <input type="text" name="admin_kop_id" class="form-control" placeholder="e.g. ADMIN-001" required autofocus>
         </div>
-        <button type="submit" name="admin_login" value="1" class="btn btn-primary w-100">Login</button>
+        <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" name="admin_pw" class="form-control" required>
+        </div>
+        <button type="submit" name="admin_login" value="1" class="btn btn-primary w-100"
+            <?= $remaining_sec ? 'disabled' : '' ?>>Login</button>
     </form>
 </div>
 <?php html_footer(); return; ?>
@@ -250,6 +287,7 @@ html_body_open();
                 <?php endif; ?>
                 <!-- Approve -->
                 <form method="post" class="mb-2">
+                    <?= csrf_field() ?>
                     <input type="hidden" name="id" value="<?= e($s['id']) ?>">
                     <input type="hidden" name="tab" value="pending">
                     <input type="hidden" name="action" value="approve_seller">
@@ -259,6 +297,7 @@ html_body_open();
                 </form>
                 <!-- Reject -->
                 <form method="post">
+                    <?= csrf_field() ?>
                     <input type="hidden" name="id" value="<?= e($s['id']) ?>">
                     <input type="hidden" name="tab" value="pending">
                     <input type="hidden" name="action" value="reject_seller">
@@ -303,6 +342,7 @@ html_body_open();
     <td><span class="text-muted" style="font-size:.7rem"><?= e(substr($s['admin_note']??'',0,50)) ?></span></td>
     <td>
         <form method="post" class="d-flex gap-1 flex-wrap">
+            <?= csrf_field() ?>
             <input type="hidden" name="id" value="<?= e($s['id']) ?>">
             <input type="hidden" name="tab" value="sellers">
             <?php if ($s['status'] !== 'active'): ?>
@@ -341,6 +381,7 @@ html_body_open();
     <td><span class="pill-<?= e($r['status'] === 'in progress' ? 'matched' : $r['status']) ?>"><?= e($r['status']) ?></span></td>
     <td>
         <form method="post" class="d-flex gap-1">
+            <?= csrf_field() ?>
             <input type="hidden" name="id" value="<?= e($r['id']) ?>">
             <input type="hidden" name="action" value="update_request">
             <input type="hidden" name="tab" value="requests">
@@ -364,6 +405,7 @@ html_body_open();
 <div class="card p-3 mb-3" style="max-width:700px">
     <div class="section-head">➕ Add New Member</div>
     <form method="post" class="row g-2">
+        <?= csrf_field() ?>
         <input type="hidden" name="action" value="add_member">
         <input type="hidden" name="tab" value="members">
         <div class="col-md-3">
@@ -406,6 +448,7 @@ html_body_open();
     <!-- Reset password inline -->
     <td>
         <form method="post" class="d-flex gap-1">
+            <?= csrf_field() ?>
             <input type="hidden" name="action" value="reset_password">
             <input type="hidden" name="id" value="<?= e($m['koperasi_id']) ?>">
             <input type="hidden" name="tab" value="members">
@@ -417,6 +460,7 @@ html_body_open();
     </td>
     <td>
         <form method="post" class="d-flex gap-1">
+            <?= csrf_field() ?>
             <input type="hidden" name="id" value="<?= e($m['koperasi_id']) ?>">
             <input type="hidden" name="tab" value="members">
             <?php if ($m['role'] !== 'admin'): ?>
@@ -462,6 +506,7 @@ html_body_open();
     </div>
 
     <form method="post" enctype="multipart/form-data">
+        <?= csrf_field() ?>
         <input type="hidden" name="action" value="import_csv">
         <input type="hidden" name="tab" value="members">
         <div class="mb-3">

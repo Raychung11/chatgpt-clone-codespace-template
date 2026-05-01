@@ -32,6 +32,9 @@ if (!$conv || !in_array($kop_id, [$conv['buyer_kop_id'], $conv['seller_kop_id']]
 // Save user message (unless AI-only)
 if (!$ai_only && $text) {
     add_message($conv_id, $kop_id, $mem_name, $text, false);
+    // Notify the other participant
+    $recipient = ($conv['buyer_kop_id'] === $kop_id) ? $conv['seller_kop_id'] : $conv['buyer_kop_id'];
+    notify_new_message($recipient, $mem_name, $conv_id);
 }
 
 $ai_reply = null;
