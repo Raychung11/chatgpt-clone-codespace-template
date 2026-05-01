@@ -118,15 +118,16 @@ document.getElementById('pulseBtn').addEventListener('click', async () => {
         month: <?= json_encode($month) ?>
     };
     try {
-        const r    = await fetch('ajax/ai_pulse.php', {
+        const r    = await csrfFetch('ajax/ai_pulse.php', {
             method: 'POST',
-            headers: {'Content-Type':'application/json'},
             body: JSON.stringify(stats)
         });
         const data = await r.json();
-        res.innerHTML = `<div class="alert alert-info">${(data.summary||'').replace(/\n/g,'<br>')}</div>`;
+        const box  = document.createElement('div'); box.className = 'alert alert-info';
+        box.innerHTML = escHtml(data.summary || '').replace(/\n/g,'<br>');
+        res.replaceChildren(box);
     } catch(e) {
-        res.innerHTML = '<span class="text-danger">Error generating summary.</span>';
+        res.textContent = 'Error generating summary.';
     }
     btn.disabled = false; btn.textContent = '🔄 Refresh Summary';
 });

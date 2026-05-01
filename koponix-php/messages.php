@@ -138,27 +138,30 @@ const chatBox  = document.getElementById('chatBox');
 chatBox.scrollTop = chatBox.scrollHeight;
 
 function appendBubble(senderName, text, type) {
-    // type: 'mine' | 'theirs' | 'ai'
     const ts   = new Date().toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit'});
-    let html   = '';
+    const wrap = document.createElement('div');
+    if (type === 'mine')  wrap.className = 'chat-msg mine';
+    else if (type === 'ai') wrap.className = 'chat-msg';
+    else wrap.className = 'chat-msg theirs';
+
+    const lbl = document.createElement('div');
+    lbl.className = 'small text-muted mb-1';
+    if (type === 'mine') { lbl.style.textAlign = 'right'; lbl.textContent = 'You'; }
+    else if (type === 'ai') { lbl.textContent = '🤖 Koponix AI'; }
+    else { lbl.textContent = senderName; }
+
+    const bub = document.createElement('div');
     if (type === 'ai') {
-        html = `<div class="chat-msg">
-            <div class="small text-muted mb-1">🤖 Koponix AI</div>
-            <div style="background:#eaf4fb;border:1px solid #b8d9f0;border-radius:14px;padding:.5rem .85rem;display:inline-block;max-width:80%;font-size:.85rem;color:#1a5276">${text.replace(/\n/g,'<br>')}</div>
-            <div class="chat-ts">${ts}</div></div>`;
-    } else if (type === 'mine') {
-        html = `<div class="chat-msg mine">
-            <div class="small text-muted mb-1" style="text-align:right">You</div>
-            <div class="bubble">${text.replace(/\n/g,'<br>')}</div>
-            <div class="chat-ts">${ts}</div></div>`;
+        bub.style.cssText = 'background:#eaf4fb;border:1px solid #b8d9f0;border-radius:14px;padding:.5rem .85rem;display:inline-block;max-width:80%;font-size:.85rem;color:#1a5276';
     } else {
-        html = `<div class="chat-msg theirs">
-            <div class="small text-muted mb-1">${senderName}</div>
-            <div class="bubble">${text.replace(/\n/g,'<br>')}</div>
-            <div class="chat-ts">${ts}</div></div>`;
+        bub.className = 'bubble';
     }
-    chatBox.innerHTML += html;
-    chatBox.scrollTop  = chatBox.scrollHeight;
+    bub.innerHTML = escHtml(text).replace(/\n/g,'<br>');
+
+    const tsd = document.createElement('div'); tsd.className = 'chat-ts'; tsd.textContent = ts;
+    wrap.append(lbl, bub, tsd);
+    chatBox.appendChild(wrap);
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 async function sendMessage(text, withAi = false) {
@@ -168,9 +171,8 @@ async function sendMessage(text, withAi = false) {
     document.getElementById('msgStatus').textContent = withAi ? '🤖 AI is thinking…' : '';
 
     try {
-        const r = await fetch('ajax/send_message.php', {
+        const r = await csrfFetch('ajax/send_message.php', {
             method: 'POST',
-            headers: {'Content-Type':'application/json'},
             body: JSON.stringify({
                 conv_id: convId,
                 text: text,
@@ -191,9 +193,8 @@ async function sendMessage(text, withAi = false) {
 async function askAiOnly() {
     document.getElementById('msgStatus').textContent = '🤖 AI is thinking…';
     try {
-        const r = await fetch('ajax/send_message.php', {
+        const r = await csrfFetch('ajax/send_message.php', {
             method: 'POST',
-            headers: {'Content-Type':'application/json'},
             body: JSON.stringify({
                 conv_id: convId,
                 text: '',

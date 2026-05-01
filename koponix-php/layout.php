@@ -32,6 +32,7 @@ function html_head(string $title = 'Koponix'): void { ?>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 <title><?= e($title) ?> — Koponix | <?= defined('KOPERASI_ABBREV') ? KOPERASI_ABBREV : 'KKBR' ?></title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤝</text></svg>">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -161,6 +162,21 @@ body{font-family:'Inter',sans-serif;background:var(--light-bg);min-height:100vh;
     }
     $initials = $member ? avatar_initials($member['name']) : '';
 ?>
+<script>
+// Escape HTML for safe DOM insertion
+function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str ?? '');
+    return d.innerHTML;
+}
+
+// fetch() wrapper that injects CSRF token header on every POST
+const _csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+function csrfFetch(url, opts = {}) {
+    opts.headers = Object.assign({'X-CSRF-Token': _csrfToken, 'Content-Type': 'application/json'}, opts.headers || {});
+    return fetch(url, opts);
+}
+</script>
 </head>
 <body>
 

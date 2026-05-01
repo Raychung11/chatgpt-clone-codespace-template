@@ -2,6 +2,7 @@
 // AJAX: General AI chat (AI Assistant page)
 require_once dirname(__DIR__) . '/functions.php';
 header('Content-Type: application/json');
+verify_csrf_ajax();
 
 $input    = json_decode(file_get_contents('php://input'), true);
 $messages = $input['messages'] ?? [];
@@ -22,5 +23,9 @@ if (!$messages) {
     exit;
 }
 
+if (!ai_rate_limit('chat')) {
+    echo json_encode(['reply' => 'Please wait a moment before sending another message.']);
+    exit;
+}
 $reply = claude_api($messages, KOPONIX_SYSTEM_PROMPT, 512, CLAUDE_MODEL);
 echo json_encode(['reply' => $reply]);

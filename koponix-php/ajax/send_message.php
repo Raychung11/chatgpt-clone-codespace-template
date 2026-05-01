@@ -4,6 +4,7 @@ require_once dirname(__DIR__) . '/functions.php';
 header('Content-Type: application/json');
 
 session_start_safe();
+verify_csrf_ajax();
 if (!is_logged_in()) {
     http_response_code(401);
     echo json_encode(['error' => 'Not logged in']);

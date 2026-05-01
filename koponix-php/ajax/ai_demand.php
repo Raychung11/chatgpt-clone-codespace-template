@@ -2,6 +2,7 @@
 // AJAX: AI Market Demand Insight
 require_once dirname(__DIR__) . '/functions.php';
 header('Content-Type: application/json');
+verify_csrf_ajax();
 
 $input      = json_decode(file_get_contents('php://input'), true);
 $req_by_cat = $input['req_by_cat'] ?? [];
@@ -37,6 +38,10 @@ $prompt = "You are analysing the service request data for Koperasi Kakitangan Ba
     . "4. Ends with one practical recommendation for koperasi members\n\n"
     . "Write in simple Malaysian business English. Be specific with numbers. No bullet points — flowing sentences only.";
 
+if (!ai_rate_limit('demand', 10)) {
+    echo json_encode(['insight' => 'Please wait before requesting another analysis.']);
+    exit;
+}
 $insight = claude_api(
     [['role' => 'user', 'content' => $prompt]],
     KOPONIX_SYSTEM_PROMPT,

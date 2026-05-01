@@ -40,6 +40,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'register') {
     $pw2    = $_POST['password_confirm']    ?? '';
 
     if (!$name)            $reg_errors[] = 'Full name is required.';
+    if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) $reg_errors[] = 'Please enter a valid email address.';
     if (!$kop_id)          $reg_errors[] = 'Koperasi Member ID is required.';
     elseif (!str_starts_with(strtoupper($kop_id), MEMBER_ID_PREFIX))
         $reg_errors[] = 'Member ID must start with ' . MEMBER_ID_PREFIX . ' (e.g. ' . MEMBER_ID_PREFIX . '00123). Contact koperasi admin if you don\'t know your ID.';
@@ -76,6 +77,8 @@ if (isset($_POST['action']) && $_POST['action'] === 'update_profile' && is_logge
 
     if (!$p_name) {
         $prof_errors[] = 'Name cannot be empty.';
+    } elseif ($p_email && !filter_var($p_email, FILTER_VALIDATE_EMAIL)) {
+        $prof_errors[] = 'Please enter a valid email address.';
     } else {
         $updates = ['name' => $p_name, 'email' => $p_email, 'bio' => $p_bio];
         $avatar  = handle_image_upload('avatar', 'avatars');
@@ -462,10 +465,12 @@ function copyLink() {
 document.getElementById('getCoachingBtn').addEventListener('click', async () => {
     const btn = document.getElementById('getCoachingBtn');
     btn.disabled = true; btn.textContent = 'Thinking…';
-    const res = await fetch('ajax/ai_coaching.php', {method:'POST'});
+    const res  = await csrfFetch('ajax/ai_coaching.php', {method:'POST', body:'{}'});
     const data = await res.json();
-    document.getElementById('coachingResult').innerHTML =
-        `<div class="alert alert-info"><strong>💡 Your Tips:</strong><br>${data.tips.replace(/\n/g,'<br>')}</div>`;
+    const box  = document.getElementById('coachingResult');
+    const div  = document.createElement('div'); div.className = 'alert alert-info';
+    div.innerHTML = '<strong>💡 Your Tips:</strong><br>' + escHtml(data.tips || '').replace(/\n/g,'<br>');
+    box.replaceChildren(div);
     btn.disabled = false; btn.textContent = '🔄 Refresh Tips';
 });
 </script>

@@ -85,14 +85,16 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
     btn.disabled = true; btn.textContent = 'Generating…';
     res.innerHTML = '<div class="spinner-border spinner-border-sm"></div> AI is writing your promo…';
     try {
-        const r    = await fetch('ajax/ai_promo.php', {
+        const r    = await csrfFetch('ajax/ai_promo.php', {
             method: 'POST',
-            headers: {'Content-Type':'application/json'},
             body: JSON.stringify(data)
         });
         const json = await r.json();
         const text = json.promo || 'Could not generate promo.';
-        res.innerHTML = `<pre style="white-space:pre-wrap;font-family:inherit">${text}</pre>`;
+        const pre  = document.createElement('pre');
+        pre.style.cssText = 'white-space:pre-wrap;font-family:inherit';
+        pre.textContent = text;
+        res.replaceChildren(pre);
         document.getElementById('promoCopyWrap').classList.remove('d-none');
         document.getElementById('copyBtn').onclick = () => {
             navigator.clipboard.writeText(text).then(() => {
@@ -100,7 +102,7 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
             });
         };
     } catch(e) {
-        res.innerHTML = '<span class="text-danger">Error generating promo. Please try again.</span>';
+        res.textContent = 'Error generating promo. Please try again.';
     }
     btn.disabled = false; btn.textContent = '✨ Generate Promo';
 });

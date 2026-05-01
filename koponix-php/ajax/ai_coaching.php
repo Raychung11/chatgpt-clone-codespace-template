@@ -3,6 +3,7 @@
 require_once dirname(__DIR__) . '/functions.php';
 header('Content-Type: application/json');
 session_start_safe();
+verify_csrf_ajax();
 
 if (!is_logged_in()) {
     echo json_encode(['tips' => 'Please log in to get coaching tips.']);
@@ -28,5 +29,9 @@ $prompt = "You are coaching a Koponix member named {$member['name']} (ID: {$kop_
     . "Give exactly 3 short, practical, actionable tips to help this member earn more or engage better "
     . "on the Koponix platform. Number each tip. Keep each tip to 1-2 sentences.";
 
+if (!ai_rate_limit('coaching', 10)) {
+    echo json_encode(['tips' => 'Please wait before requesting coaching again.']);
+    exit;
+}
 $tips = claude_api([['role'=>'user','content'=>$prompt]], KOPONIX_SYSTEM_PROMPT, 350, CLAUDE_MODEL);
 echo json_encode(['tips' => trim($tips)]);

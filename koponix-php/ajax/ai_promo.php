@@ -2,6 +2,7 @@
 // AJAX: Promo Generator
 require_once dirname(__DIR__) . '/functions.php';
 header('Content-Type: application/json');
+verify_csrf_ajax();
 
 $input    = json_decode(file_get_contents('php://input'), true);
 $title    = $input['title']    ?? '';
@@ -18,5 +19,9 @@ $prompt = "Write a {$type} for the following Koponix member service:\n"
     . "Include a call-to-action. Write in Malaysian business English. "
     . "Do not add hashtags unless it's a social media post.";
 
+if (!ai_rate_limit('promo')) {
+    echo json_encode(['promo' => 'Please wait a moment before generating another promo.']);
+    exit;
+}
 $promo = claude_api([['role'=>'user','content'=>$prompt]], KOPONIX_SYSTEM_PROMPT, 400, CLAUDE_MODEL);
 echo json_encode(['promo' => trim($promo)]);

@@ -46,15 +46,16 @@ const systemPrompt  = <?= json_encode(KOPONIX_SYSTEM_PROMPT) ?>;
 let   history       = [];
 
 function addBubble(role, text) {
-    const cls  = role === 'user' ? 'mine' : (role === 'ai' ? 'theirs' : 'theirs');
+    const cls  = role === 'user' ? 'mine' : 'theirs';
     const name = role === 'user' ? 'You' : '🤖 Koponix AI';
     const ts   = new Date().toLocaleTimeString('en-MY', {hour:'2-digit', minute:'2-digit'});
-    chatBox.innerHTML += `
-        <div class="chat-msg ${cls}">
-            <div class="small text-muted mb-1">${name}</div>
-            <div class="bubble">${text.replace(/\n/g,'<br>')}</div>
-            <div class="chat-ts">${ts}</div>
-        </div>`;
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-msg ' + cls;
+    const lbl = document.createElement('div'); lbl.className = 'small text-muted mb-1'; lbl.textContent = name;
+    const bub = document.createElement('div'); bub.className = 'bubble'; bub.innerHTML = escHtml(text).replace(/\n/g,'<br>');
+    const tsd = document.createElement('div'); tsd.className = 'chat-ts'; tsd.textContent = ts;
+    wrap.append(lbl, bub, tsd);
+    chatBox.appendChild(wrap);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
@@ -68,9 +69,8 @@ async function sendMessage() {
     sendBtn.textContent = '…';
 
     try {
-        const res  = await fetch('ajax/ai_chat.php', {
+        const res  = await csrfFetch('ajax/ai_chat.php', {
             method: 'POST',
-            headers: {'Content-Type':'application/json'},
             body: JSON.stringify({messages: history})
         });
         const data = await res.json();

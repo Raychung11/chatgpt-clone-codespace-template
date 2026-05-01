@@ -94,10 +94,23 @@ if ($is_admin && isset($_POST['action'])) {
         $tab = 'members';
     } elseif ($act === 'import_csv') {
         $csv = '';
-        if (!empty($_FILES['csv_file']['tmp_name'])) {
-            $csv = file_get_contents($_FILES['csv_file']['tmp_name']);
+        $csv_file = $_FILES['csv_file'] ?? [];
+        $csv_err  = '';
+        if (!empty($csv_file['tmp_name']) && $csv_file['error'] === UPLOAD_ERR_OK) {
+            if ($csv_file['size'] > 2 * 1024 * 1024) {
+                $csv_err = 'CSV file too large (max 2 MB).';
+            } else {
+                $ext = strtolower(pathinfo($csv_file['name'] ?? '', PATHINFO_EXTENSION));
+                if (!in_array($ext, ['csv', 'txt'], true)) {
+                    $csv_err = 'Only .csv files are allowed.';
+                } else {
+                    $csv = file_get_contents($csv_file['tmp_name']);
+                }
+            }
         }
-        if (!$csv) {
+        if ($csv_err) {
+            flash($csv_err, 'error');
+        } elseif (!$csv) {
             flash('No CSV file uploaded.', 'error');
         } else {
             $result = import_members_csv($csv);

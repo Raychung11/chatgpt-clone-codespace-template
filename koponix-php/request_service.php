@@ -373,16 +373,15 @@ document.getElementById('aiInsightBtn').addEventListener('click', async () => {
         total_req  : <?= count($all_requests) ?>
     };
     try {
-        const r    = await fetch('ajax/ai_demand.php', {
+        const r    = await csrfFetch('ajax/ai_demand.php', {
             method : 'POST',
-            headers: {'Content-Type':'application/json'},
             body   : JSON.stringify(stats)
         });
         const data = await r.json();
-        res.innerHTML = `<div style="background:#eaf4fb;border-left:3px solid #2e86c1;border-radius:0 8px 8px 0;
-                            padding:.6rem .8rem;color:#1a5276;line-height:1.6">
-                            ${(data.insight||'').replace(/\n/g,'<br>')}
-                        </div>`;
+        const box  = document.createElement('div');
+        box.style.cssText = 'background:#eaf4fb;border-left:3px solid #2e86c1;border-radius:0 8px 8px 0;padding:.6rem .8rem;color:#1a5276;line-height:1.6';
+        box.innerHTML = escHtml(data.insight || '').replace(/\n/g,'<br>');
+        res.replaceChildren(box);
     } catch(e) {
         res.textContent = 'Could not load insight. Try again.';
     }

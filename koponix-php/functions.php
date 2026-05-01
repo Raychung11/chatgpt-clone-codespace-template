@@ -620,6 +620,34 @@ function verify_csrf(): void {
     }
 }
 
+/**
+ * Verify CSRF for JSON/AJAX endpoints via X-CSRF-Token header.
+ * Sends 403 JSON response on failure.
+ */
+function verify_csrf_ajax(): void {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
+    $header = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    if (!$header || !hash_equals(csrf_token(), $header)) {
+        http_response_code(403);
+        header('Content-Type: application/json');
+        die(json_encode(['error' => 'CSRF token invalid']));
+    }
+}
+
+/**
+ * Session-based rate limiter for AI endpoints.
+ * Returns true if allowed; false if within the cooldown window.
+ */
+function ai_rate_limit(string $key = 'ai', int $seconds = 3): bool {
+    session_start_safe();
+    $ts_key = 'rl_' . $key;
+    $now    = time();
+    $last   = (int)($_SESSION[$ts_key] ?? 0);
+    if ($now - $last < $seconds) return false;
+    $_SESSION[$ts_key] = $now;
+    return true;
+}
+
 // ── Admin Rate Limiting ───────────────────────────────────────
 function check_admin_rate_limit(): ?int {
     session_start_safe();

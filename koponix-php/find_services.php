@@ -242,7 +242,7 @@ document.getElementById('aiSearchBtn').addEventListener('click', async () => {
     btn.disabled = true; btn.textContent = 'Searching…';
     res.textContent = '⏳ AI is interpreting your search…';
     try {
-        const r    = await fetch('ajax/ai_search.php', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({query:q})});
+        const r    = await csrfFetch('ajax/ai_search.php', {method:'POST', body: JSON.stringify({query:q})});
         const data = await r.json();
         if (data.url) {
             res.textContent = '🎯 Filter applied — redirecting…';
@@ -262,11 +262,14 @@ document.querySelectorAll('.ai-insight-btn').forEach(btn => {
         if (box.dataset.loaded) return;
         btn.disabled = true; btn.textContent = '…';
         try {
-            const r    = await fetch('ajax/ai_insight.php', {method:'POST', headers:{'Content-Type':'application/json'},
+            const r    = await csrfFetch('ajax/ai_insight.php', {method:'POST',
                 body: JSON.stringify({title:btn.dataset.title, category:btn.dataset.category, area:btn.dataset.area, price:btn.dataset.price, description:btn.dataset.desc})
             });
             const data = await r.json();
-            box.innerHTML = `<div style="background:#eaf4fb;border-left:3px solid #2e86c1;border-radius:0 6px 6px 0;padding:4px 8px;font-size:.76rem;color:#1a5276;margin-top:.25rem">✨ <em>${data.insight || ''}</em></div>`;
+            const ins  = document.createElement('div');
+            ins.style.cssText = 'background:#eaf4fb;border-left:3px solid #2e86c1;border-radius:0 6px 6px 0;padding:4px 8px;font-size:.76rem;color:#1a5276;margin-top:.25rem';
+            const em = document.createElement('em'); em.textContent = '✨ ' + (data.insight || '');
+            ins.appendChild(em); box.appendChild(ins);
             box.dataset.loaded = '1';
         } catch(e) {}
         btn.disabled = false; btn.textContent = '✨ AI';

@@ -2,6 +2,7 @@
 // AJAX: AI Smart Search — extract categories/locations from query
 require_once dirname(__DIR__) . '/functions.php';
 header('Content-Type: application/json');
+verify_csrf_ajax();
 
 $input = json_decode(file_get_contents('php://input'), true);
 $query = trim($input['query'] ?? '');
@@ -21,6 +22,10 @@ $prompt = "A user is searching for a service on Koponix with this description:\n
     . "- keywords: short keyword string for text search (max 4 words, empty string if none)\n"
     . "Return ONLY the raw JSON object — no explanation, no markdown fences.";
 
+if (!ai_rate_limit('search')) {
+    echo json_encode(['url' => null]);
+    exit;
+}
 $raw = claude_api([['role'=>'user','content'=>$prompt]], KOPONIX_SYSTEM_PROMPT, 200, CLAUDE_MODEL);
 
 $url = null;
