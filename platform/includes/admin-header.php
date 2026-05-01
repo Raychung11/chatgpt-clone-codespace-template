@@ -192,6 +192,9 @@ function adminBadge(string $sql): int {
         </a>
 
         <div class="nav-section-label mt-3">Settings</div>
+        <a href="/admin/pricing.php" class="admin-nav-link <?= $adminPage === 'pricing' ? 'active' : '' ?>">
+            <i class="bi bi-tags"></i> Capsule Pricing
+        </a>
         <a href="/admin/settings.php" class="admin-nav-link <?= $adminPage === 'settings' ? 'active' : '' ?>">
             <i class="bi bi-gear"></i> Settings
         </a>
