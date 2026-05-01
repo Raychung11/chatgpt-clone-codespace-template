@@ -11,7 +11,7 @@ require_once '../includes/header.php';
 <div class="container py-5">
     <div class="mb-5">
         <h2 class="text-white fw-bold mb-1"><i class="bi bi-cpu-fill me-2 text-primary"></i>AI Tools</h2>
-        <p class="text-muted">12 AI-powered tools to automate your everyday business tasks</p>
+        <p class="text-muted">20 AI-powered tools to automate your everyday business tasks</p>
     </div>
 
     <?php
@@ -33,6 +33,18 @@ require_once '../includes/header.php';
             ['Leave Request',        '/modules/leave-request.php',     'bi-calendar-check', '#ef4444', 'Submit leave requests with AI-drafted messages and track history.'],
             ['Performance Review',   '/modules/performance-review.php','bi-star-half',      '#84cc16', 'Generate balanced, professional reviews for any staff member.'],
             ['Meeting Minutes',      '/modules/meeting-minutes.php',   'bi-journal-text',   '#8b5cf6', 'Transform rough notes into structured meeting minutes instantly.'],
+        ],
+        'Strategy & Finance' => [
+            ['Financial Analysis',   '/modules/financial-analysis.php','bi-bar-chart-line', '#10b981', 'Paste your numbers — get plain-English analysis, red flags, and recommendations.'],
+            ['Business Report',      '/modules/business-report.php',   'bi-file-earmark-bar-chart','#3b82f6','Generate professional monthly, quarterly, or annual business reports.'],
+            ['Pitch Deck Generator', '/modules/pitch-deck.php',        'bi-easel',          '#f59e0b', 'Slide-by-slide pitch deck content that wins investors and clients.'],
+            ['Cold Outreach',        '/modules/cold-outreach.php',     'bi-send',           '#f97316', 'Multi-touch cold email and LinkedIn sequences that get replies.'],
+        ],
+        'Automation & Systems' => [
+            ['WhatsApp Templates',   '/modules/whatsapp-templates.php','bi-whatsapp',       '#25d366', 'Broadcast messages and campaign templates optimised for WhatsApp.'],
+            ['Chatbot Flow Designer','/modules/chatbot-flow.php',      'bi-robot',          '#06b6d4', 'Design your WhatsApp or website chatbot conversation flow with AI.'],
+            ['Contract Drafter',     '/modules/contract-drafter.php',  'bi-file-earmark-lock','#14b8a6','Draft NDAs, service agreements, and employment contracts in minutes.'],
+            ['Training Creator',     '/modules/training-creator.php',  'bi-mortarboard',    '#8b5cf6', 'Build full training modules, onboarding guides, and quizzes with AI.'],
         ],
     ];
     foreach ($groups as $groupName => $tools):
