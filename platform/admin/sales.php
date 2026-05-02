@@ -174,7 +174,7 @@ require_once '../includes/admin-header.php';
                     </div>
                     <div>
                         <div class="text-muted small">Total Revenue</div>
-                        <div class="fs-4 fw-bold text-white"><?= CURRENCY_SYMBOL ?><?= number_format($kpiRevenue, 2) ?></div>
+                        <div class="fs-4 fw-bold text-white"><?= APP_CURRENCY ?><?= number_format($kpiRevenue, 2) ?></div>
                         <div class="text-success small">Selected period</div>
                     </div>
                 </div>
@@ -202,7 +202,7 @@ require_once '../includes/admin-header.php';
                     </div>
                     <div>
                         <div class="text-muted small">Avg Order Value</div>
-                        <div class="fs-4 fw-bold text-white"><?= CURRENCY_SYMBOL ?><?= number_format($kpiAOV, 2) ?></div>
+                        <div class="fs-4 fw-bold text-white"><?= APP_CURRENCY ?><?= number_format($kpiAOV, 2) ?></div>
                         <div class="text-info small">Per transaction</div>
                     </div>
                 </div>
@@ -277,8 +277,8 @@ require_once '../includes/admin-header.php';
                                     </div>
                                 </td>
                                 <td class="text-muted small text-end"><?= number_format($tp['units']) ?></td>
-                                <td class="text-success fw-semibold small text-end"><?= CURRENCY_SYMBOL ?><?= number_format($tp['revenue'], 2) ?></td>
-                                <td class="text-muted small text-end"><?= CURRENCY_SYMBOL ?><?= number_format($tp['avg_price'], 2) ?></td>
+                                <td class="text-success fw-semibold small text-end"><?= APP_CURRENCY ?><?= number_format($tp['revenue'], 2) ?></td>
+                                <td class="text-muted small text-end"><?= APP_CURRENCY ?><?= number_format($tp['avg_price'], 2) ?></td>
                             </tr>
                             <?php endforeach; ?>
                             <?php endif; ?>
@@ -323,7 +323,7 @@ require_once '../includes/admin-header.php';
                                 <td class="text-muted small"><?= date('d M', strtotime($tx[0])) ?></td>
                                 <td class="text-white small"><?= htmlspecialchars($tx[1]) ?></td>
                                 <td class="text-muted small"><?= htmlspecialchars($tx[2]) ?></td>
-                                <td class="text-success fw-semibold small text-end"><?= CURRENCY_SYMBOL ?><?= number_format($tx[3],2) ?></td>
+                                <td class="text-success fw-semibold small text-end"><?= APP_CURRENCY ?><?= number_format($tx[3],2) ?></td>
                                 <td><span class="badge bg-<?= $sc[$tx[4]] ?? 'secondary' ?>"><?= ucfirst($tx[4]) ?></span></td>
                             </tr>
                             <?php endforeach; ?>
@@ -337,7 +337,7 @@ require_once '../includes/admin-header.php';
                                 <td class="text-muted small"><?= date('d M Y', strtotime($tx['created_at'])) ?></td>
                                 <td class="text-white small"><?= htmlspecialchars($tx['customer_name'] ?? '—') ?></td>
                                 <td class="text-muted small"><?= htmlspecialchars(mb_substr($tx['product_name'] ?? '—', 0, 25)) ?></td>
-                                <td class="text-success fw-semibold small text-end"><?= CURRENCY_SYMBOL ?><?= number_format($tx['amount'], 2) ?></td>
+                                <td class="text-success fw-semibold small text-end"><?= APP_CURRENCY ?><?= number_format($tx['amount'], 2) ?></td>
                                 <td><span class="badge bg-<?= $sc ?>"><?= ucfirst($tx['status']) ?></span></td>
                             </tr>
                             <?php endforeach; ?>

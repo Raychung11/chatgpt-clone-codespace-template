@@ -161,7 +161,7 @@ require_once '../includes/admin-header.php';
                     </div>
                     <div>
                         <div class="text-muted small">Inventory Value</div>
-                        <div class="fs-4 fw-bold text-white"><?= CURRENCY_SYMBOL . number_format($kpiInvValue, 2) ?></div>
+                        <div class="fs-4 fw-bold text-white"><?= APP_CURRENCY . number_format($kpiInvValue, 2) ?></div>
                     </div>
                 </div>
             </div>

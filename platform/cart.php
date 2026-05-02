@@ -124,7 +124,7 @@ require_once 'includes/header.php';
                     </div>
                   </td>
                   <td class="py-3 px-4 border-0 text-center text-muted small">
-                    <?= CURRENCY_SYMBOL ?><?= number_format($item['price'], 2) ?>/mo
+                    <?= APP_CURRENCY ?><?= number_format($item['price'], 2) ?>/mo
                   </td>
                   <td class="py-3 px-4 border-0 text-center">
                     <div class="d-flex align-items-center justify-content-center gap-2">
@@ -149,7 +149,7 @@ require_once 'includes/header.php';
                     </div>
                   </td>
                   <td class="py-3 px-4 border-0 text-end fw-semibold small">
-                    <?= CURRENCY_SYMBOL ?><?= number_format($item['line'], 2) ?>
+                    <?= APP_CURRENCY ?><?= number_format($item['line'], 2) ?>
                   </td>
                   <td class="py-3 px-4 border-0">
                     <form method="POST">
@@ -180,11 +180,11 @@ require_once 'includes/header.php';
 
           <div class="d-flex justify-content-between align-items-center mb-2 small">
             <span class="text-muted">Subtotal (<?= count($cartItems) ?> agent<?= count($cartItems) > 1 ? 's' : '' ?>)</span>
-            <span class="fw-semibold"><?= CURRENCY_SYMBOL ?><?= number_format($subtotal, 2) ?>/mo</span>
+            <span class="fw-semibold"><?= APP_CURRENCY ?><?= number_format($subtotal, 2) ?>/mo</span>
           </div>
           <div class="d-flex justify-content-between align-items-center mb-2 small">
             <span class="text-muted">Discount</span>
-            <span class="text-success fw-semibold">–<?= CURRENCY_SYMBOL ?>0.00</span>
+            <span class="text-success fw-semibold">–<?= APP_CURRENCY ?>0.00</span>
           </div>
 
           <!-- Trial badge -->
@@ -200,7 +200,7 @@ require_once 'includes/header.php';
           <hr style="border-color:rgba(255,255,255,0.08);">
           <div class="d-flex justify-content-between align-items-center mb-4">
             <span class="fw-bold">Total / month</span>
-            <span class="fw-bold fs-5"><?= CURRENCY_SYMBOL ?><?= number_format($subtotal, 2) ?></span>
+            <span class="fw-bold fs-5"><?= APP_CURRENCY ?><?= number_format($subtotal, 2) ?></span>
           </div>
 
           <a href="/checkout.php" class="btn btn-primary w-100 py-2 fw-semibold mb-2">

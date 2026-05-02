@@ -187,7 +187,7 @@ require_once '../includes/admin-header.php';
                         <td class="<?= $isOverdue ? 'text-danger' : 'text-muted' ?> small">
                             <?= date('d M Y', strtotime($inv['due_date'])) ?>
                         </td>
-                        <td class="text-white fw-semibold small"><?= CURRENCY_SYMBOL ?><?= number_format($inv['total'],2) ?></td>
+                        <td class="text-white fw-semibold small"><?= APP_CURRENCY ?><?= number_format($inv['total'],2) ?></td>
                         <td><span class="badge bg-<?= $badgeClass ?>" style="font-size:10px"><?= ucfirst($statusDisplay) ?></span></td>
                         <td>
                             <div class="d-flex gap-1">

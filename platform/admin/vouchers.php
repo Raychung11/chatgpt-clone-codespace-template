@@ -194,7 +194,7 @@ require_once '../includes/admin-header.php';
                     </div>
                     <div>
                         <div class="text-muted small">Total Savings Given</div>
-                        <div class="fs-4 fw-bold text-white"><?= CURRENCY_SYMBOL ?><?= number_format($kpiSavings, 2) ?></div>
+                        <div class="fs-4 fw-bold text-white"><?= APP_CURRENCY ?><?= number_format($kpiSavings, 2) ?></div>
                         <div class="text-warning small">Fixed discounts</div>
                     </div>
                 </div>
@@ -257,7 +257,7 @@ require_once '../includes/admin-header.php';
                         $typeCol   = $typeColors[$v['type']] ?? 'secondary';
                         $statusCol = $statusColors[$v['status']] ?? 'secondary';
                         $valueDisp = $v['type'] === 'percentage' ? $v['value'] . '%'
-                                   : ($v['type'] === 'fixed' ? CURRENCY_SYMBOL . number_format($v['value'],2)
+                                   : ($v['type'] === 'fixed' ? APP_CURRENCY . number_format($v['value'],2)
                                    : 'Free Shipping');
                         $usagePct = $v['usage_limit'] > 0 ? min(100, round(($v['used_count']/$v['usage_limit'])*100)) : 0;
                         $isExpired = $v['expires_at'] && strtotime($v['expires_at']) < time();

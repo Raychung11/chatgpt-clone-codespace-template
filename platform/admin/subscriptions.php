@@ -36,7 +36,7 @@ require_once '../includes/admin-header.php';
         ['Active','active','bg-success',$stats['active'],'bi-check-circle'],
         ['Trial','trial','bg-info',$stats['trial'],'bi-clock'],
         ['Cancelled','cancelled','bg-danger',$stats['cancelled'],'bi-x-circle'],
-        ['MRR','mrr','bg-primary',CURRENCY_SYMBOL.number_format($stats['mrr'],2),'bi-cash-stack'],
+        ['MRR','mrr','bg-primary',APP_CURRENCY.number_format($stats['mrr'],2),'bi-cash-stack'],
     ] as [$label,$key,$bg,$val,$icon]): ?>
     <div class="col-6 col-md-3">
         <div class="glass-card p-3 text-center">
@@ -78,7 +78,7 @@ require_once '../includes/admin-header.php';
     </td>
     <td><?= htmlspecialchars($s['product_name']) ?></td>
     <td><span class="badge bg-secondary"><?= ucfirst($s['plan'] ?? 'monthly') ?></span></td>
-    <td><?= CURRENCY_SYMBOL.number_format($s['amount'],2) ?></td>
+    <td><?= APP_CURRENCY.number_format($s['amount'],2) ?></td>
     <td>
         <?php $sc=['active'=>'success','trial'=>'info','cancelled'=>'danger','expired'=>'secondary','paused'=>'warning']; ?>
         <span class="badge bg-<?= $sc[$s['status']] ?? 'secondary' ?>"><?= ucfirst($s['status']) ?></span>

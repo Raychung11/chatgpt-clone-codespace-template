@@ -279,7 +279,7 @@ require_once '../includes/admin-header.php';
             <div class="admin-card rounded-4 p-3 text-center">
                 <div class="text-muted small mb-1">Pending Value</div>
                 <div class="text-warning fs-4 fw-bold">
-                    <?= CURRENCY_SYMBOL ?><?= number_format($kpiPending, 2) ?>
+                    <?= APP_CURRENCY ?><?= number_format($kpiPending, 2) ?>
                 </div>
             </div>
         </div>
@@ -287,7 +287,7 @@ require_once '../includes/admin-header.php';
             <div class="admin-card rounded-4 p-3 text-center">
                 <div class="text-muted small mb-1">Received This Month</div>
                 <div class="text-success fs-4 fw-bold">
-                    <?= CURRENCY_SYMBOL ?><?= number_format($kpiReceived, 2) ?>
+                    <?= APP_CURRENCY ?><?= number_format($kpiReceived, 2) ?>
                 </div>
             </div>
         </div>
@@ -425,13 +425,13 @@ require_once '../includes/admin-header.php';
                         </td>
                         <td class="text-center text-muted small"><?= (int)$po['item_count'] ?></td>
                         <td class="text-end text-muted small">
-                            <?= CURRENCY_SYMBOL ?><?= number_format((float)$po['subtotal'], 2) ?>
+                            <?= APP_CURRENCY ?><?= number_format((float)$po['subtotal'], 2) ?>
                         </td>
                         <td class="text-end text-muted small">
-                            <?= CURRENCY_SYMBOL ?><?= number_format((float)$po['tax'], 2) ?>
+                            <?= APP_CURRENCY ?><?= number_format((float)$po['tax'], 2) ?>
                         </td>
                         <td class="text-end text-white small fw-semibold">
-                            <?= CURRENCY_SYMBOL ?><?= number_format((float)$po['total'], 2) ?>
+                            <?= APP_CURRENCY ?><?= number_format((float)$po['total'], 2) ?>
                         </td>
                         <td>
                             <span class="badge bg-<?= $statusBadge ?>">
@@ -680,7 +680,7 @@ require_once '../includes/admin-header.php';
                                 <div class="d-flex justify-content-between mb-2">
                                     <span class="text-muted small">Subtotal</span>
                                     <span class="text-white small" id="summarySubtotal">
-                                        <?= CURRENCY_SYMBOL ?><span id="subtotalVal">
+                                        <?= APP_CURRENCY ?><span id="subtotalVal">
                                             <?= $editPo ? number_format((float)$editPo['subtotal'], 2) : '0.00' ?>
                                         </span>
                                     </span>
@@ -688,7 +688,7 @@ require_once '../includes/admin-header.php';
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <label class="text-muted small mb-0" for="taxInput">Tax</label>
                                     <div class="d-flex align-items-center gap-1">
-                                        <span class="text-muted small"><?= CURRENCY_SYMBOL ?></span>
+                                        <span class="text-muted small"><?= APP_CURRENCY ?></span>
                                         <input type="number" step="0.01" min="0" name="tax" id="taxInput"
                                                value="<?= $editPo ? htmlspecialchars($editPo['tax']) : '0.00' ?>"
                                                class="form-control form-control-sm bg-dark border-secondary text-white text-end"
@@ -699,7 +699,7 @@ require_once '../includes/admin-header.php';
                                 <div class="d-flex justify-content-between">
                                     <span class="text-white fw-semibold small">Total</span>
                                     <span class="text-white fw-semibold" id="totalVal">
-                                        <?= CURRENCY_SYMBOL ?><span id="grandTotalVal">
+                                        <?= APP_CURRENCY ?><span id="grandTotalVal">
                                             <?= $editPo ? number_format((float)$editPo['total'], 2) : '0.00' ?>
                                         </span>
                                     </span>

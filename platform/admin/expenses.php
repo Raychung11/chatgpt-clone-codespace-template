@@ -79,7 +79,7 @@ require_once '../includes/admin-header.php';
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="text-white fw-bold mb-0">
             Expenses
-            <span class="text-muted fs-6">&nbsp;<?= CURRENCY_SYMBOL ?><?= number_format($totalShown,2) ?> shown</span>
+            <span class="text-muted fs-6">&nbsp;<?= APP_CURRENCY ?><?= number_format($totalShown,2) ?> shown</span>
         </h4>
         <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#expenseModal">
             <i class="bi bi-plus-circle me-1"></i>Add Expense
@@ -151,7 +151,7 @@ require_once '../includes/admin-header.php';
                         <td><span class="badge bg-<?= $cc ?>" style="font-size:10px"><?= ucfirst($exp['category']) ?></span></td>
                         <td class="text-muted small"><?= htmlspecialchars($exp['vendor'] ?: '—') ?></td>
                         <td class="text-muted small"><?= htmlspecialchars($exp['reference'] ?: '—') ?></td>
-                        <td class="text-white fw-semibold small"><?= CURRENCY_SYMBOL ?><?= number_format($exp['amount'],2) ?></td>
+                        <td class="text-white fw-semibold small"><?= APP_CURRENCY ?><?= number_format($exp['amount'],2) ?></td>
                         <td>
                             <div class="d-flex gap-1">
                                 <a href="?edit=<?= $exp['id'] ?>" class="btn btn-sm btn-outline-primary" title="Edit">
@@ -176,7 +176,7 @@ require_once '../includes/admin-header.php';
                 <tfoot class="border-top border-secondary">
                     <tr>
                         <td colspan="5" class="text-muted small text-end pe-3 fw-semibold">Total</td>
-                        <td class="text-white fw-bold"><?= CURRENCY_SYMBOL ?><?= number_format($totalShown,2) ?></td>
+                        <td class="text-white fw-bold"><?= APP_CURRENCY ?><?= number_format($totalShown,2) ?></td>
                         <td></td>
                     </tr>
                 </tfoot>
@@ -214,7 +214,7 @@ require_once '../includes/admin-header.php';
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-muted small">Amount (<?= CURRENCY_SYMBOL ?>) *</label>
+                            <label class="form-label text-muted small">Amount (<?= APP_CURRENCY ?>) *</label>
                             <input type="number" name="amount" step="0.01" min="0.01"
                                    value="<?= $editExp['amount'] ?? '' ?>"
                                    class="form-control bg-dark border-secondary text-white" required>

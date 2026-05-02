@@ -36,7 +36,7 @@ class Brand {
         self::$data = self::$defaults;
         // Fallback from config constants where they exist
         if (defined('SITE_NAME'))      self::$data['site_name']             = SITE_NAME;
-        if (defined('CURRENCY_SYMBOL')) self::$data['brand_currency_symbol'] = CURRENCY_SYMBOL;
+        if (defined('APP_CURRENCY')) self::$data['brand_currency_symbol'] = APP_CURRENCY;
         if (defined('ADMIN_EMAIL'))    self::$data['brand_email']            = ADMIN_EMAIL;
         try {
             $rows = DB::fetchAll("SELECT `key`, `value` FROM settings WHERE `key` = 'site_name' OR `key` LIKE 'brand_%' OR `key` = 'active_theme'");

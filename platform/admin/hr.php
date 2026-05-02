@@ -99,7 +99,7 @@ require_once '../includes/admin-header.php';
         <div class="col-6 col-xl-3">
             <div class="admin-card rounded-4 p-4">
                 <div class="text-muted small mb-1">Payroll This Month</div>
-                <div class="text-white fs-3 fw-bold"><?= CURRENCY_SYMBOL ?><?= number_format($totalPayroll, 0) ?></div>
+                <div class="text-white fs-3 fw-bold"><?= APP_CURRENCY ?><?= number_format($totalPayroll, 0) ?></div>
                 <div class="text-muted" style="font-size:11px">Net paid</div>
             </div>
         </div>

@@ -35,7 +35,7 @@ define('TRIAL_DAYS', 14);
 // IMPORTANT: if these show wrong on your live site, make sure THIS file
 // is the version uploaded to Hostinger (public_html/includes/config.php)
 if (!defined('CURRENCY'))        define('CURRENCY',        'MYR');
-if (!defined('CURRENCY_SYMBOL')) define('CURRENCY_SYMBOL', 'RM');
+if (!defined('APP_CURRENCY')) define('APP_CURRENCY', 'RM');
 
 // Error reporting (set to 0 in production)
 error_reporting(E_ALL);

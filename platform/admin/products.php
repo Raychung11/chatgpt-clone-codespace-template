@@ -117,9 +117,9 @@ require_once '../includes/admin-header.php';
                         </td>
                         <td class="text-muted small"><?= htmlspecialchars($p['cat_name'] ?? '—') ?></td>
                         <td>
-                            <div class="text-white small"><?= CURRENCY_SYMBOL ?><?= number_format($p['price_monthly'], 0) ?>/mo</div>
+                            <div class="text-white small"><?= APP_CURRENCY ?><?= number_format($p['price_monthly'], 0) ?>/mo</div>
                             <?php if ($p['price_yearly']): ?>
-                            <div class="text-muted" style="font-size:11px"><?= CURRENCY_SYMBOL ?><?= number_format($p['price_yearly'], 0) ?>/yr</div>
+                            <div class="text-muted" style="font-size:11px"><?= APP_CURRENCY ?><?= number_format($p['price_yearly'], 0) ?>/yr</div>
                             <?php endif; ?>
                         </td>
                         <td>
@@ -207,11 +207,11 @@ require_once '../includes/admin-header.php';
                             <textarea name="description" rows="3" class="form-control bg-dark border-secondary text-white"><?= htmlspecialchars($editProduct['description'] ?? '') ?></textarea>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label text-muted small">Monthly Price (<?= CURRENCY_SYMBOL ?>)</label>
+                            <label class="form-label text-muted small">Monthly Price (<?= APP_CURRENCY ?>)</label>
                             <input type="number" name="price_monthly" step="0.01" value="<?= $editProduct['price_monthly'] ?? '' ?>" class="form-control bg-dark border-secondary text-white">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label text-muted small">Yearly Price (<?= CURRENCY_SYMBOL ?>)</label>
+                            <label class="form-label text-muted small">Yearly Price (<?= APP_CURRENCY ?>)</label>
                             <input type="number" name="price_yearly" step="0.01" value="<?= $editProduct['price_yearly'] ?? '' ?>" class="form-control bg-dark border-secondary text-white">
                         </div>
                         <div class="col-md-4">

@@ -182,7 +182,7 @@ require_once '../includes/admin-header.php';
                     </div>
                     <div>
                         <div class="text-muted small">Inventory Value</div>
-                        <div class="fs-4 fw-bold text-white"><?= CURRENCY_SYMBOL . number_format($kpiInvValue, 2) ?></div>
+                        <div class="fs-4 fw-bold text-white"><?= APP_CURRENCY . number_format($kpiInvValue, 2) ?></div>
                     </div>
                 </div>
             </div>
@@ -293,8 +293,8 @@ require_once '../includes/admin-header.php';
                         </td>
                         <td><span class="badge <?= $qtyClass ?>"><?= $qty ?></span></td>
                         <td class="text-muted small"><?= $rl ?></td>
-                        <td class="text-muted small"><?= CURRENCY_SYMBOL . number_format((float)$item['unit_cost'], 2) ?></td>
-                        <td class="text-muted small"><?= CURRENCY_SYMBOL . number_format((float)$item['unit_price'], 2) ?></td>
+                        <td class="text-muted small"><?= APP_CURRENCY . number_format((float)$item['unit_cost'], 2) ?></td>
+                        <td class="text-muted small"><?= APP_CURRENCY . number_format((float)$item['unit_price'], 2) ?></td>
                         <td>
                             <?php if ($item['status'] === 'active'): ?>
                                 <span class="badge bg-success">Active</span>
@@ -383,14 +383,14 @@ require_once '../includes/admin-header.php';
                         <div class="col-md-3">
                             <label class="form-label text-muted small">Unit Cost</label>
                             <div class="input-group">
-                                <span class="input-group-text bg-dark text-muted border-secondary"><?= CURRENCY_SYMBOL ?></span>
+                                <span class="input-group-text bg-dark text-muted border-secondary"><?= APP_CURRENCY ?></span>
                                 <input type="number" step="0.01" min="0" name="unit_cost" id="item_unit_cost" class="form-control bg-dark text-white border-secondary" value="0.00">
                             </div>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label text-muted small">Unit Price</label>
                             <div class="input-group">
-                                <span class="input-group-text bg-dark text-muted border-secondary"><?= CURRENCY_SYMBOL ?></span>
+                                <span class="input-group-text bg-dark text-muted border-secondary"><?= APP_CURRENCY ?></span>
                                 <input type="number" step="0.01" min="0" name="unit_price" id="item_unit_price" class="form-control bg-dark text-white border-secondary" value="0.00">
                             </div>
                         </div>

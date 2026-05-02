@@ -166,7 +166,7 @@ require_once '../includes/admin-header.php';
                 <?php foreach ($viewCustomer['purchases'] as $pur): ?>
                 <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded-3 bg-secondary bg-opacity-10">
                     <div class="text-white small"><?= htmlspecialchars($pur['product_name']) ?></div>
-                    <span class="text-muted small"><?= CURRENCY_SYMBOL ?><?= number_format($pur['amount'], 2) ?></span>
+                    <span class="text-muted small"><?= APP_CURRENCY ?><?= number_format($pur['amount'], 2) ?></span>
                 </div>
                 <?php endforeach; ?>
                 <?php endif; ?>

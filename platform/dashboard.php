@@ -252,7 +252,7 @@ require_once 'includes/header.php';
                     </div>
                     <div class="flex-grow-1 min-width-0">
                         <div class="text-white small fw-semibold"><?= htmlspecialchars($rec['name']) ?></div>
-                        <div class="text-muted" style="font-size:12px"><?= CURRENCY_SYMBOL ?><?= number_format($rec['price_monthly'], 0) ?>/mo</div>
+                        <div class="text-muted" style="font-size:12px"><?= APP_CURRENCY ?><?= number_format($rec['price_monthly'], 0) ?>/mo</div>
                     </div>
                     <a href="/product.php?slug=<?= $rec['slug'] ?>" class="btn btn-primary btn-sm flex-shrink-0">View</a>
                 </div>

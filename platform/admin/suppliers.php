@@ -142,7 +142,7 @@ require_once '../includes/admin-header.php';
             <div class="admin-card rounded-4 p-3 text-center">
                 <div class="text-muted small mb-1">Total PO Value</div>
                 <div class="text-warning fs-4 fw-bold">
-                    <?= CURRENCY_SYMBOL ?><?= number_format($kpiPoVal, 2) ?>
+                    <?= APP_CURRENCY ?><?= number_format($kpiPoVal, 2) ?>
                 </div>
             </div>
         </div>

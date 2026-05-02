@@ -181,14 +181,14 @@ require_once '../includes/admin-header.php';
         <div class="col-sm-6 col-xl-3">
             <div class="admin-card rounded-4 p-3">
                 <div class="text-muted small mb-1"><i class="bi bi-funnel me-1"></i>Open Deals</div>
-                <div class="fs-3 fw-bold text-white"><?= CURRENCY_SYMBOL ?><?= number_format($openDeals['total'], 0) ?></div>
+                <div class="fs-3 fw-bold text-white"><?= APP_CURRENCY ?><?= number_format($openDeals['total'], 0) ?></div>
                 <div class="text-muted small"><?= number_format($openDeals['cnt']) ?> active deals</div>
             </div>
         </div>
         <div class="col-sm-6 col-xl-3">
             <div class="admin-card rounded-4 p-3">
                 <div class="text-muted small mb-1"><i class="bi bi-trophy me-1"></i>Won This Month</div>
-                <div class="fs-3 fw-bold text-success"><?= CURRENCY_SYMBOL ?><?= number_format($wonThisMonth['total'], 0) ?></div>
+                <div class="fs-3 fw-bold text-success"><?= APP_CURRENCY ?><?= number_format($wonThisMonth['total'], 0) ?></div>
                 <div class="text-muted small"><?= date('F Y') ?></div>
             </div>
         </div>
@@ -218,7 +218,7 @@ require_once '../includes/admin-header.php';
                         <span class="text-muted small">
                             <?= number_format($info['cnt']) ?> deal<?= $info['cnt'] != 1 ? 's' : '' ?>
                             &nbsp;&middot;&nbsp;
-                            <?= CURRENCY_SYMBOL ?><?= number_format($info['total'], 0) ?>
+                            <?= APP_CURRENCY ?><?= number_format($info['total'], 0) ?>
                         </span>
                     </div>
                     <div class="progress" style="height:10px;background:#1e1e2e;">
@@ -410,7 +410,7 @@ $extraScripts = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/c
         data: {
             labels,
             datasets: [{
-                label: "Won Value (' . CURRENCY_SYMBOL . ')",
+                label: "Won Value (' . APP_CURRENCY . ')",
                 data,
                 backgroundColor: "rgba(99,102,241,0.7)",
                 borderColor:     "#6366f1",
@@ -424,13 +424,13 @@ $extraScripts = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/c
                 legend: { labels: { color: "#aaa" } },
                 tooltip: {
                     callbacks: {
-                        label: ctx => "' . CURRENCY_SYMBOL . '" + ctx.parsed.y.toLocaleString()
+                        label: ctx => "' . APP_CURRENCY . '" + ctx.parsed.y.toLocaleString()
                     }
                 }
             },
             scales: {
                 x: { ticks: { color: "#aaa" }, grid: { color: "rgba(255,255,255,0.05)" } },
-                y: { ticks: { color: "#aaa", callback: v => "' . CURRENCY_SYMBOL . '" + v.toLocaleString() }, grid: { color: "rgba(255,255,255,0.05)" } }
+                y: { ticks: { color: "#aaa", callback: v => "' . APP_CURRENCY . '" + v.toLocaleString() }, grid: { color: "rgba(255,255,255,0.05)" } }
             }
         }
     });

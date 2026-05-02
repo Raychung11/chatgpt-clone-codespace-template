@@ -31,7 +31,7 @@ $s = array_merge([
     'site_email'       => ADMIN_EMAIL,
     'site_phone'       => '',
     'site_address'     => '',
-    'currency'         => CURRENCY_SYMBOL,
+    'currency'         => APP_CURRENCY,
     'trial_days'       => TRIAL_DAYS,
     'maintenance_mode' => '0',
 ], $s);

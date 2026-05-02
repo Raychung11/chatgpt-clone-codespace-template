@@ -207,7 +207,7 @@ require_once 'includes/header.php';
                             </ul>
                             <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top border-secondary border-opacity-25">
                                 <div>
-                                    <span class="fw-bold text-white"><?= CURRENCY_SYMBOL ?><?= number_format($p['price_monthly'], 0) ?></span>
+                                    <span class="fw-bold text-white"><?= APP_CURRENCY ?><?= number_format($p['price_monthly'], 0) ?></span>
                                     <span class="text-muted" style="font-size:12px">/mo</span>
                                 </div>
                                 <div class="d-flex gap-2">

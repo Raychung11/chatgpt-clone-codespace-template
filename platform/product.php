@@ -131,13 +131,13 @@ require_once 'includes/header.php';
                     <div class="text-center mb-4">
                         <div class="text-muted small mb-1">Starting from</div>
                         <div class="display-4 fw-bold text-white">
-                            <?= CURRENCY_SYMBOL ?><?= number_format($product['price_monthly'], 0) ?>
+                            <?= APP_CURRENCY ?><?= number_format($product['price_monthly'], 0) ?>
                         </div>
                         <div class="text-muted">per month</div>
                         <?php if ($product['price_yearly'] > 0): ?>
                         <div class="mt-2">
                             <span class="badge bg-success">Save <?= round((1 - ($product['price_yearly'] / ($product['price_monthly'] * 12))) * 100) ?>% yearly</span>
-                            <div class="text-muted small"><?= CURRENCY_SYMBOL ?><?= number_format($product['price_yearly'], 0) ?>/year</div>
+                            <div class="text-muted small"><?= APP_CURRENCY ?><?= number_format($product['price_yearly'], 0) ?>/year</div>
                         </div>
                         <?php endif; ?>
                     </div>
@@ -148,7 +148,7 @@ require_once 'includes/header.php';
                         </a>
                         <?php if ($product['price_yearly'] > 0): ?>
                         <a href="/checkout.php?product=<?= $product['id'] ?>&plan=yearly" class="btn btn-outline-primary">
-                            Get Yearly (Save <?= CURRENCY_SYMBOL ?><?= number_format($product['price_monthly'] * 12 - $product['price_yearly'], 0) ?>)
+                            Get Yearly (Save <?= APP_CURRENCY ?><?= number_format($product['price_monthly'] * 12 - $product['price_yearly'], 0) ?>)
                         </a>
                         <?php endif; ?>
                         <?php if ($product['demo_url']): ?>
@@ -220,7 +220,7 @@ require_once 'includes/header.php';
                         <h6 class="text-white fw-bold"><?= htmlspecialchars($rp['name']) ?></h6>
                         <p class="text-muted small"><?= htmlspecialchars($rp['tagline']) ?></p>
                         <div class="d-flex justify-content-between align-items-center">
-                            <span class="fw-bold text-white"><?= CURRENCY_SYMBOL ?><?= number_format($rp['price_monthly'], 0) ?>/mo</span>
+                            <span class="fw-bold text-white"><?= APP_CURRENCY ?><?= number_format($rp['price_monthly'], 0) ?>/mo</span>
                             <a href="/product.php?slug=<?= $rp['slug'] ?>" class="btn btn-primary btn-sm">View</a>
                         </div>
                     </div>

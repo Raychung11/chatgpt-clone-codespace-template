@@ -172,7 +172,7 @@ require_once '../includes/admin-header.php';
                         </td>
                         <td class="text-muted small"><?= $empTypes[$emp['employment_type']] ?? ucfirst($emp['employment_type']) ?></td>
                         <td class="text-white small">
-                            <?= $emp['salary'] ? CURRENCY_SYMBOL.number_format($emp['salary'],0).'<span class="text-muted">/'.$emp['pay_cycle'][0].'</span>' : '<span class="text-muted">—</span>' ?>
+                            <?= $emp['salary'] ? APP_CURRENCY.number_format($emp['salary'],0).'<span class="text-muted">/'.$emp['pay_cycle'][0].'</span>' : '<span class="text-muted">—</span>' ?>
                         </td>
                         <td class="text-muted small"><?= htmlspecialchars($emp['manager_name'] ?: '—') ?></td>
                         <td class="text-muted small"><?= date('d M Y', strtotime($emp['start_date'])) ?></td>
@@ -275,7 +275,7 @@ require_once '../includes/admin-header.php';
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label text-muted small">Salary (<?= CURRENCY_SYMBOL ?>)</label>
+                            <label class="form-label text-muted small">Salary (<?= APP_CURRENCY ?>)</label>
                             <input type="number" name="salary" step="0.01" min="0"
                                    value="<?= $editEmp['salary'] ?? '' ?>"
                                    class="form-control bg-dark border-secondary text-white">

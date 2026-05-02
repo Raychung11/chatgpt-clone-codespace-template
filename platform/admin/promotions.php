@@ -154,7 +154,7 @@ require_once '../includes/admin-header.php';
                     </div>
                     <div>
                         <div class="text-muted small">Revenue Impact</div>
-                        <div class="fs-4 fw-bold text-white"><?= CURRENCY_SYMBOL ?><?= number_format($revenueImpact, 2) ?></div>
+                        <div class="fs-4 fw-bold text-white"><?= APP_CURRENCY ?><?= number_format($revenueImpact, 2) ?></div>
                         <div class="text-warning small">Fixed discounts given</div>
                     </div>
                 </div>
@@ -219,7 +219,7 @@ require_once '../includes/admin-header.php';
                         $usageLimit  = $p['max_uses'] ? number_format($p['max_uses']) : '∞';
                         $valueDisplay = match($p['type']) {
                             'percentage'   => $p['discount_value'] . '%',
-                            'fixed'        => CURRENCY_SYMBOL . number_format($p['discount_value'], 2),
+                            'fixed'        => APP_CURRENCY . number_format($p['discount_value'], 2),
                             'bogo'         => 'BOGO',
                             'free_shipping'=> 'Free',
                             default        => $p['discount_value'],
@@ -234,7 +234,7 @@ require_once '../includes/admin-header.php';
                         </td>
                         <td><span class="badge bg-<?= $typeBadge ?> bg-opacity-15 text-<?= $typeBadge ?> border border-<?= $typeBadge ?> border-opacity-25"><?= ucfirst(str_replace('_',' ',$p['type'])) ?></span></td>
                         <td class="text-white fw-semibold small"><?= htmlspecialchars($valueDisplay) ?></td>
-                        <td class="text-muted small"><?= $p['min_order_value'] > 0 ? CURRENCY_SYMBOL . number_format($p['min_order_value'], 2) : '—' ?></td>
+                        <td class="text-muted small"><?= $p['min_order_value'] > 0 ? APP_CURRENCY . number_format($p['min_order_value'], 2) : '—' ?></td>
                         <td class="text-muted small">
                             <?= $p['start_date'] ? date('d M Y', strtotime($p['start_date'])) : '—' ?>
                             <?php if ($p['end_date']): ?><br><span style="font-size:10px">to <?= date('d M Y', strtotime($p['end_date'])) ?></span><?php endif; ?>

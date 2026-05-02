@@ -138,14 +138,14 @@ require_once '../includes/admin-header.php';
         <div class="col-6 col-xl-3">
             <div class="admin-card rounded-4 p-4">
                 <div class="text-muted small mb-1">Gross Revenue</div>
-                <div class="text-white fs-4 fw-bold"><?= CURRENCY_SYMBOL ?><?= number_format($grossRevenue, 2) ?></div>
-                <div class="text-muted" style="font-size:11px">Subs: <?= CURRENCY_SYMBOL ?><?= number_format($subRevenue,2) ?> &middot; One-off: <?= CURRENCY_SYMBOL ?><?= number_format($purchaseRevenue,2) ?></div>
+                <div class="text-white fs-4 fw-bold"><?= APP_CURRENCY ?><?= number_format($grossRevenue, 2) ?></div>
+                <div class="text-muted" style="font-size:11px">Subs: <?= APP_CURRENCY ?><?= number_format($subRevenue,2) ?> &middot; One-off: <?= APP_CURRENCY ?><?= number_format($purchaseRevenue,2) ?></div>
             </div>
         </div>
         <div class="col-6 col-xl-3">
             <div class="admin-card rounded-4 p-4">
                 <div class="text-muted small mb-1">Total Expenses</div>
-                <div class="text-white fs-4 fw-bold"><?= CURRENCY_SYMBOL ?><?= number_format($totalExpenses, 2) ?></div>
+                <div class="text-white fs-4 fw-bold"><?= APP_CURRENCY ?><?= number_format($totalExpenses, 2) ?></div>
                 <div class="text-muted" style="font-size:11px"><?= count($expByCategory) ?> categor<?= count($expByCategory)==1?'y':'ies' ?></div>
             </div>
         </div>
@@ -153,7 +153,7 @@ require_once '../includes/admin-header.php';
             <div class="admin-card rounded-4 p-4">
                 <div class="text-muted small mb-1">Net Profit</div>
                 <div class="fs-4 fw-bold <?= $netProfit >= 0 ? 'text-success' : 'text-danger' ?>">
-                    <?= $netProfit < 0 ? '-' : '' ?><?= CURRENCY_SYMBOL ?><?= number_format(abs($netProfit), 2) ?>
+                    <?= $netProfit < 0 ? '-' : '' ?><?= APP_CURRENCY ?><?= number_format(abs($netProfit), 2) ?>
                 </div>
                 <div class="text-muted" style="font-size:11px">
                     Margin: <?= $grossRevenue > 0 ? number_format(($netProfit/$grossRevenue)*100,1).'%' : '—' ?>
@@ -163,8 +163,8 @@ require_once '../includes/admin-header.php';
         <div class="col-6 col-xl-3">
             <div class="admin-card rounded-4 p-4">
                 <div class="text-muted small mb-1">Outstanding Invoices</div>
-                <div class="text-warning fs-4 fw-bold"><?= CURRENCY_SYMBOL ?><?= number_format((float)$invoiceStats['outstanding'], 2) ?></div>
-                <div class="text-muted" style="font-size:11px">Overdue: <?= CURRENCY_SYMBOL ?><?= number_format((float)$invoiceStats['overdue'], 2) ?></div>
+                <div class="text-warning fs-4 fw-bold"><?= APP_CURRENCY ?><?= number_format((float)$invoiceStats['outstanding'], 2) ?></div>
+                <div class="text-muted" style="font-size:11px">Overdue: <?= APP_CURRENCY ?><?= number_format((float)$invoiceStats['overdue'], 2) ?></div>
             </div>
         </div>
     </div>
@@ -197,7 +197,7 @@ require_once '../includes/admin-header.php';
                     <div class="flex-grow-1">
                         <div class="d-flex justify-content-between small text-white">
                             <span><?= ucfirst($cat['category']) ?></span>
-                            <span><?= CURRENCY_SYMBOL ?><?= number_format($cat['total'],2) ?></span>
+                            <span><?= APP_CURRENCY ?><?= number_format($cat['total'],2) ?></span>
                         </div>
                         <div class="progress mt-1" style="height:4px">
                             <div class="progress-bar bg-primary" style="width:<?= $pct ?>%"></div>
@@ -241,7 +241,7 @@ require_once '../includes/admin-header.php';
                                 <?= ucfirst($tx['type']) ?>
                             </span>
                         </td>
-                        <td class="text-white fw-semibold small"><?= CURRENCY_SYMBOL ?><?= number_format($tx['amount'],2) ?></td>
+                        <td class="text-white fw-semibold small"><?= APP_CURRENCY ?><?= number_format($tx['amount'],2) ?></td>
                         <td>
                             <?php
                             $sc = ['active'=>'success','completed'=>'success','cancelled'=>'secondary','pending'=>'warning','failed'=>'danger'];

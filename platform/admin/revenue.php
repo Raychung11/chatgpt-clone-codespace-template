@@ -34,10 +34,10 @@ require_once '../includes/admin-header.php';
 
 <div class="row g-3 mb-4">
     <?php foreach ([
-        ['Total Revenue',CURRENCY_SYMBOL.number_format($totalRevenue,2),'bi-currency-dollar','text-success'],
-        ['This Month',CURRENCY_SYMBOL.number_format($monthRevenue,2),'bi-calendar-month','text-primary'],
+        ['Total Revenue',APP_CURRENCY.number_format($totalRevenue,2),'bi-currency-dollar','text-success'],
+        ['This Month',APP_CURRENCY.number_format($monthRevenue,2),'bi-calendar-month','text-primary'],
         ['Active Subs',$activeSubs,'bi-repeat','text-info'],
-        ['MRR',CURRENCY_SYMBOL.number_format($mrr,2),'bi-graph-up','text-warning'],
+        ['MRR',APP_CURRENCY.number_format($mrr,2),'bi-graph-up','text-warning'],
     ] as [$lbl,$val,$icon,$col]): ?>
     <div class="col-6 col-md-3">
         <div class="glass-card p-3">
@@ -65,7 +65,7 @@ require_once '../includes/admin-header.php';
             <div class="mb-2">
                 <div class="d-flex justify-content-between small mb-1">
                     <span class="text-white text-truncate" style="max-width:160px"><?= htmlspecialchars($tp['name']) ?></span>
-                    <span class="text-success fw-semibold"><?= CURRENCY_SYMBOL.number_format($tp['revenue'],0) ?></span>
+                    <span class="text-success fw-semibold"><?= APP_CURRENCY.number_format($tp['revenue'],0) ?></span>
                 </div>
                 <?php $maxR = $topProducts[0]['revenue'] ?: 1; ?>
                 <div class="progress" style="height:4px"><div class="progress-bar bg-primary" style="width:<?= round($tp['revenue']/$maxR*100) ?>%"></div></div>
@@ -88,7 +88,7 @@ require_once '../includes/admin-header.php';
         <div class="text-muted small"><?= htmlspecialchars($tx['email']) ?></div>
     </td>
     <td><?= htmlspecialchars($tx['product']) ?></td>
-    <td class="text-success fw-semibold"><?= CURRENCY_SYMBOL.number_format($tx['amount'],2) ?></td>
+    <td class="text-success fw-semibold"><?= APP_CURRENCY.number_format($tx['amount'],2) ?></td>
     <td class="text-muted small"><?= date('d M Y H:i', strtotime($tx['created_at'])) ?></td>
 </tr>
 <?php endforeach; ?>

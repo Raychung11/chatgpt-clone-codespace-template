@@ -189,19 +189,19 @@ require_once '../includes/admin-header.php';
         <div class="col-md-4">
             <div class="admin-card rounded-4 p-3 text-center">
                 <div class="text-muted small">Gross</div>
-                <div class="text-white fw-bold fs-5"><?= CURRENCY_SYMBOL ?><?= number_format($totalGross,2) ?></div>
+                <div class="text-white fw-bold fs-5"><?= APP_CURRENCY ?><?= number_format($totalGross,2) ?></div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="admin-card rounded-4 p-3 text-center">
                 <div class="text-muted small">Deductions</div>
-                <div class="text-danger fw-bold fs-5">−<?= CURRENCY_SYMBOL ?><?= number_format($totalDeductions,2) ?></div>
+                <div class="text-danger fw-bold fs-5">−<?= APP_CURRENCY ?><?= number_format($totalDeductions,2) ?></div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="admin-card rounded-4 p-3 text-center">
                 <div class="text-muted small">Net Payroll</div>
-                <div class="text-success fw-bold fs-5"><?= CURRENCY_SYMBOL ?><?= number_format($totalNet,2) ?></div>
+                <div class="text-success fw-bold fs-5"><?= APP_CURRENCY ?><?= number_format($totalNet,2) ?></div>
             </div>
         </div>
     </div>
@@ -235,11 +235,11 @@ require_once '../includes/admin-header.php';
                             <?= date('d M', strtotime($pr['pay_period_start'])) ?> –
                             <?= date('d M Y', strtotime($pr['pay_period_end'])) ?>
                         </td>
-                        <td class="text-white small"><?= CURRENCY_SYMBOL ?><?= number_format($pr['gross_amount'],2) ?></td>
+                        <td class="text-white small"><?= APP_CURRENCY ?><?= number_format($pr['gross_amount'],2) ?></td>
                         <td class="text-danger small">
-                            <?= $pr['deductions'] > 0 ? '−'.CURRENCY_SYMBOL.number_format($pr['deductions'],2) : '<span class="text-muted">—</span>' ?>
+                            <?= $pr['deductions'] > 0 ? '−'.APP_CURRENCY.number_format($pr['deductions'],2) : '<span class="text-muted">—</span>' ?>
                         </td>
-                        <td class="text-white fw-semibold small"><?= CURRENCY_SYMBOL ?><?= number_format($pr['net_amount'],2) ?></td>
+                        <td class="text-white fw-semibold small"><?= APP_CURRENCY ?><?= number_format($pr['net_amount'],2) ?></td>
                         <td class="text-muted small">
                             <?= $pr['payment_date'] ? date('d M Y', strtotime($pr['payment_date'])) : '—' ?>
                         </td>
@@ -283,9 +283,9 @@ require_once '../includes/admin-header.php';
                 <tfoot class="border-top border-secondary">
                     <tr class="text-muted small fw-semibold">
                         <td colspan="2" class="text-end pe-3">Totals (<?= count($records) ?> records)</td>
-                        <td class="text-white"><?= CURRENCY_SYMBOL ?><?= number_format($totalGross,2) ?></td>
-                        <td class="text-danger">−<?= CURRENCY_SYMBOL ?><?= number_format($totalDeductions,2) ?></td>
-                        <td class="text-success fw-bold"><?= CURRENCY_SYMBOL ?><?= number_format($totalNet,2) ?></td>
+                        <td class="text-white"><?= APP_CURRENCY ?><?= number_format($totalGross,2) ?></td>
+                        <td class="text-danger">−<?= APP_CURRENCY ?><?= number_format($totalDeductions,2) ?></td>
+                        <td class="text-success fw-bold"><?= APP_CURRENCY ?><?= number_format($totalNet,2) ?></td>
                         <td colspan="3"></td>
                     </tr>
                 </tfoot>
@@ -360,7 +360,7 @@ require_once '../includes/admin-header.php';
                                         data-salary="<?= $e['salary'] ?? 0 ?>"
                                         <?= ($editRecord['employee_id'] ?? '') == $e['id'] ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($e['first_name'].' '.$e['last_name']) ?>
-                                    <?= $e['salary'] ? ' — '.CURRENCY_SYMBOL.number_format($e['salary'],0) : '' ?>
+                                    <?= $e['salary'] ? ' — '.APP_CURRENCY.number_format($e['salary'],0) : '' ?>
                                 </option>
                                 <?php endforeach; ?>
                             </select>
@@ -378,20 +378,20 @@ require_once '../includes/admin-header.php';
                                    class="form-control bg-dark border-secondary text-white" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label text-muted small">Gross (<?= CURRENCY_SYMBOL ?>) *</label>
+                            <label class="form-label text-muted small">Gross (<?= APP_CURRENCY ?>) *</label>
                             <input type="number" name="gross_amount" id="grossInput" step="0.01" min="0"
                                    value="<?= $editRecord['gross_amount'] ?? '' ?>"
                                    class="form-control bg-dark border-secondary text-white" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label text-muted small">Deductions (<?= CURRENCY_SYMBOL ?>)</label>
+                            <label class="form-label text-muted small">Deductions (<?= APP_CURRENCY ?>)</label>
                             <input type="number" name="deductions" id="deductInput" step="0.01" min="0" value="<?= $editRecord['deductions'] ?? 0 ?>"
                                    class="form-control bg-dark border-secondary text-white">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label text-muted small">Net</label>
                             <div class="form-control bg-dark border-secondary text-success fw-semibold" id="netDisplay">
-                                <?= CURRENCY_SYMBOL ?><?= isset($editRecord) ? number_format($editRecord['net_amount'],2) : '0.00' ?>
+                                <?= APP_CURRENCY ?><?= isset($editRecord) ? number_format($editRecord['net_amount'],2) : '0.00' ?>
                             </div>
                         </div>
                         <div class="col-md-6">

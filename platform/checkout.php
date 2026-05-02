@@ -112,7 +112,7 @@ require_once 'includes/header.php';
                 <div class="mb-4">
                     <div class="d-flex justify-content-between text-muted small mb-2">
                         <span><?= htmlspecialchars($product['name']) ?> (<?= ucfirst($plan) ?>)</span>
-                        <span><?= CURRENCY_SYMBOL ?><?= number_format($price, 2) ?></span>
+                        <span><?= APP_CURRENCY ?><?= number_format($price, 2) ?></span>
                     </div>
                     <div class="d-flex justify-content-between text-muted small mb-2">
                         <span><?= TRIAL_DAYS ?>-day trial</span>
@@ -125,7 +125,7 @@ require_once 'includes/header.php';
                     </div>
                     <div class="d-flex justify-content-between text-muted small mt-1">
                         <span>After <?= TRIAL_DAYS ?> days</span>
-                        <span><?= CURRENCY_SYMBOL ?><?= number_format($price, 2) ?>/<?= $plan === 'yearly' ? 'yr' : 'mo' ?></span>
+                        <span><?= APP_CURRENCY ?><?= number_format($price, 2) ?>/<?= $plan === 'yearly' ? 'yr' : 'mo' ?></span>
                     </div>
                 </div>
 

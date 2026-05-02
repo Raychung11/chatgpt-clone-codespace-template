@@ -167,7 +167,7 @@ require_once 'includes/header.php';
                         </ul>
                         <div class="d-flex justify-content-between align-items-center mt-auto pt-3 border-top border-secondary border-opacity-25">
                             <div>
-                                <span class="fs-5 fw-bold text-white"><?= CURRENCY_SYMBOL ?><?= number_format($product['price_monthly'], 0) ?></span>
+                                <span class="fs-5 fw-bold text-white"><?= APP_CURRENCY ?><?= number_format($product['price_monthly'], 0) ?></span>
                                 <span class="text-muted small">/mo</span>
                             </div>
                             <a href="/product.php?slug=<?= $product['slug'] ?>" class="btn btn-primary btn-sm px-3">

@@ -203,19 +203,19 @@ require_once '../includes/admin-header.php';
         <div class="col-sm-4">
             <div class="admin-card rounded-4 p-3">
                 <div class="text-muted small mb-1"><i class="bi bi-funnel me-1"></i>Open Pipeline</div>
-                <div class="fs-4 fw-bold text-white"><?= CURRENCY_SYMBOL ?><?= number_format($totalPipeline, 0) ?></div>
+                <div class="fs-4 fw-bold text-white"><?= APP_CURRENCY ?><?= number_format($totalPipeline, 0) ?></div>
             </div>
         </div>
         <div class="col-sm-4">
             <div class="admin-card rounded-4 p-3">
                 <div class="text-muted small mb-1"><i class="bi bi-trophy me-1"></i>Total Won</div>
-                <div class="fs-4 fw-bold text-success"><?= CURRENCY_SYMBOL ?><?= number_format($totalWon, 0) ?></div>
+                <div class="fs-4 fw-bold text-success"><?= APP_CURRENCY ?><?= number_format($totalWon, 0) ?></div>
             </div>
         </div>
         <div class="col-sm-4">
             <div class="admin-card rounded-4 p-3">
                 <div class="text-muted small mb-1"><i class="bi bi-x-circle me-1"></i>Total Lost</div>
-                <div class="fs-4 fw-bold text-danger"><?= CURRENCY_SYMBOL ?><?= number_format($totalLost, 0) ?></div>
+                <div class="fs-4 fw-bold text-danger"><?= APP_CURRENCY ?><?= number_format($totalLost, 0) ?></div>
             </div>
         </div>
     </div>
@@ -235,7 +235,7 @@ require_once '../includes/admin-header.php';
                     <?= ucfirst(str_replace('_', ' ', $stage)) ?>
                     <span class="ms-1 opacity-75"><?= count($stageDeals) ?></span>
                 </span>
-                <span class="text-muted small"><?= CURRENCY_SYMBOL ?><?= number_format($stageTotal, 0) ?></span>
+                <span class="text-muted small"><?= APP_CURRENCY ?><?= number_format($stageTotal, 0) ?></span>
             </div>
             <!-- Deal Cards -->
             <div class="d-flex flex-column gap-2">
@@ -268,7 +268,7 @@ require_once '../includes/admin-header.php';
                     </div>
                     <?php endif; ?>
                     <div class="d-flex align-items-center justify-content-between mt-2">
-                        <span class="text-white fw-bold small"><?= CURRENCY_SYMBOL ?><?= number_format($deal['value'], 0) ?></span>
+                        <span class="text-white fw-bold small"><?= APP_CURRENCY ?><?= number_format($deal['value'], 0) ?></span>
                         <span class="badge bg-<?= $color ?> bg-opacity-50 text-white" style="font-size:10px">
                             <?= (int)$deal['probability'] ?>%
                         </span>
@@ -343,7 +343,7 @@ require_once '../includes/admin-header.php';
                             <div class="text-muted" style="font-size:11px"><?= htmlspecialchars($deal['contact_company'] ?? '') ?></div>
                         </td>
                         <td class="py-3">
-                            <span class="text-white fw-semibold small"><?= CURRENCY_SYMBOL ?><?= number_format($deal['value'], 0) ?></span>
+                            <span class="text-white fw-semibold small"><?= APP_CURRENCY ?><?= number_format($deal['value'], 0) ?></span>
                         </td>
                         <td class="py-3">
                             <span class="badge bg-<?= $color ?>">
@@ -442,7 +442,7 @@ require_once '../includes/admin-header.php';
                         <div class="col-md-3">
                             <label class="form-label text-muted small">Value</label>
                             <div class="input-group">
-                                <span class="input-group-text bg-dark border-secondary text-muted"><?= CURRENCY_SYMBOL ?></span>
+                                <span class="input-group-text bg-dark border-secondary text-muted"><?= APP_CURRENCY ?></span>
                                 <input type="number" name="value" step="0.01" min="0"
                                        class="form-control bg-dark border-secondary text-white"
                                        placeholder="0.00"

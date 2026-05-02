@@ -270,7 +270,7 @@ require_once '../includes/admin-header.php';
                     <div class="flex-grow-1 min-width-0">
                         <div class="text-muted small mb-1">Revenue</div>
                         <div class="text-white fs-3 fw-bold">
-                            <?= CURRENCY_SYMBOL ?><?= number_format($kpiRev, 0) ?>
+                            <?= APP_CURRENCY ?><?= number_format($kpiRev, 0) ?>
                         </div>
                         <div class="text-muted mt-1" style="font-size:11px">
                             <?= $outletLabel ?> · <?= $periodLabel ?>
@@ -306,7 +306,7 @@ require_once '../includes/admin-header.php';
                     <div>
                         <div class="text-muted small mb-1">Avg Order Value</div>
                         <div class="text-warning fs-3 fw-bold">
-                            <?= CURRENCY_SYMBOL ?><?= number_format($kpiAov, 0) ?>
+                            <?= APP_CURRENCY ?><?= number_format($kpiAov, 0) ?>
                         </div>
                         <div class="text-muted mt-1" style="font-size:11px">Per transaction</div>
                     </div>
@@ -430,11 +430,11 @@ require_once '../includes/admin-header.php';
                                     </span>
                                 </td>
                                 <td class="text-end fw-semibold text-white">
-                                    <?= CURRENCY_SYMBOL ?><?= number_format($row['rev'], 0) ?>
+                                    <?= APP_CURRENCY ?><?= number_format($row['rev'], 0) ?>
                                 </td>
                                 <td class="text-end text-muted"><?= number_format($row['orders']) ?></td>
                                 <td class="text-end text-muted">
-                                    <?= CURRENCY_SYMBOL ?><?= number_format($row['aov'], 0) ?>
+                                    <?= APP_CURRENCY ?><?= number_format($row['aov'], 0) ?>
                                 </td>
                                 <td class="text-center">
                                     <?php if ($row['growth'] === null): ?>
@@ -470,7 +470,7 @@ require_once '../includes/admin-header.php';
                             <tr class="text-muted small">
                                 <td colspan="3" class="px-4 fw-semibold text-white">Totals</td>
                                 <td class="text-end fw-bold text-white">
-                                    <?= CURRENCY_SYMBOL ?><?= number_format(array_sum(array_column($summaryRows, 'rev')), 0) ?>
+                                    <?= APP_CURRENCY ?><?= number_format(array_sum(array_column($summaryRows, 'rev')), 0) ?>
                                 </td>
                                 <td class="text-end fw-bold text-white">
                                     <?= number_format(array_sum(array_column($summaryRows, 'orders'))) ?>
@@ -533,7 +533,7 @@ require_once '../includes/admin-header.php';
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-end text-success fw-semibold" style="white-space:nowrap">
-                                    <?= CURRENCY_SYMBOL ?><?= number_format((float)$tx['amount'], 0) ?>
+                                    <?= APP_CURRENCY ?><?= number_format((float)$tx['amount'], 0) ?>
                                 </td>
                                 <td class="text-center pe-4">
                                     <span class="badge bg-<?= $pmCls ?> bg-opacity-20 text-<?= $pmCls ?>"
@@ -565,7 +565,7 @@ require_once '../includes/admin-header.php';
 // Prepare chart JSON safely
 $jsMonthLabels = json_encode($chartMonthLabels, JSON_UNESCAPED_UNICODE);
 $jsDatasets    = json_encode($chartDatasets,    JSON_UNESCAPED_UNICODE);
-$jsCurrSymbol  = json_encode(CURRENCY_SYMBOL);
+$jsCurrSymbol  = json_encode(APP_CURRENCY);
 ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>

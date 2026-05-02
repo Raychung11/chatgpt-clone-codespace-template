@@ -61,12 +61,12 @@ require_once '../includes/admin-header.php';
     <div class="row g-3 mb-4">
         <?php
         $statCards = [
-            ['Total Revenue',   CURRENCY_SYMBOL . number_format($stats['total_revenue'], 0), 'text-success', 'bi-currency-dollar', 'All time'],
+            ['Total Revenue',   APP_CURRENCY . number_format($stats['total_revenue'], 0), 'text-success', 'bi-currency-dollar', 'All time'],
             ['Customers',       number_format($stats['total_customers']),                    'text-info',    'bi-people',          '+' . $stats['new_customers_mo'] . ' this month'],
             ['Active Subs',     number_format($stats['active_subs']),                        'text-primary', 'bi-repeat',          'Live now'],
             ['Products',        $stats['total_products'],                                    'text-warning', 'bi-cpu',             'Active listings'],
             ['New Leads',       $stats['new_leads'],                                         'text-danger',  'bi-funnel',          'Need follow-up'],
-            ['MRR',             CURRENCY_SYMBOL . number_format($stats['mrr'], 0),           'text-success', 'bi-graph-up',        'Monthly recurring'],
+            ['MRR',             APP_CURRENCY . number_format($stats['mrr'], 0),           'text-success', 'bi-graph-up',        'Monthly recurring'],
         ];
         foreach ($statCards as [$label, $val, $col, $icon, $sub]):
         ?>
@@ -166,7 +166,7 @@ require_once '../includes/admin-header.php';
                     <div class="rank-badge"><?= $i + 1 ?></div>
                     <div class="flex-grow-1 min-width-0">
                         <div class="text-white small fw-semibold text-truncate"><?= htmlspecialchars($tp['name']) ?></div>
-                        <div class="text-muted" style="font-size:11px"><?= CURRENCY_SYMBOL ?><?= number_format($tp['price_monthly'] ?? 0, 0) ?>/mo</div>
+                        <div class="text-muted" style="font-size:11px"><?= APP_CURRENCY ?><?= number_format($tp['price_monthly'] ?? 0, 0) ?>/mo</div>
                     </div>
                     <div class="text-end">
                         <div class="text-white small fw-bold"><?= $tp['active_count'] ?? 0 ?></div>
