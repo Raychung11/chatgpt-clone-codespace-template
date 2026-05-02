@@ -71,16 +71,17 @@ if (isset($_POST['action']) && $_POST['action'] === 'register') {
 if (isset($_POST['action']) && $_POST['action'] === 'update_profile' && is_logged_in()) {
     $tab    = 'profile';
     $member = current_member();
-    $p_name = trim($_POST['profile_name'] ?? '');
-    $p_email= trim($_POST['profile_email'] ?? '');
-    $p_bio  = trim($_POST['profile_bio']  ?? '');
+    $p_name  = trim($_POST['profile_name']  ?? '');
+    $p_email = trim($_POST['profile_email'] ?? '');
+    $p_phone = trim($_POST['profile_phone'] ?? '');
+    $p_bio   = trim($_POST['profile_bio']   ?? '');
 
     if (!$p_name) {
         $prof_errors[] = 'Name cannot be empty.';
     } elseif ($p_email && !filter_var($p_email, FILTER_VALIDATE_EMAIL)) {
         $prof_errors[] = 'Please enter a valid email address.';
     } else {
-        $updates = ['name' => $p_name, 'email' => $p_email, 'bio' => $p_bio];
+        $updates = ['name' => $p_name, 'email' => $p_email, 'phone' => $p_phone, 'bio' => $p_bio];
         $avatar  = handle_image_upload('avatar', 'avatars');
         if ($avatar) $updates['avatar'] = $avatar;
         update_member_profile($member['koperasi_id'], $updates);
@@ -523,6 +524,13 @@ document.getElementById('getCoachingBtn').addEventListener('click', async () => 
                     <label class="form-label small fw-semibold">Email</label>
                     <input type="email" name="profile_email" class="form-control form-control-sm"
                         value="<?= e($member['email'] ?? '') ?>">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold">Phone / WhatsApp</label>
+                    <input type="tel" name="profile_phone" class="form-control form-control-sm"
+                        value="<?= e($member['phone'] ?? '') ?>"
+                        placeholder="e.g. 0123456789">
+                    <div class="small text-muted mt-1">Used to auto-fill booking contact</div>
                 </div>
                 <div class="mb-2">
                     <label class="form-label small fw-semibold">Short Bio</label>

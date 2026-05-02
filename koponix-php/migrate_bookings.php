@@ -29,6 +29,12 @@ try {
         INDEX idx_book_buyer  (buyer_kop_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     $done[] = 'Table <b>bookings</b> created (or already existed).';
+
+    // Add phone column to members (safe if already exists)
+    try {
+        db()->exec("ALTER TABLE members ADD COLUMN IF NOT EXISTS phone VARCHAR(30) DEFAULT ''");
+        $done[] = 'Column <b>members.phone</b> added (or already existed).';
+    } catch (Throwable $e) { $errors[] = 'phone column: ' . $e->getMessage(); }
 } catch (Throwable $e) {
     $errors[] = $e->getMessage();
 }

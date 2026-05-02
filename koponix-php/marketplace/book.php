@@ -113,8 +113,13 @@ html_body_open();
 
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Contact (Phone / WhatsApp) *</label>
+                        <?php
+                            $prefill_contact = $_POST['buyer_contact']
+                                ?? ($member['phone'] ?? '')
+                                ?: ($member['email'] ?? '');
+                        ?>
                         <input type="text" name="buyer_contact" class="form-control"
-                            value="<?= e($_POST['buyer_contact'] ?? '') ?>"
+                            value="<?= e($prefill_contact) ?>"
                             placeholder="e.g. 0123456789" required>
                     </div>
 

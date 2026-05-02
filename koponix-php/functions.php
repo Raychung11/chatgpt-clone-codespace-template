@@ -254,7 +254,7 @@ function update_member_password(string $kop_id, string $new_hash): void {
 function update_member_profile(string $kop_id, array $data): void {
     $fields = [];
     $params = [];
-    foreach (['name', 'email', 'bio', 'avatar'] as $col) {
+    foreach (['name', 'email', 'phone', 'bio', 'avatar'] as $col) {
         if (array_key_exists($col, $data)) {
             $fields[] = "{$col}=?";
             $params[]  = $data[$col];

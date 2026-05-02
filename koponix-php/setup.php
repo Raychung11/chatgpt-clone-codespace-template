@@ -69,6 +69,7 @@ try {
         "ALTER TABLE members ADD COLUMN IF NOT EXISTS referral_code VARCHAR(20)  DEFAULT ''",
         "ALTER TABLE members ADD COLUMN IF NOT EXISTS referred_by   VARCHAR(20)  DEFAULT ''",
         "ALTER TABLE members ADD COLUMN IF NOT EXISTS credits       INT          DEFAULT 0",
+        "ALTER TABLE members ADD COLUMN IF NOT EXISTS phone         VARCHAR(30)  DEFAULT ''",
         "ALTER TABLE sellers ADD COLUMN IF NOT EXISTS image         VARCHAR(255) DEFAULT ''",
         "ALTER TABLE sellers ADD COLUMN IF NOT EXISTS gallery1      VARCHAR(255) DEFAULT ''",
         "ALTER TABLE sellers ADD COLUMN IF NOT EXISTS gallery2      VARCHAR(255) DEFAULT ''",
