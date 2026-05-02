@@ -7,6 +7,22 @@ Auth::requireLogin();
 $user = Auth::user();
 $pageTitle = 'My Dashboard';
 
+// Handle trial capsule dismiss / restore
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['dismiss_capsule'])) {
+    $dismissId = (int)$_POST['dismiss_capsule'];
+    $_SESSION['dismissed_capsules']   = $_SESSION['dismissed_capsules'] ?? [];
+    $_SESSION['dismissed_capsules'][] = $dismissId;
+    $_SESSION['dismissed_capsules']   = array_unique($_SESSION['dismissed_capsules']);
+    header('Location: /dashboard.php');
+    exit;
+}
+if (isset($_GET['restore'])) {
+    $_SESSION['dismissed_capsules'] = [];
+    header('Location: /dashboard.php');
+    exit;
+}
+$dismissedIds = $_SESSION['dismissed_capsules'] ?? [];
+
 // Trial detection
 $trialEnd     = strtotime($user['created_at']) + (TRIAL_DAYS * 86400);
 $trialDaysLeft = max(0, (int)ceil(($trialEnd - time()) / 86400));
@@ -226,37 +242,52 @@ require_once 'includes/header.php';
 
                 <?php if (!$hasOwned && $isInTrial): ?>
                 <!-- Trial capsules -->
-                <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="text-white fw-semibold mb-0"><i class="bi bi-cpu me-2 text-primary"></i>Your Trial Capsules</h5>
-                    <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 px-3 py-2">
-                        <i class="bi bi-stars me-1"></i>Trial Access
+                    <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 px-2 py-1" style="font-size:11px">
+                        <i class="bi bi-stars me-1"></i><?= $trialDaysLeft ?>d left
                     </span>
                 </div>
-                <?php foreach ($trialCapsules as $tc): ?>
-                <div class="agent-row d-flex align-items-center gap-3 p-3 rounded-3 mb-2">
-                    <div class="cat-icon-sm flex-shrink-0" style="background:<?= $tc['cat_color'] ?? '#6366f1' ?>22;color:<?= $tc['cat_color'] ?? '#6366f1' ?>">
-                        <i class="bi <?= $tc['cat_icon'] ?? 'bi-cpu' ?>"></i>
+                <?php
+                $visibleTrialCapsules = array_filter($trialCapsules, fn($tc) => !in_array($tc['id'], $dismissedIds));
+                foreach ($visibleTrialCapsules as $tc):
+                    $openUrl = $tc['module_slug'] ? '/modules/'.$tc['module_slug'].'.php' : '/modules/';
+                ?>
+                <div class="rounded-3 mb-2 p-3" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+                    <!-- Row 1: icon + name + dismiss -->
+                    <div class="d-flex align-items-start gap-3 mb-2">
+                        <div class="cat-icon-sm flex-shrink-0" style="background:<?= $tc['cat_color'] ?? '#6366f1' ?>22;color:<?= $tc['cat_color'] ?? '#6366f1' ?>">
+                            <i class="bi <?= $tc['cat_icon'] ?? 'bi-cpu' ?>"></i>
+                        </div>
+                        <div class="flex-grow-1 min-width-0">
+                            <div class="text-white fw-semibold" style="font-size:14px;line-height:1.3"><?= htmlspecialchars($tc['name']) ?></div>
+                            <div class="text-muted" style="font-size:12px;margin-top:2px"><?= htmlspecialchars($tc['tagline'] ?? '') ?></div>
+                        </div>
+                        <form method="POST" class="flex-shrink-0">
+                            <input type="hidden" name="dismiss_capsule" value="<?= $tc['id'] ?>">
+                            <button type="submit" class="btn btn-sm p-0" style="width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.07);color:#6b7280;border:none;font-size:13px;line-height:1" title="Hide this capsule">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </form>
                     </div>
-                    <div class="flex-grow-1 min-width-0">
-                        <div class="text-white fw-semibold"><?= htmlspecialchars($tc['name']) ?></div>
-                        <div class="text-muted small"><?= htmlspecialchars($tc['tagline'] ?? '') ?></div>
-                    </div>
-                    <div class="text-end flex-shrink-0">
-                        <span class="badge bg-info text-dark">Trial</span>
-                        <div class="text-muted small mt-1"><?= $trialDaysLeft ?> days left</div>
-                    </div>
-                    <div class="flex-shrink-0 d-flex gap-2">
-                        <?php
-                        $openUrl = $tc['module_slug']
-                            ? '/modules/' . $tc['module_slug'] . '.php'
-                            : '/modules/';
-                        ?>
-                        <a href="<?= htmlspecialchars($openUrl) ?>" class="btn btn-primary btn-sm">
+                    <!-- Row 2: badge + date + open button -->
+                    <div class="d-flex align-items-center justify-content-between gap-2" style="padding-left:47px">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="badge bg-info text-dark" style="font-size:10px">Trial</span>
+                            <span class="text-muted" style="font-size:11px"><?= $trialDaysLeft ?> days left</span>
+                        </div>
+                        <a href="<?= htmlspecialchars($openUrl) ?>" class="btn btn-primary btn-sm px-3" style="font-size:12px;white-space:nowrap">
                             <i class="bi bi-play-fill me-1"></i>Try Now
                         </a>
                     </div>
                 </div>
                 <?php endforeach; ?>
+                <?php if (empty($visibleTrialCapsules)): ?>
+                <div class="text-center py-3">
+                    <p class="text-muted small mb-2">You've hidden all trial capsules.</p>
+                    <a href="?restore=1" class="btn btn-outline-secondary btn-sm">Restore All</a>
+                </div>
+                <?php endif; ?>
                 <div class="mt-3 pt-3 border-top border-secondary border-opacity-25 text-center">
                     <a href="/modules/" class="text-muted small text-decoration-none">
                         <i class="bi bi-magic me-1"></i>View all AI Tools
@@ -277,56 +308,59 @@ require_once 'includes/header.php';
                 <!-- Paid subscriptions / purchases -->
                 <h5 class="text-white fw-semibold mb-4"><i class="bi bi-cpu me-2 text-primary"></i>My Capsules</h5>
 
-                <?php foreach ($subscriptions as $sub): ?>
-                <div class="agent-row d-flex align-items-center gap-3 p-3 rounded-3 mb-2">
-                    <div class="cat-icon-sm flex-shrink-0" style="background:<?= $sub['cat_color'] ?? '#6366f1' ?>22;color:<?= $sub['cat_color'] ?? '#6366f1' ?>">
-                        <i class="bi <?= $sub['cat_icon'] ?? 'bi-cpu' ?>"></i>
-                    </div>
-                    <div class="flex-grow-1 min-width-0">
-                        <div class="text-white fw-semibold"><?= htmlspecialchars($sub['product_name']) ?></div>
-                        <div class="text-muted small"><?= htmlspecialchars($sub['tagline'] ?? '') ?></div>
-                    </div>
-                    <div class="text-end flex-shrink-0">
-                        <?php
-                        $badgeClass = match($sub['status']) {
-                            'active'   => 'bg-success',
-                            'trialing' => 'bg-info text-dark',
-                            'past_due' => 'bg-warning text-dark',
-                            'canceled' => 'bg-danger',
-                            default    => 'bg-secondary',
-                        };
-                        ?>
-                        <span class="badge <?= $badgeClass ?>"><?= ucfirst($sub['status']) ?></span>
-                        <div class="text-muted small mt-1">
-                            <?= ucfirst($sub['plan']) ?> &bull;
-                            Renews <?= $sub['current_period_end'] ? date('d M', strtotime($sub['current_period_end'])) : 'N/A' ?>
+                <?php foreach ($subscriptions as $sub):
+                    $subUrl = $sub['module_slug'] ? '/modules/'.$sub['module_slug'].'.php' : '/product.php?slug='.$sub['product_slug'];
+                    $badgeClass = match($sub['status']) {
+                        'active'   => 'bg-success',
+                        'trialing' => 'bg-info text-dark',
+                        'past_due' => 'bg-warning text-dark',
+                        'canceled' => 'bg-danger',
+                        default    => 'bg-secondary',
+                    };
+                ?>
+                <div class="rounded-3 mb-2 p-3" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+                    <div class="d-flex align-items-start gap-3 mb-2">
+                        <div class="cat-icon-sm flex-shrink-0" style="background:<?= $sub['cat_color'] ?? '#6366f1' ?>22;color:<?= $sub['cat_color'] ?? '#6366f1' ?>">
+                            <i class="bi <?= $sub['cat_icon'] ?? 'bi-cpu' ?>"></i>
+                        </div>
+                        <div class="flex-grow-1 min-width-0">
+                            <div class="text-white fw-semibold" style="font-size:14px;line-height:1.3"><?= htmlspecialchars($sub['product_name']) ?></div>
+                            <div class="text-muted" style="font-size:12px;margin-top:2px"><?= htmlspecialchars($sub['tagline'] ?? '') ?></div>
                         </div>
                     </div>
-                    <div class="flex-shrink-0">
-                        <?php $subUrl = $sub['module_slug'] ? '/modules/'.$sub['module_slug'].'.php' : '/product.php?slug='.$sub['product_slug']; ?>
-                        <a href="<?= htmlspecialchars($subUrl) ?>" class="btn btn-primary btn-sm">
+                    <div class="d-flex align-items-center justify-content-between gap-2" style="padding-left:47px">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="badge <?= $badgeClass ?>" style="font-size:10px"><?= ucfirst($sub['status']) ?></span>
+                            <span class="text-muted" style="font-size:11px">
+                                <?= ucfirst($sub['plan']) ?> &bull; Renews <?= $sub['current_period_end'] ? date('d M', strtotime($sub['current_period_end'])) : 'N/A' ?>
+                            </span>
+                        </div>
+                        <a href="<?= htmlspecialchars($subUrl) ?>" class="btn btn-primary btn-sm px-3" style="font-size:12px;white-space:nowrap">
                             <i class="bi bi-play-fill me-1"></i>Open
                         </a>
                     </div>
                 </div>
                 <?php endforeach; ?>
 
-                <?php foreach ($purchases as $pur): ?>
-                <div class="agent-row d-flex align-items-center gap-3 p-3 rounded-3 mb-2">
-                    <div class="cat-icon-sm flex-shrink-0" style="background:<?= $pur['cat_color'] ?? '#6366f1' ?>22;color:<?= $pur['cat_color'] ?? '#6366f1' ?>">
-                        <i class="bi <?= $pur['cat_icon'] ?? 'bi-cpu' ?>"></i>
+                <?php foreach ($purchases as $pur):
+                    $purUrl = $pur['module_slug'] ? '/modules/'.$pur['module_slug'].'.php' : '/product.php?slug='.$pur['product_slug'];
+                ?>
+                <div class="rounded-3 mb-2 p-3" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+                    <div class="d-flex align-items-start gap-3 mb-2">
+                        <div class="cat-icon-sm flex-shrink-0" style="background:<?= $pur['cat_color'] ?? '#6366f1' ?>22;color:<?= $pur['cat_color'] ?? '#6366f1' ?>">
+                            <i class="bi <?= $pur['cat_icon'] ?? 'bi-cpu' ?>"></i>
+                        </div>
+                        <div class="flex-grow-1 min-width-0">
+                            <div class="text-white fw-semibold" style="font-size:14px;line-height:1.3"><?= htmlspecialchars($pur['product_name']) ?></div>
+                            <div class="text-muted" style="font-size:12px;margin-top:2px"><?= htmlspecialchars($pur['tagline'] ?? '') ?></div>
+                        </div>
                     </div>
-                    <div class="flex-grow-1">
-                        <div class="text-white fw-semibold"><?= htmlspecialchars($pur['product_name']) ?></div>
-                        <div class="text-muted small"><?= htmlspecialchars($pur['tagline'] ?? '') ?></div>
-                    </div>
-                    <div class="text-end">
-                        <span class="badge bg-primary">Purchased</span>
-                        <div class="text-muted small mt-1">Lifetime access</div>
-                    </div>
-                    <div>
-                        <?php $purUrl = $pur['module_slug'] ? '/modules/'.$pur['module_slug'].'.php' : '/product.php?slug='.$pur['product_slug']; ?>
-                        <a href="<?= htmlspecialchars($purUrl) ?>" class="btn btn-primary btn-sm">
+                    <div class="d-flex align-items-center justify-content-between gap-2" style="padding-left:47px">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-primary" style="font-size:10px">Purchased</span>
+                            <span class="text-muted" style="font-size:11px">Lifetime access</span>
+                        </div>
+                        <a href="<?= htmlspecialchars($purUrl) ?>" class="btn btn-primary btn-sm px-3" style="font-size:12px;white-space:nowrap">
                             <i class="bi bi-play-fill me-1"></i>Open
                         </a>
                     </div>
