@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/layout.php';
+require_once __DIR__ . '/../layout.php';
 html_head('Find Services');
 
 // ── Filters ───────────────────────────────────────────────────
@@ -65,7 +65,7 @@ html_body_open();
                 <?php foreach (categories() as $c):
                     $active = ($cat_filter === $c);
                 ?>
-                    <a href="find_services.php?category=<?= urlencode($c) ?>"
+                    <a href="<?= MARKET_URL ?>/?category=<?= urlencode($c) ?>"
                        style="background:<?= $active ? '#fff' : 'rgba(255,255,255,.15)' ?>;
                               color:<?= $active ? ($colors[$c] ?? '#1a5276') : '#fff' ?>;
                               border-radius:20px;padding:4px 12px;font-size:.75rem;font-weight:600;
@@ -106,14 +106,14 @@ html_body_open();
     </div>
 </form>
 <?php if ($cat_filter || $loc_filter || $kw_filter): ?>
-<p class="small"><a href="find_services.php">✕ Clear all filters</a></p>
+<p class="small"><a href="<?= MARKET_URL ?>/">✕ Clear all filters</a></p>
 <?php endif; ?>
 
 <p class="small text-muted mb-3"><?= count($filtered) ?> service<?= count($filtered) !== 1 ? 's' : '' ?> found
     <?= count($filtered) < count($all_sellers) ? ' · filtered from ' . count($all_sellers) . ' total' : '' ?></p>
 
 <?php if (!$filtered): ?>
-    <div class="alert alert-info">No services match your search. Try different filters or <a href="find_services.php">clear all</a>.</div>
+    <div class="alert alert-info">No services match your search. Try different filters or <a href="<?= MARKET_URL ?>/">clear all</a>.</div>
 <?php else: ?>
 <div class="row g-3">
 <?php foreach ($filtered as $s):
@@ -184,10 +184,10 @@ html_body_open();
                         📩 Contact
                     </button>
                     <?php if (is_logged_in()): ?>
-                    <a href="messages.php?start=1&seller_kop=<?= urlencode($s['koperasi_id']) ?>&seller_name=<?= urlencode($s['name']) ?>&subject=<?= urlencode('Enquiry: '.$s['service_title']) ?>&seller_id=<?= urlencode($s['id']) ?>"
+                    <a href="<?= PORTAL_URL ?>/messages.php?start=1&seller_kop=<?= urlencode($s['koperasi_id']) ?>&seller_name=<?= urlencode($s['name']) ?>&subject=<?= urlencode('Enquiry: '.$s['service_title']) ?>&seller_id=<?= urlencode($s['id']) ?>"
                        class="btn btn-sm btn-primary">💬 Message</a>
                     <?php else: ?>
-                    <a href="member_portal.php?login_required=1" class="btn btn-sm btn-outline-primary">💬 Message</a>
+                    <a href="<?= PORTAL_URL ?>/?login_required=1" class="btn btn-sm btn-outline-primary">💬 Message</a>
                     <?php endif; ?>
                     <button class="btn btn-sm btn-outline-info ai-insight-btn"
                         data-seller-id="<?= e($s['id']) ?>"
@@ -204,7 +204,7 @@ html_body_open();
                         <strong><?= e($s['name']) ?></strong><br>
                         📍 <?= e($s['area']) ?> | 💰 <?= e($s['price_range']) ?><br>
                         <?= e($s['contact']) ?><br>
-                        <a href="request_service.php" class="btn btn-sm btn-primary mt-2">Submit Request →</a>
+                        <a href="<?= MARKET_URL ?>/request.php" class="btn btn-sm btn-primary mt-2">Submit Request →</a>
                     </div>
                 </div>
             </div>
@@ -220,14 +220,14 @@ html_body_open();
         <div class="card p-3 border-0" style="background:#eaf4fb">
             <strong>Don't see what you need?</strong><br>
             <span class="small text-muted">Submit a buyer request and let Koponix AI match you.</span>
-            <br><a href="request_service.php" class="btn btn-sm btn-primary mt-2">🛒 Submit a Request</a>
+            <br><a href="<?= MARKET_URL ?>/request.php" class="btn btn-sm btn-primary mt-2">🛒 Submit a Request</a>
         </div>
     </div>
     <div class="col-md-6">
         <div class="card p-3 border-0" style="background:#f0fdf4">
             <strong>Are you a koperasi member with skills?</strong><br>
             <span class="small text-muted">List your service and start earning.</span>
-            <br><a href="register_service.php" class="btn btn-sm btn-outline-primary mt-2">💼 Register Service</a>
+            <br><a href="<?= MARKET_URL ?>/list.php" class="btn btn-sm btn-outline-primary mt-2">💼 Register Service</a>
         </div>
     </div>
 </div>

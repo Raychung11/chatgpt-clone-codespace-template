@@ -46,9 +46,10 @@ function logout_member(): void {
     session_destroy();
 }
 
-function require_login(string $redirect = 'member_portal.php'): void {
+function require_login(string $redirect = ''): void {
     if (!is_logged_in()) {
-        header('Location: ' . $redirect . '?login_required=1');
+        $dest = $redirect ?: (defined('PORTAL_URL') ? PORTAL_URL . '/' : '../portal/');
+        header('Location: ' . $dest . '?login_required=1');
         exit;
     }
 }
@@ -295,7 +296,7 @@ function handle_image_upload(string $field, string $dest_subdir): ?string {
 
 function img_url(string $path): string {
     if (!$path) return '';
-    return 'uploads/' . ltrim($path, '/');
+    return (defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/uploads/' . ltrim($path, '/');
 }
 
 function get_all_members(): array {
@@ -708,7 +709,7 @@ function notify_listing_approved(array $seller): void {
         <p>Hi <strong>{$m['name']}</strong>,</p>
         <p>Your listing <strong>\"{$title}\"</strong> has been reviewed and is now <strong>live</strong> on the Koponix marketplace.</p>
         <p>Members can now find and contact you through your listing.</p>
-        <p><a href='" . SITE_URL . "/find_services.php' style='background:#1a5276;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block'>View Marketplace →</a></p>"
+        <p><a href='" . MARKET_URL . "/' style='background:#1a5276;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block'>View Marketplace →</a></p>"
     );
 }
 
@@ -725,7 +726,7 @@ function notify_listing_rejected(array $seller, string $reason): void {
         <p>Your listing <strong>\"{$title}\"</strong> could not be approved at this time.</p>
         <p><strong>Reason:</strong> {$reason}</p>
         <p>Please log in, edit your listing to address the issue, and resubmit for review.</p>
-        <p><a href='" . SITE_URL . "/member_portal.php?tab=listings' style='background:#1a5276;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block'>Edit My Listings →</a></p>"
+        <p><a href='" . PORTAL_URL . "/?tab=listings' style='background:#1a5276;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block'>Edit My Listings →</a></p>"
     );
 }
 
@@ -739,7 +740,7 @@ function notify_new_message(string $recipient_kop_id, string $sender_name, strin
         "<h2 style='color:#1a5276'>💬 You have a new message</h2>
         <p>Hi <strong>{$m['name']}</strong>,</p>
         <p><strong>{$sender}</strong> has sent you a message on Koponix.</p>
-        <p><a href='" . SITE_URL . "/messages.php?conv=" . urlencode($conv_id) . "' style='background:#1a5276;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block'>Read Message →</a></p>
+        <p><a href='" . PORTAL_URL . "/messages.php?conv=" . urlencode($conv_id) . "' style='background:#1a5276;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block'>Read Message →</a></p>
         <p style='color:#888;font-size:.85rem'>Log in to reply. You can disable email notifications in your profile settings.</p>"
     );
 }
@@ -755,7 +756,7 @@ function notify_referral_bonus(string $referrer_kop_id, string $new_member_name,
         <p>Hi <strong>{$m['name']}</strong>,</p>
         <p><strong>{$new_name}</strong> just joined Koponix using your referral code.</p>
         <p>You've been credited <strong style='font-size:1.3rem;color:#e67e22'>{$credits} credits</strong> (RM " . number_format($credits, 2) . ")!</p>
-        <p><a href='" . SITE_URL . "/member_portal.php?tab=credits' style='background:#e67e22;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block'>View My Credits →</a></p>"
+        <p><a href='" . PORTAL_URL . "/?tab=credits' style='background:#e67e22;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block'>View My Credits →</a></p>"
     );
 }
 

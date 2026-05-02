@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/layout.php';
+require_once __DIR__ . '/../layout.php';
 
 $login_errors   = [];
 $reg_errors     = [];
@@ -23,7 +23,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'login') {
         if ($m) {
             login_member($m);
             flash('Welcome back, ' . $m['name'] . '!');
-            redirect('member_portal.php');
+            redirect(PORTAL_URL . '/');
         } else {
             $login_errors[] = 'Invalid Member ID or password.';
         }
@@ -63,7 +63,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'register') {
         $m = get_member_by_kop_id($kop_id);
         login_member($m);
         flash('Account created! Welcome, ' . $name . '. You have been given 10 credits to get started!');
-        redirect('member_portal.php?tab=credits');
+        redirect(PORTAL_URL . '/?tab=credits');
     }
 }
 
@@ -209,8 +209,8 @@ $active_l    = array_filter($my_listings, fn($s) => $s['status'] === 'active');
 $open_r      = array_filter($my_requests, fn($r) => $r['status'] === 'open');
 $credits     = get_credits($kop_id);
 $ref_code    = ensure_referral_code($kop_id);
-$ref_url     = rtrim(defined('SITE_URL') ? SITE_URL : 'https://yourdomain.com', '/')
-               . '/member_portal.php?tab=register&ref=' . $ref_code;
+$ref_url     = (defined('PORTAL_URL') ? PORTAL_URL : rtrim(defined('SITE_URL') ? SITE_URL : 'https://yourdomain.com', '/') . '/portal')
+               . '/?tab=register&ref=' . $ref_code;
 ?>
 
 <!-- Stats -->
@@ -238,7 +238,7 @@ $ref_url     = rtrim(defined('SITE_URL') ? SITE_URL : 'https://yourdomain.com', 
 <!-- My Listings -->
 <?php if ($tab === 'listings'): ?>
 <?php if (!$my_listings): ?>
-    <div class="alert alert-info">No listings yet. <a href="register_service.php">Add your first service →</a></div>
+    <div class="alert alert-info">No listings yet. <a href="<?= MARKET_URL ?>/list.php">Add your first service →</a></div>
 <?php else: ?>
 <div class="row g-3">
 <?php foreach ($my_listings as $s): ?>
@@ -275,23 +275,23 @@ $ref_url     = rtrim(defined('SITE_URL') ? SITE_URL : 'https://yourdomain.com', 
         </div>
         <div class="desc mt-2"><?= e(substr($s['description'],0,120)) ?>…</div>
         <div class="d-flex gap-2 mt-2 flex-wrap">
-            <a href="edit_listing.php?id=<?= urlencode($s['id']) ?>" class="btn btn-sm btn-primary">✏️ Edit</a>
+            <a href="<?= MARKET_URL ?>/edit.php?id=<?= urlencode($s['id']) ?>" class="btn btn-sm btn-primary">✏️ Edit</a>
             <?php if ($s['status']==='active'): ?>
-            <a href="find_services.php?category=<?= urlencode($s['category']) ?>" class="btn btn-sm btn-outline-secondary">View Public</a>
+            <a href="<?= MARKET_URL ?>/?category=<?= urlencode($s['category']) ?>" class="btn btn-sm btn-outline-secondary">View Public</a>
             <?php endif; ?>
-            <a href="ai_assistant.php?prompt=<?= urlencode('Give me tips to improve my listing: '.$s['service_title'].' in '.$s['area']) ?>" class="btn btn-sm btn-outline-info">🤖 AI Tips</a>
+            <a href="<?= MARKET_URL ?>/assistant.php?prompt=<?= urlencode('Give me tips to improve my listing: '.$s['service_title'].' in '.$s['area']) ?>" class="btn btn-sm btn-outline-info">🤖 AI Tips</a>
         </div>
     </div>
     </div>
 <?php endforeach; ?>
 </div>
 <?php endif; ?>
-<a href="register_service.php" class="btn btn-primary mt-3">+ Add New Listing</a>
+<a href="<?= MARKET_URL ?>/list.php" class="btn btn-primary mt-3">+ Add New Listing</a>
 
 <!-- My Requests -->
 <?php elseif ($tab === 'requests'): ?>
 <?php if (!$my_requests): ?>
-    <div class="alert alert-info">No requests yet. <a href="request_service.php">Submit a request →</a></div>
+    <div class="alert alert-info">No requests yet. <a href="<?= MARKET_URL ?>/request.php">Submit a request →</a></div>
 <?php else: ?>
 <?php
 $status_class = ['open'=>'pill-open','in progress'=>'badge bg-warning text-dark','matched'=>'pill-matched','closed'=>'pill-closed'];
@@ -304,7 +304,7 @@ foreach ($my_requests as $r): ?>
     </div>
 <?php endforeach; ?>
 <?php endif; ?>
-<a href="request_service.php" class="btn btn-primary mt-2">+ New Request</a>
+<a href="<?= MARKET_URL ?>/request.php" class="btn btn-primary mt-2">+ New Request</a>
 
 <!-- Credits & Referral -->
 <?php elseif ($tab === 'credits'):
@@ -364,7 +364,7 @@ foreach ($my_requests as $r): ?>
                 your credits as a discount on the service. Credits are deducted from your balance
                 and the provider receives the full payment.
             </div>
-            <a href="request_service.php" class="btn btn-primary btn-sm mt-2">🛒 Post a Request</a>
+            <a href="<?= MARKET_URL ?>/request.php" class="btn btn-primary btn-sm mt-2">🛒 Post a Request</a>
         </div>
 
     </div>
@@ -569,7 +569,7 @@ document.getElementById('getCoachingBtn').addEventListener('click', async () => 
         </div>
 
         <div class="mt-3">
-            <a href="logout.php" class="btn btn-outline-danger btn-sm">Sign Out</a>
+            <a href="<?= SITE_URL ?>/logout.php" class="btn btn-outline-danger btn-sm">Sign Out</a>
         </div>
     </div>
 </div>

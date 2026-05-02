@@ -43,13 +43,13 @@ $colors     = cat_colors();
         </p>
 
         <div class="d-flex gap-2 flex-wrap">
-            <a href="find_services.php" class="btn btn-warning fw-bold px-4" style="border-radius:30px">
+            <a href="<?= MARKET_URL ?>/" class="btn btn-warning fw-bold px-4" style="border-radius:30px">
                 🔍 Browse Services
             </a>
-            <a href="register_service.php" class="btn btn-outline-light px-4" style="border-radius:30px">
+            <a href="<?= MARKET_URL ?>/list.php" class="btn btn-outline-light px-4" style="border-radius:30px">
                 💼 List Your Service
             </a>
-            <a href="request_service.php" class="btn btn-outline-light px-4" style="border-radius:30px">
+            <a href="<?= MARKET_URL ?>/request.php" class="btn btn-outline-light px-4" style="border-radius:30px">
                 🛒 Post a Request
             </a>
         </div>
@@ -161,9 +161,9 @@ $colors     = cat_colors();
                 </div>
             </div>
             <div class="mt-3 d-flex gap-2 flex-wrap">
-                <a href="find_services.php" class="btn btn-primary btn-sm">🔍 Browse Member Services</a>
-                <a href="member_portal.php" class="btn btn-outline-primary btn-sm">👤 Member Login</a>
-                <a href="register_service.php" class="btn btn-outline-secondary btn-sm">💼 List Your Service</a>
+                <a href="<?= MARKET_URL ?>/" class="btn btn-primary btn-sm">🔍 Browse Member Services</a>
+                <a href="<?= PORTAL_URL ?>/" class="btn btn-outline-primary btn-sm">👤 Member Login</a>
+                <a href="<?= MARKET_URL ?>/list.php" class="btn btn-outline-secondary btn-sm">💼 List Your Service</a>
             </div>
         </div>
     </div>
@@ -199,7 +199,7 @@ $colors     = cat_colors();
     $has_img = !empty($s['image']);
 ?>
     <div class="col-md-6 col-lg-3">
-        <a href="find_services.php?category=<?= urlencode($s['category']) ?>" class="text-decoration-none">
+        <a href="<?= MARKET_URL ?>/?category=<?= urlencode($s['category']) ?>" class="text-decoration-none">
         <div class="card h-100" style="border-radius:12px;overflow:hidden;border:none;box-shadow:0 3px 10px rgba(0,0,0,.09);transition:transform .15s" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''">
             <?php if ($has_img): ?>
                 <img src="<?= e(img_url($s['image'])) ?>"
@@ -222,7 +222,7 @@ $colors     = cat_colors();
 <?php endforeach; ?>
 </div>
 <div class="text-center mb-4">
-    <a href="find_services.php" class="btn btn-outline-primary">View All Services →</a>
+    <a href="<?= MARKET_URL ?>/" class="btn btn-outline-primary">View All Services →</a>
 </div>
 <?php endif; ?>
 
@@ -231,7 +231,7 @@ $colors     = cat_colors();
 <div class="row g-2 mb-4">
 <?php foreach ($categories as $cat): ?>
     <div class="col-6 col-md-4 col-lg-3">
-        <a href="find_services.php?category=<?= urlencode($cat) ?>" class="text-decoration-none">
+        <a href="<?= MARKET_URL ?>/?category=<?= urlencode($cat) ?>" class="text-decoration-none">
             <div class="card h-100 p-3 text-center" style="border-left:4px solid <?= e($colors[$cat] ?? '#607d8b') ?>;
                         border-radius:10px;border-top:none;border-right:none;border-bottom:none;
                         transition:transform .15s"
@@ -270,10 +270,10 @@ $colors     = cat_colors();
     <h4 style="font-weight:800;margin-bottom:.5rem">Ready to join the Koponix economy?</h4>
     <p style="opacity:.88;margin-bottom:1.2rem">Register now and start earning or discovering services within your koperasi network.</p>
     <div class="d-flex gap-2 justify-content-center flex-wrap">
-        <a href="member_portal.php" class="btn btn-warning fw-bold px-4" style="border-radius:30px">
+        <a href="<?= PORTAL_URL ?>/" class="btn btn-warning fw-bold px-4" style="border-radius:30px">
             🔑 Join / Login
         </a>
-        <a href="find_services.php" class="btn btn-outline-light px-4" style="border-radius:30px">
+        <a href="<?= MARKET_URL ?>/" class="btn btn-outline-light px-4" style="border-radius:30px">
             🔍 Browse First
         </a>
     </div>

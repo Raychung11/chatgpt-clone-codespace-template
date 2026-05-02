@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/layout.php';
+require_once __DIR__ . '/../layout.php';
 
 $errors = [];
 
@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $data['status']  = 'pending'; // requires admin approval
         save_seller($data);
         flash('Listing submitted! It will be reviewed and activated by the koperasi admin within 1–2 working days.', 'info');
-        redirect('member_portal.php');
+        redirect(PORTAL_URL . '/');
     }
 }
 
@@ -146,7 +146,7 @@ html_body_open();
 
         <div class="col-12">
             <button type="submit" class="btn btn-primary">✅ Submit Listing</button>
-            <a href="find_services.php" class="btn btn-outline-secondary ms-2">Cancel</a>
+            <a href="<?= MARKET_URL ?>/" class="btn btn-outline-secondary ms-2">Cancel</a>
         </div>
     </div>
 </form>

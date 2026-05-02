@@ -3,7 +3,7 @@
 //  KOPONIX – Mobile-First Member Dashboard
 //  Standalone page – does NOT use layout.php
 // ============================================================
-require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/../functions.php';
 session_start_safe();
 
 // ── Auth: handle login form submission ───────────────────────
@@ -17,7 +17,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'login') {
         $m = authenticate_member($kop_id, $pw);
         if ($m) {
             login_member($m);
-            header('Location: member_mobile.php');
+            header('Location: ' . PORTAL_URL . '/mobile.php');
             exit;
         } else {
             $login_error = 'Invalid Member ID or password.';
@@ -113,9 +113,9 @@ body {
         <button type="submit" class="btn-login">Sign In</button>
     </form>
     <div class="login-footer">
-        <a href="member_portal.php">Full desktop view</a>
+        <a href="<?= PORTAL_URL ?>/">Full desktop view</a>
         &nbsp;·&nbsp;
-        <a href="index.php">Back to home</a>
+        <a href="<?= SITE_URL ?>/">Back to home</a>
     </div>
 </div>
 </body>
@@ -474,7 +474,7 @@ body {
             <div class="sbox"><div class="sv"><?= count($open_r) ?></div><div class="sl">Open</div></div>
         </div>
         <!-- Credits banner -->
-        <a href="member_portal.php?tab=credits" style="display:flex;align-items:center;gap:12px;
+        <a href="<?= PORTAL_URL ?>/?tab=credits" style="display:flex;align-items:center;gap:12px;
             background:linear-gradient(135deg,#f6d365,#fda085);border-radius:14px;
             padding:12px 16px;margin-bottom:14px;text-decoration:none">
             <span style="font-size:1.8rem">💰</span>
@@ -489,16 +489,16 @@ body {
 
         <div class="sec-lbl">Quick Actions</div>
         <div class="qa-grid">
-            <a href="find_services.php"    class="qa-btn"><span class="qi">🔍</span>Browse<br>Services</a>
-            <a href="request_service.php"  class="qa-btn"><span class="qi">🛒</span>Post<br>Request</a>
-            <a href="register_service.php" class="qa-btn"><span class="qi">➕</span>New<br>Listing</a>
-            <a href="messages.php"         class="qa-btn"><span class="qi">💬</span>Messages</a>
+            <a href="<?= MARKET_URL ?>/"    class="qa-btn"><span class="qi">🔍</span>Browse<br>Services</a>
+            <a href="<?= MARKET_URL ?>/request.php"  class="qa-btn"><span class="qi">🛒</span>Post<br>Request</a>
+            <a href="<?= MARKET_URL ?>/list.php" class="qa-btn"><span class="qi">➕</span>New<br>Listing</a>
+            <a href="<?= PORTAL_URL ?>/messages.php"         class="qa-btn"><span class="qi">💬</span>Messages</a>
         </div>
 
         <div class="sec-lbl">Recent Listings</div>
         <?php if (!$recent_l): ?>
             <div class="mcard" style="text-align:center;color:var(--muted);font-size:.84rem;padding:20px">
-                No listings yet. <a href="register_service.php" style="color:var(--accent)">Add one →</a>
+                No listings yet. <a href="<?= MARKET_URL ?>/list.php" style="color:var(--accent)">Add one →</a>
             </div>
         <?php else: ?>
             <?php foreach ($recent_l as $s):
@@ -547,14 +547,14 @@ body {
                         <div><?= cat_badge($s['category']) ?> <?= status_pill($s['status']) ?></div>
                         <div class="ltitle"><?= e($s['service_title']) ?></div>
                         <div class="lmeta">📍 <?= e($s['area']) ?> &nbsp;·&nbsp; 💰 <?= e($s['price_range']) ?></div>
-                        <a class="ledit" href="edit_listing.php?id=<?= urlencode($s['id']) ?>">✏️ Edit</a>
+                        <a class="ledit" href="<?= MARKET_URL ?>/edit.php?id=<?= urlencode($s['id']) ?>">✏️ Edit</a>
                     </div>
                 </div>
             </div>
             <?php endforeach; ?>
         <?php endif; ?>
 
-        <a href="register_service.php" class="add-btn">+ Add New Listing</a>
+        <a href="<?= MARKET_URL ?>/list.php" class="add-btn">+ Add New Listing</a>
 
     </section>
 
@@ -583,7 +583,7 @@ body {
             <?php endforeach; ?>
         <?php endif; ?>
 
-        <a href="request_service.php" class="add-btn">+ New Request</a>
+        <a href="<?= MARKET_URL ?>/request.php" class="add-btn">+ New Request</a>
 
     </section>
 
@@ -596,7 +596,7 @@ body {
             <div class="empty">
                 <div class="ei">💬</div>
                 <div class="et">No messages yet</div>
-                <div class="es">Go to <a href="find_services.php" style="color:var(--accent)">Browse Services</a> and tap <strong>Message</strong> on any listing.</div>
+                <div class="es">Go to <a href="<?= MARKET_URL ?>/" style="color:var(--accent)">Browse Services</a> and tap <strong>Message</strong> on any listing.</div>
             </div>
         <?php else: ?>
             <div class="conv-list">
@@ -604,7 +604,7 @@ body {
                     $other = ($conv['buyer_kop_id'] === $kop_id) ? $conv['seller_name'] : $conv['buyer_name'];
                     $oi    = mb_strtoupper(mb_substr($other, 0, 1));
                 ?>
-                <a class="conv-row" href="messages.php?conv=<?= urlencode($conv['id']) ?>">
+                <a class="conv-row" href="<?= PORTAL_URL ?>/messages.php?conv=<?= urlencode($conv['id']) ?>">
                     <div class="cav"><?= e($oi) ?></div>
                     <div class="cinfo">
                         <div class="cname"><?= e($other) ?></div>
@@ -638,10 +638,10 @@ body {
         </div>
 
         <div class="prof-btns">
-            <a href="member_portal.php?tab=profile" class="pb pb-blue">✏️ Edit Profile</a>
-            <a href="member_portal.php?tab=profile" class="pb pb-outline">🔒 Change Password</a>
-            <a href="logout.php" class="pb pb-red">Sign Out</a>
-            <a href="index.php"  class="pb pb-grey">🖥 Desktop View</a>
+            <a href="<?= PORTAL_URL ?>/?tab=profile" class="pb pb-blue">✏️ Edit Profile</a>
+            <a href="<?= PORTAL_URL ?>/?tab=profile" class="pb pb-outline">🔒 Change Password</a>
+            <a href="<?= SITE_URL ?>/logout.php" class="pb pb-red">Sign Out</a>
+            <a href="<?= SITE_URL ?>/"  class="pb pb-grey">🖥 Desktop View</a>
         </div>
 
     </section>

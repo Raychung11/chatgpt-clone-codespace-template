@@ -7,10 +7,16 @@
 require_once __DIR__ . '/functions.php';
 session_start_safe();
 
-$flash  = get_flash();
-$member = current_member();
-$page   = basename($_SERVER['PHP_SELF']);
-$role   = view_role(); // public | member | provider | admin
+$flash     = get_flash();
+$member    = current_member();
+$page      = basename($_SERVER['PHP_SELF']);
+$_req_path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+$role      = view_role(); // public | member | provider | admin
+
+// true when on root-level pages (not inside a section subfolder)
+$_is_home_section = !str_contains($_req_path, '/admin')
+                 && !str_contains($_req_path, '/portal')
+                 && !str_contains($_req_path, '/marketplace');
 
 // ── Avatar initials helper ───────────────────────────────────
 function avatar_initials(string $name): string {
@@ -20,10 +26,10 @@ function avatar_initials(string $name): string {
     return $init;
 }
 
-// ── Active nav link helper ───────────────────────────────────
-function nav_active(string $file): string {
-    global $page;
-    return $page === $file ? 'active fw-semibold' : '';
+// ── Active nav link helper (checks REQUEST_URI path segment) ─
+function nav_active(string $needle): string {
+    global $_req_path;
+    return str_contains($_req_path, $needle) ? 'active fw-semibold' : '';
 }
 
 function html_head(string $title = 'Koponix'): void { ?>
@@ -170,9 +176,14 @@ function escHtml(str) {
     return d.innerHTML;
 }
 
-// fetch() wrapper that injects CSRF token header on every POST
+// Absolute base URLs — works from any section subfolder
+const _siteUrl = <?= json_encode(rtrim(SITE_URL, '/')) ?>;
+const _ajaxBase = _siteUrl + '/ajax';
+
+// fetch() wrapper: injects CSRF token + resolves ajax/ paths absolutely
 const _csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 function csrfFetch(url, opts = {}) {
+    if (url.startsWith('ajax/')) url = _ajaxBase + '/' + url.slice(5);
     opts.headers = Object.assign({'X-CSRF-Token': _csrfToken, 'Content-Type': 'application/json'}, opts.headers || {});
     return fetch(url, opts);
 }
@@ -187,7 +198,7 @@ function csrfFetch(url, opts = {}) {
 <div class="d-flex align-items-center h-100 px-3 gap-2">
 
     <!-- Logo -->
-    <a href="index.php" class="brand me-3">
+    <a href="<?= SITE_URL ?>/" class="brand me-3">
         🤝 Kopo<span>nix</span>
         <span class="brand-sub"><?= defined('KOPERASI_NAME') ? e(KOPERASI_NAME) : 'KKBR' ?><br>Digital Marketplace</span>
     </a>
@@ -196,34 +207,30 @@ function csrfFetch(url, opts = {}) {
     <nav class="desktop-nav d-flex align-items-center gap-1 flex-grow-1">
 
         <!-- Public: Home always visible -->
-        <a href="index.php" class="nav-link <?= nav_active('index.php') ?>">Home</a>
-        <a href="find_services.php" class="nav-link <?= nav_active('find_services.php') ?>">Browse Services</a>
+        <a href="<?= SITE_URL ?>/" class="nav-link <?= $_is_home_section && $page === 'index.php' ? 'active fw-semibold' : '' ?>">Home</a>
+        <a href="<?= MARKET_URL ?>/" class="nav-link <?= nav_active('/marketplace/') ?>">Browse Services</a>
 
         <?php if ($role === 'public'): ?>
-            <!-- Public only -->
-            <a href="request_service.php" class="nav-link <?= nav_active('request_service.php') ?>">Request Service</a>
+            <a href="<?= MARKET_URL ?>/request.php" class="nav-link <?= nav_active('/marketplace/request') ?>">Request Service</a>
 
         <?php elseif ($role === 'member'): ?>
-            <!-- Member: logged in, no listings yet -->
-            <a href="request_service.php" class="nav-link <?= nav_active('request_service.php') ?>">Request Service</a>
-            <a href="messages.php" class="nav-link <?= nav_active('messages.php') ?>">Messages</a>
-            <a href="register_service.php" class="nav-link <?= nav_active('register_service.php') ?>"
+            <a href="<?= MARKET_URL ?>/request.php" class="nav-link <?= nav_active('/marketplace/request') ?>">Request Service</a>
+            <a href="<?= PORTAL_URL ?>/messages.php" class="nav-link <?= nav_active('/portal/messages') ?>">Messages</a>
+            <a href="<?= MARKET_URL ?>/list.php" class="nav-link <?= nav_active('/marketplace/list') ?>"
                 style="color:#1e8449">+ List My Service</a>
 
         <?php elseif ($role === 'provider'): ?>
-            <!-- Provider: listed their service -->
-            <a href="request_service.php" class="nav-link <?= nav_active('request_service.php') ?>">Request Service</a>
-            <a href="messages.php" class="nav-link <?= nav_active('messages.php') ?>">Messages</a>
-            <a href="member_portal.php?tab=listings" class="nav-link <?= nav_active('member_portal.php') ?>">
+            <a href="<?= MARKET_URL ?>/request.php" class="nav-link <?= nav_active('/marketplace/request') ?>">Request Service</a>
+            <a href="<?= PORTAL_URL ?>/messages.php" class="nav-link <?= nav_active('/portal/messages') ?>">Messages</a>
+            <a href="<?= PORTAL_URL ?>/?tab=listings" class="nav-link <?= nav_active('/portal/') ?>">
                 My Listings <span class="role-badge provider">PROVIDER</span>
             </a>
 
         <?php elseif ($role === 'admin'): ?>
-            <!-- Admin: all links -->
-            <a href="request_service.php" class="nav-link <?= nav_active('request_service.php') ?>">Request Service</a>
-            <a href="messages.php" class="nav-link <?= nav_active('messages.php') ?>">Messages</a>
-            <a href="member_portal.php?tab=listings" class="nav-link <?= nav_active('member_portal.php') ?>">My Listings</a>
-            <a href="admin_dashboard.php" class="nav-link <?= nav_active('admin_dashboard.php') ?>">
+            <a href="<?= MARKET_URL ?>/request.php" class="nav-link <?= nav_active('/marketplace/request') ?>">Request Service</a>
+            <a href="<?= PORTAL_URL ?>/messages.php" class="nav-link <?= nav_active('/portal/messages') ?>">Messages</a>
+            <a href="<?= PORTAL_URL ?>/?tab=listings" class="nav-link <?= nav_active('/portal/') ?>">My Listings</a>
+            <a href="<?= ADMIN_URL ?>/" class="nav-link <?= nav_active('/admin/') ?>">
                 Admin <span class="role-badge admin">ADMIN</span>
             </a>
         <?php endif; ?>
@@ -235,10 +242,10 @@ function csrfFetch(url, opts = {}) {
 
     <?php if ($role === 'public'): ?>
         <!-- Public: Login + Register -->
-        <a href="member_portal.php" class="btn btn-sm btn-outline-primary d-none d-md-inline-flex">Login</a>
-        <a href="member_portal.php?tab=register" class="btn btn-sm btn-primary d-none d-md-inline-flex">Join Free</a>
+        <a href="<?= PORTAL_URL ?>/" class="btn btn-sm btn-outline-primary d-none d-md-inline-flex">Login</a>
+        <a href="<?= PORTAL_URL ?>/?tab=register" class="btn btn-sm btn-primary d-none d-md-inline-flex">Join Free</a>
         <!-- Mobile: just Login -->
-        <a href="member_portal.php" class="btn btn-sm btn-primary d-md-none">Login</a>
+        <a href="<?= PORTAL_URL ?>/" class="btn btn-sm btn-primary d-md-none">Login</a>
 
     <?php else: ?>
         <!-- Logged in: Avatar dropdown -->
@@ -267,11 +274,11 @@ function csrfFetch(url, opts = {}) {
 
                 <!-- My Account section -->
                 <li><span class="dropdown-section-label">My Account</span></li>
-                <li><a class="dropdown-item" href="member_portal.php?tab=profile">👤 My Profile</a></li>
-                <li><a class="dropdown-item" href="member_portal.php?tab=listings">📋 My Listings</a></li>
-                <li><a class="dropdown-item" href="member_portal.php?tab=requests">🛒 My Requests</a></li>
-                <li><a class="dropdown-item" href="messages.php">💬 Messages</a></li>
-                <li><a class="dropdown-item" href="member_portal.php?tab=credits">
+                <li><a class="dropdown-item" href="<?= PORTAL_URL ?>/?tab=profile">👤 My Profile</a></li>
+                <li><a class="dropdown-item" href="<?= PORTAL_URL ?>/?tab=listings">📋 My Listings</a></li>
+                <li><a class="dropdown-item" href="<?= PORTAL_URL ?>/?tab=requests">🛒 My Requests</a></li>
+                <li><a class="dropdown-item" href="<?= PORTAL_URL ?>/messages.php">💬 Messages</a></li>
+                <li><a class="dropdown-item" href="<?= PORTAL_URL ?>/?tab=credits">
                     💰 Credits &amp; Referral
                     <span style="float:right;background:#f6d365;color:#7d3200;font-size:.65rem;
                         padding:1px 6px;border-radius:10px;font-weight:700">
@@ -281,28 +288,28 @@ function csrfFetch(url, opts = {}) {
 
                 <?php if ($role === 'member'): ?>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="register_service.php" style="color:#1e8449">
+                    <li><a class="dropdown-item" href="<?= MARKET_URL ?>/list.php" style="color:#1e8449">
                         ✨ Become a Provider</a></li>
                 <?php endif; ?>
 
                 <?php if ($role === 'provider' || $role === 'admin'): ?>
                     <li><hr class="dropdown-divider"></li>
                     <li><span class="dropdown-section-label">Provider Tools</span></li>
-                    <li><a class="dropdown-item" href="register_service.php">➕ Add New Listing</a></li>
-                    <li><a class="dropdown-item" href="promo_generator.php">📣 Promo Generator</a></li>
-                    <li><a class="dropdown-item" href="monthly_report.php">📊 Monthly Report</a></li>
-                    <li><a class="dropdown-item" href="ai_assistant.php">🤖 AI Assistant</a></li>
+                    <li><a class="dropdown-item" href="<?= MARKET_URL ?>/list.php">➕ Add New Listing</a></li>
+                    <li><a class="dropdown-item" href="<?= MARKET_URL ?>/promo.php">📣 Promo Generator</a></li>
+                    <li><a class="dropdown-item" href="<?= ADMIN_URL ?>/report.php">📊 Monthly Report</a></li>
+                    <li><a class="dropdown-item" href="<?= MARKET_URL ?>/assistant.php">🤖 AI Assistant</a></li>
                 <?php endif; ?>
 
                 <?php if ($role === 'admin'): ?>
                     <li><hr class="dropdown-divider"></li>
                     <li><span class="dropdown-section-label">Admin Tools</span></li>
-                    <li><a class="dropdown-item" href="admin_dashboard.php">🛡️ Admin Dashboard</a></li>
-                    <li><a class="dropdown-item" href="match_engine.php">🎯 Match Engine</a></li>
+                    <li><a class="dropdown-item" href="<?= ADMIN_URL ?>/">🛡️ Admin Dashboard</a></li>
+                    <li><a class="dropdown-item" href="<?= MARKET_URL ?>/match.php">🎯 Match Engine</a></li>
                 <?php endif; ?>
 
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item text-danger" href="logout.php">⬅️ Logout</a></li>
+                <li><a class="dropdown-item text-danger" href="<?= SITE_URL ?>/logout.php">⬅️ Logout</a></li>
             </ul>
         </div><!-- /dropdown -->
     <?php endif; ?>
@@ -327,10 +334,10 @@ function csrfFetch(url, opts = {}) {
 
 
 <?php function html_footer(): void {
-    global $member, $page, $role;
-    $account_href  = $member ? 'member_mobile.php'  : 'member_portal.php';
-    $account_label = $member ? 'Account'             : 'Login';
-    $account_icon  = $member ? '👤'                  : '🔑';
+    global $member, $page, $role, $_req_path, $_is_home_section;
+    $account_href  = $member ? PORTAL_URL . '/mobile.php' : PORTAL_URL . '/';
+    $account_label = $member ? 'Account'                  : 'Login';
+    $account_icon  = $member ? '👤'                       : '🔑';
 ?>
 </main>
 
@@ -338,26 +345,25 @@ function csrfFetch(url, opts = {}) {
      MOBILE BOTTOM NAVIGATION (≤768px only)
 ════════════════════════════════════════════════════ -->
 <nav id="mobile-nav">
-    <a href="index.php" class="<?= $page==='index.php'?'active':'' ?>">
+    <a href="<?= SITE_URL ?>/" class="<?= $_is_home_section && $page === 'index.php' ? 'active' : '' ?>">
         <span class="mn-icon">🏠</span>Home
     </a>
-    <a href="find_services.php" class="<?= $page==='find_services.php'?'active':'' ?>">
+    <a href="<?= MARKET_URL ?>/" class="<?= nav_active('/marketplace/') ?>">
         <span class="mn-icon">🔍</span>Browse
     </a>
-    <a href="request_service.php" class="<?= $page==='request_service.php'?'active':'' ?>">
+    <a href="<?= MARKET_URL ?>/request.php" class="<?= nav_active('/marketplace/request') ?>">
         <span class="mn-icon">🛒</span>Request
     </a>
     <?php if ($member): ?>
-    <a href="messages.php" class="<?= $page==='messages.php'?'active':'' ?>">
+    <a href="<?= PORTAL_URL ?>/messages.php" class="<?= nav_active('/portal/messages') ?>">
         <span class="mn-icon">💬</span>Messages
     </a>
     <?php else: ?>
-    <a href="find_services.php">
+    <a href="<?= MARKET_URL ?>/">
         <span class="mn-icon">🔍</span>Services
     </a>
     <?php endif; ?>
-    <a href="<?= $account_href ?>"
-        class="<?= in_array($page,['member_mobile.php','member_portal.php'])?'active':'' ?>">
+    <a href="<?= $account_href ?>" class="<?= nav_active('/portal/') ?>">
         <span class="mn-icon"><?= $account_icon ?></span><?= $account_label ?>
     </a>
 </nav>
@@ -385,10 +391,10 @@ function csrfFetch(url, opts = {}) {
         <div style="min-width:140px">
             <div style="font-weight:700;color:#fff;margin-bottom:.6rem;font-size:.8rem;">Platform</div>
             <div style="display:flex;flex-direction:column;gap:.3rem">
-                <a href="index.php" style="color:rgba(255,255,255,.65);text-decoration:none">Home</a>
-                <a href="find_services.php" style="color:rgba(255,255,255,.65);text-decoration:none">Browse Services</a>
-                <a href="request_service.php" style="color:rgba(255,255,255,.65);text-decoration:none">Request Service</a>
-                <a href="register_service.php" style="color:rgba(255,255,255,.65);text-decoration:none">Become a Provider</a>
+                <a href="<?= SITE_URL ?>/" style="color:rgba(255,255,255,.65);text-decoration:none">Home</a>
+                <a href="<?= MARKET_URL ?>/" style="color:rgba(255,255,255,.65);text-decoration:none">Browse Services</a>
+                <a href="<?= MARKET_URL ?>/request.php" style="color:rgba(255,255,255,.65);text-decoration:none">Request Service</a>
+                <a href="<?= MARKET_URL ?>/list.php" style="color:rgba(255,255,255,.65);text-decoration:none">Become a Provider</a>
             </div>
         </div>
 
@@ -396,10 +402,10 @@ function csrfFetch(url, opts = {}) {
         <div style="min-width:140px">
             <div style="font-weight:700;color:#fff;margin-bottom:.6rem;font-size:.8rem;">Members</div>
             <div style="display:flex;flex-direction:column;gap:.3rem">
-                <a href="member_portal.php" style="color:rgba(255,255,255,.65);text-decoration:none">Member Login</a>
-                <a href="member_portal.php?tab=register" style="color:rgba(255,255,255,.65);text-decoration:none">Register</a>
-                <a href="messages.php" style="color:rgba(255,255,255,.65);text-decoration:none">Messages</a>
-                <a href="member_portal.php?tab=profile" style="color:rgba(255,255,255,.65);text-decoration:none">My Account</a>
+                <a href="<?= PORTAL_URL ?>/" style="color:rgba(255,255,255,.65);text-decoration:none">Member Login</a>
+                <a href="<?= PORTAL_URL ?>/?tab=register" style="color:rgba(255,255,255,.65);text-decoration:none">Register</a>
+                <a href="<?= PORTAL_URL ?>/messages.php" style="color:rgba(255,255,255,.65);text-decoration:none">Messages</a>
+                <a href="<?= PORTAL_URL ?>/?tab=profile" style="color:rgba(255,255,255,.65);text-decoration:none">My Account</a>
             </div>
         </div>
 

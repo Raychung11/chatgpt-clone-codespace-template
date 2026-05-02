@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/layout.php';
+require_once __DIR__ . '/../layout.php';
 
 session_start_safe();
 
@@ -28,7 +28,7 @@ if (isset($_POST['admin_login'])) {
 }
 if (isset($_GET['admin_logout'])) {
     unset($_SESSION['admin_auth']);
-    redirect('admin_dashboard.php');
+    redirect(ADMIN_URL . '/');
 }
 $is_admin = !empty($_SESSION['admin_auth']);
 
@@ -120,7 +120,7 @@ if ($is_admin && isset($_POST['action'])) {
         }
         $tab = 'members';
     }
-    redirect('admin_dashboard.php?tab=' . $tab);
+    redirect(ADMIN_URL . '/?tab=' . $tab);
 }
 
 $tab      = $_GET['tab'] ?? 'overview';

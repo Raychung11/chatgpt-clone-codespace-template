@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/layout.php';
+require_once __DIR__ . '/../layout.php';
 require_login('member_portal.php');
 
 $member   = current_member();
@@ -15,7 +15,7 @@ if (!empty($_GET['start']) && !empty($_GET['seller_kop'])) {
 
     if ($seller_kop !== $kop_id) { // don't message yourself
         $conv_id = create_conversation($kop_id, $mem_name, $seller_kop, $seller_name, $subject, $seller_id);
-        redirect('messages.php?conv=' . urlencode($conv_id));
+        redirect(PORTAL_URL . '/messages.php?conv=' . urlencode($conv_id));
     }
 }
 
@@ -34,7 +34,7 @@ html_body_open();
 <div class="text-center py-5 text-muted">
     <div style="font-size:3rem">💬</div>
     <h5 class="mt-2">No messages yet</h5>
-    <p>Go to <a href="find_services.php">Find Services</a> and click <strong>Message</strong> on any seller.</p>
+    <p>Go to <a href="<?= MARKET_URL ?>/">Find Services</a> and click <strong>Message</strong> on any seller.</p>
 </div>
 <?php html_footer(); return; ?>
 <?php endif; ?>
@@ -52,7 +52,7 @@ html_body_open();
             $other = ($c['buyer_kop_id'] === $kop_id) ? $c['seller_name'] : $c['buyer_name'];
             $is_active = ($c['id'] === $active_conv_id);
         ?>
-            <a href="messages.php?conv=<?= urlencode($c['id']) ?>"
+            <a href="<?= PORTAL_URL ?>/messages.php?conv=<?= urlencode($c['id']) ?>"
                class="list-group-item list-group-item-action <?= $is_active?'active':'' ?> small py-2">
                 <div class="fw-bold"><?= e($other) ?></div>
                 <div class="<?= $is_active?'text-white-50':'text-muted' ?>" style="font-size:.72rem">

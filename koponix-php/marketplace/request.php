@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/layout.php';
+require_once __DIR__ . '/../layout.php';
 
 $errors  = [];
 $member  = current_member();
@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $msg = 'Your service request has been submitted!';
         if ($credits_to_use > 0) $msg .= " {$credits_to_use} credits applied (RM " . number_format($credits_to_use, 2) . " discount).";
         flash($msg);
-        redirect('match_engine.php?category=' . urlencode($category) . '&location=' . urlencode($location));
+        redirect(MARKET_URL . '/match.php?category=' . urlencode($category) . '&location=' . urlencode($location));
     }
 }
 
@@ -172,7 +172,7 @@ html_body_open();
                     <div style="font-size:.8rem;font-weight:600"><?= ($icons[$cat]??'⭐') ?> <?= e($cat) ?></div>
                     <div style="font-size:.7rem;color:#888"><?= $gap[$cat]['demand'] ?> requests · <?= $gap[$cat]['supply'] ?> providers</div>
                 </div>
-                <a href="register_service.php" style="font-size:.72rem;color:#e67e22;font-weight:700;white-space:nowrap">
+                <a href="<?= MARKET_URL ?>/list.php" style="font-size:.72rem;color:#e67e22;font-weight:700;white-space:nowrap">
                     Register →
                 </a>
             </div>
@@ -253,7 +253,7 @@ html_body_open();
         <?php endforeach; ?>
         </div>
         <div class="mt-2" style="font-size:.72rem;color:#888">
-            Are you a provider? <a href="register_service.php">List your service</a> and get matched to these requests.
+            Are you a provider? <a href="<?= MARKET_URL ?>/list.php">List your service</a> and get matched to these requests.
         </div>
     </div>
     <?php endif; ?>
@@ -352,7 +352,7 @@ html_body_open();
                 <?php endif; ?>
                 <div class="col-12">
                     <button type="submit" class="btn btn-primary">🚀 Submit Request</button>
-                    <a href="find_services.php" class="btn btn-outline-secondary ms-2">Browse Services Instead</a>
+                    <a href="<?= MARKET_URL ?>/" class="btn btn-outline-secondary ms-2">Browse Services Instead</a>
                 </div>
             </div>
         </form>

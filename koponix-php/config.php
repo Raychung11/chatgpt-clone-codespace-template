@@ -40,6 +40,11 @@ define('SITE_NAME',  'Koponix');
 define('SITE_URL',   rtrim(env('SITE_URL', 'https://yourdomain.com'), '/'));
 define('SITE_EMAIL', env('SITE_EMAIL', 'noreply@yourdomain.com'));
 
+// ── Section URLs (no trailing slash) ─────────────────────────
+define('ADMIN_URL',  SITE_URL . '/admin');
+define('PORTAL_URL', SITE_URL . '/portal');
+define('MARKET_URL', SITE_URL . '/marketplace');
+
 // ── Admin ─────────────────────────────────────────────────────
 // Admin authenticates via the members table (ADMIN-001, role=admin).
 // This hash is only used as a final fallback if the members table is unreachable.

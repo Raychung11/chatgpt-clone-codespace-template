@@ -2,7 +2,7 @@
 // ============================================================
 //  KOPONIX – Edit Listing (members only, own listings)
 // ============================================================
-require_once __DIR__ . '/layout.php';
+require_once __DIR__ . '/../layout.php';
 require_login('member_portal.php');
 
 $member = current_member();
@@ -10,12 +10,12 @@ $kop_id = $member['koperasi_id'];
 $id     = trim($_GET['id'] ?? '');
 $errors = [];
 
-if (!$id) { flash('No listing specified.', 'error'); redirect('member_portal.php?tab=listings'); }
+if (!$id) { flash('No listing specified.', 'error'); redirect(PORTAL_URL . '/?tab=listings'); }
 
 $seller = get_seller_by_id($id);
 if (!$seller || $seller['koperasi_id'] !== $kop_id) {
     flash('Listing not found or access denied.', 'error');
-    redirect('member_portal.php?tab=listings');
+    redirect(PORTAL_URL . '/?tab=listings');
 }
 
 // ── Handle form submit ────────────────────────────────────────
@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         update_seller($id, $update);
         flash('Listing updated successfully!');
-        redirect('member_portal.php?tab=listings');
+        redirect(PORTAL_URL . '/?tab=listings');
     }
     // re-merge for display
     $seller = array_merge($seller, compact('category','service_title','area','price_range','availability','experience','description','contact'));
@@ -64,7 +64,7 @@ html_body_open();
 ?>
 
 <div class="d-flex align-items-center gap-2 mb-3">
-    <a href="member_portal.php?tab=listings" class="btn btn-sm btn-outline-secondary">← Back</a>
+    <a href="<?= PORTAL_URL ?>/?tab=listings" class="btn btn-sm btn-outline-secondary">← Back</a>
     <div class="page-title mb-0">✏️ Edit Listing</div>
 </div>
 
@@ -174,7 +174,7 @@ html_body_open();
 
         <div class="col-12">
             <button type="submit" class="btn btn-primary">💾 Save Changes</button>
-            <a href="member_portal.php?tab=listings" class="btn btn-outline-secondary ms-2">Cancel</a>
+            <a href="<?= PORTAL_URL ?>/?tab=listings" class="btn btn-outline-secondary ms-2">Cancel</a>
         </div>
     </div>
 </form>
