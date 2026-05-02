@@ -7,21 +7,75 @@ Auth::requireLogin();
 $user = Auth::user();
 $pageTitle = 'My Dashboard';
 
-// Handle trial capsule dismiss / restore
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['dismiss_capsule'])) {
-    $dismissId = (int)$_POST['dismiss_capsule'];
-    $_SESSION['dismissed_capsules']   = $_SESSION['dismissed_capsules'] ?? [];
-    $_SESSION['dismissed_capsules'][] = $dismissId;
-    $_SESSION['dismissed_capsules']   = array_unique($_SESSION['dismissed_capsules']);
-    header('Location: /dashboard.php');
-    exit;
+// Dismissed capsule IDs stored in a cookie (set by JS, read here)
+$dismissedIds = [];
+if (!empty($_COOKIE['dismissed_capsules'])) {
+    $decoded = json_decode($_COOKIE['dismissed_capsules'], true);
+    if (is_array($decoded)) $dismissedIds = array_map('intval', $decoded);
 }
-if (isset($_GET['restore'])) {
-    $_SESSION['dismissed_capsules'] = [];
-    header('Location: /dashboard.php');
-    exit;
+
+// Trial detection
+$trialEnd      = strtotime($user['created_at']) + (TRIAL_DAYS * 86400);
+$trialDaysLeft = max(0, (int)ceil(($trialEnd - time()) / 86400));
+$isInTrial     = $trialDaysLeft > 0;
+
+// Subquery to safely get one module slug per product (avoids duplicate rows)
+$moduleSubquery = DB::fetch("SHOW TABLES LIKE 'ai_modules'")
+    ? "(SELECT slug FROM ai_modules WHERE product_id=p.id AND is_active=1 LIMIT 1)"
+    : "NULL";
+
+// Fetch subscriptions
+$subscriptions = DB::fetchAll(
+    "SELECT s.*, p.name as product_name, p.slug as product_slug, p.tagline,
+            c.name as cat_name, c.icon as cat_icon, c.color as cat_color,
+            $moduleSubquery as module_slug
+     FROM subscriptions s
+     JOIN products p ON s.product_id = p.id
+     LEFT JOIN categories c ON p.category_id = c.id
+     WHERE s.user_id = ? ORDER BY s.created_at DESC",
+    [$user['id']]
+);
+
+// Fetch one-time purchases
+$purchases = DB::fetchAll(
+    "SELECT pu.*, p.name as product_name, p.slug as product_slug, p.tagline,
+            c.name as cat_name, c.icon as cat_icon, c.color as cat_color,
+            $moduleSubquery as module_slug
+     FROM purchases pu
+     JOIN products p ON pu.product_id = p.id
+     LEFT JOIN categories c ON p.category_id = c.id
+     WHERE pu.user_id = ? AND pu.status='completed' ORDER BY pu.created_at DESC",
+    [$user['id']]
+);
+
+$hasOwned = !empty($subscriptions) || !empty($purchases);
+
+// Trial capsules — shown when user has no paid capsules yet
+$trialCapsules = [];
+if ($isInTrial && !$hasOwned) {
+    $trialCapsules = DB::fetchAll(
+        "SELECT p.*, c.name as cat_name, c.icon as cat_icon, c.color as cat_color,
+                $moduleSubquery as module_slug
+         FROM products p LEFT JOIN categories c ON p.category_id=c.id
+         WHERE p.is_active=1 ORDER BY p.is_featured DESC, p.sort_order LIMIT 9"
+    );
 }
-$dismissedIds = $_SESSION['dismissed_capsules'] ?? [];
+
+// Recommended (only shown when user has paid capsules)
+$recommended = [];
+if ($hasOwned) {
+    $ownedIds     = array_merge(array_column($subscriptions, 'product_id'), array_column($purchases, 'product_id'));
+    $placeholders = implode(',', array_fill(0, count($ownedIds), '?'));
+    $recommended  = DB::fetchAll(
+        "SELECT p.*, c.name as cat_name, c.icon as cat_icon, c.color as cat_color
+         FROM products p LEFT JOIN categories c ON p.category_id=c.id
+         WHERE p.id NOT IN ($placeholders) AND p.is_active=1 ORDER BY p.is_featured DESC, p.sort_order LIMIT 3",
+        $ownedIds
+    );
+}
+
+require_once 'includes/header.php';
+?>
 
 // Trial detection
 $trialEnd     = strtotime($user['created_at']) + (TRIAL_DAYS * 86400);
@@ -96,8 +150,6 @@ if ($hasOwned) {
     );
 }
 
-require_once 'includes/header.php';
-?>
 
 <div class="container py-5">
     <!-- Header -->
@@ -250,10 +302,12 @@ require_once 'includes/header.php';
                 </div>
                 <?php
                 $visibleTrialCapsules = array_filter($trialCapsules, fn($tc) => !in_array($tc['id'], $dismissedIds));
-                foreach ($visibleTrialCapsules as $tc):
+                ?>
+                <div id="trialCapsuleList">
+                <?php foreach ($visibleTrialCapsules as $tc):
                     $openUrl = $tc['module_slug'] ? '/modules/'.$tc['module_slug'].'.php' : '/modules/';
                 ?>
-                <div class="rounded-3 mb-2 p-3" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+                <div class="capsule-card rounded-3 mb-2 p-3" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
                     <!-- Row 1: icon + name + dismiss -->
                     <div class="d-flex align-items-start gap-3 mb-2">
                         <div class="cat-icon-sm flex-shrink-0" style="background:<?= $tc['cat_color'] ?? '#6366f1' ?>22;color:<?= $tc['cat_color'] ?? '#6366f1' ?>">
@@ -263,12 +317,12 @@ require_once 'includes/header.php';
                             <div class="text-white fw-semibold" style="font-size:14px;line-height:1.3"><?= htmlspecialchars($tc['name']) ?></div>
                             <div class="text-muted" style="font-size:12px;margin-top:2px"><?= htmlspecialchars($tc['tagline'] ?? '') ?></div>
                         </div>
-                        <form method="POST" class="flex-shrink-0">
-                            <input type="hidden" name="dismiss_capsule" value="<?= $tc['id'] ?>">
-                            <button type="submit" class="btn btn-sm p-0" style="width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.07);color:#6b7280;border:none;font-size:13px;line-height:1" title="Hide this capsule">
-                                <i class="bi bi-x"></i>
-                            </button>
-                        </form>
+                        <button type="button" onclick="dismissCapsule(<?= $tc['id'] ?>, this.closest('.capsule-card'))"
+                            class="btn btn-sm p-0 flex-shrink-0"
+                            style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.07);color:#9ca3af;border:1px solid rgba(255,255,255,0.1);font-size:14px"
+                            title="Hide this capsule">
+                            <i class="bi bi-x"></i>
+                        </button>
                     </div>
                     <!-- Row 2: badge + date + open button -->
                     <div class="d-flex align-items-center justify-content-between gap-2" style="padding-left:47px">
@@ -282,10 +336,11 @@ require_once 'includes/header.php';
                     </div>
                 </div>
                 <?php endforeach; ?>
+                </div><?php // end #trialCapsuleList ?>
                 <?php if (empty($visibleTrialCapsules)): ?>
                 <div class="text-center py-3">
                     <p class="text-muted small mb-2">You've hidden all trial capsules.</p>
-                    <a href="?restore=1" class="btn btn-outline-secondary btn-sm">Restore All</a>
+                    <button onclick="restoreCapsules()" class="btn btn-outline-secondary btn-sm">Restore All</button>
                 </div>
                 <?php endif; ?>
                 <div class="mt-3 pt-3 border-top border-secondary border-opacity-25 text-center">
@@ -309,7 +364,7 @@ require_once 'includes/header.php';
                 <h5 class="text-white fw-semibold mb-4"><i class="bi bi-cpu me-2 text-primary"></i>My Capsules</h5>
 
                 <?php foreach ($subscriptions as $sub):
-                    $subUrl = $sub['module_slug'] ? '/modules/'.$sub['module_slug'].'.php' : '/product.php?slug='.$sub['product_slug'];
+                    $subUrl = $sub['module_slug'] ? '/modules/'.$sub['module_slug'].'.php' : '/modules/';
                     $badgeClass = match($sub['status']) {
                         'active'   => 'bg-success',
                         'trialing' => 'bg-info text-dark',
@@ -318,7 +373,7 @@ require_once 'includes/header.php';
                         default    => 'bg-secondary',
                     };
                 ?>
-                <div class="rounded-3 mb-2 p-3" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+                <div class="capsule-card rounded-3 mb-2 p-3" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
                     <div class="d-flex align-items-start gap-3 mb-2">
                         <div class="cat-icon-sm flex-shrink-0" style="background:<?= $sub['cat_color'] ?? '#6366f1' ?>22;color:<?= $sub['cat_color'] ?? '#6366f1' ?>">
                             <i class="bi <?= $sub['cat_icon'] ?? 'bi-cpu' ?>"></i>
@@ -343,9 +398,9 @@ require_once 'includes/header.php';
                 <?php endforeach; ?>
 
                 <?php foreach ($purchases as $pur):
-                    $purUrl = $pur['module_slug'] ? '/modules/'.$pur['module_slug'].'.php' : '/product.php?slug='.$pur['product_slug'];
+                    $purUrl = $pur['module_slug'] ? '/modules/'.$pur['module_slug'].'.php' : '/modules/';
                 ?>
-                <div class="rounded-3 mb-2 p-3" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+                <div class="capsule-card rounded-3 mb-2 p-3" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
                     <div class="d-flex align-items-start gap-3 mb-2">
                         <div class="cat-icon-sm flex-shrink-0" style="background:<?= $pur['cat_color'] ?? '#6366f1' ?>22;color:<?= $pur['cat_color'] ?? '#6366f1' ?>">
                             <i class="bi <?= $pur['cat_icon'] ?? 'bi-cpu' ?>"></i>
@@ -414,4 +469,36 @@ require_once 'includes/header.php';
     </div>
 </div>
 
+<script>
+function dismissCapsule(productId, card) {
+    // Read current dismissed list from cookie
+    let dismissed = [];
+    const match = document.cookie.match(/(?:^|;\s*)dismissed_capsules=([^;]+)/);
+    if (match) { try { dismissed = JSON.parse(decodeURIComponent(match[1])); } catch(e){} }
+    if (!dismissed.includes(productId)) dismissed.push(productId);
+    // Save cookie for 30 days
+    const exp = new Date(Date.now() + 30*24*60*60*1000).toUTCString();
+    document.cookie = `dismissed_capsules=${encodeURIComponent(JSON.stringify(dismissed))};path=/;expires=${exp}`;
+    // Animate out
+    card.style.transition = 'opacity .2s, max-height .3s, margin .3s, padding .3s';
+    card.style.overflow = 'hidden';
+    card.style.opacity = '0';
+    card.style.maxHeight = '0';
+    card.style.marginBottom = '0';
+    card.style.padding = '0';
+    setTimeout(() => {
+        card.remove();
+        // Show restore prompt if no cards left
+        if (!document.querySelector('.capsule-card')) {
+            const wrap = document.getElementById('trialCapsuleList');
+            if (wrap) wrap.innerHTML = '<div class="text-center py-3"><p class="text-muted small mb-2">You\'ve hidden all trial capsules.</p><button onclick="restoreCapsules()" class="btn btn-outline-secondary btn-sm">Restore All</button></div>';
+        }
+    }, 350);
+}
+function restoreCapsules() {
+    const exp = new Date(0).toUTCString();
+    document.cookie = `dismissed_capsules=[];path=/;expires=${exp}`;
+    location.reload();
+}
+</script>
 <?php require_once 'includes/footer.php'; ?>
