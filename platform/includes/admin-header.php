@@ -191,6 +191,13 @@ function adminBadge(string $sql): int {
             <i class="bi bi-layout-text-window-reverse"></i> Homepage Builder
         </a>
 
+        <div class="nav-section-label mt-3">AI Platform</div>
+        <a href="/admin/modules.php" class="admin-nav-link <?= $adminPage === 'modules' ? 'active' : '' ?>">
+            <i class="bi bi-cpu"></i> AI Modules
+            <?php $n = adminBadge("SHOW TABLES LIKE 'ai_modules'") ? adminBadge("SELECT COUNT(*) as n FROM ai_modules WHERE is_active=1") : 0;
+            if ($n > 0) echo "<span class='badge bg-primary bg-opacity-50 text-primary ms-auto'>$n</span>"; ?>
+        </a>
+
         <div class="nav-section-label mt-3">Settings</div>
         <a href="/admin/pricing.php" class="admin-nav-link <?= $adminPage === 'pricing' ? 'active' : '' ?>">
             <i class="bi bi-tags"></i> Capsule Pricing
