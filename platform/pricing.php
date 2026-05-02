@@ -255,13 +255,13 @@ require_once 'includes/header.php';
               ['feature'=>'Onboarding',                  'starter'=>'Self-serve',  'growth'=>'Guided call',   'enterprise'=>'Full concierge'],
               ['feature'=>'White-label',                 'starter'=>false,         'growth'=>false,           'enterprise'=>true],
             ];
+            function renderCell($val) {
+              if ($val === true)  return '<i class="bi bi-check-circle-fill text-success"></i>';
+              if ($val === false) return '<i class="bi bi-x-circle-fill" style="opacity:0.25;"></i>';
+              return '<span class="small">' . htmlspecialchars($val) . '</span>';
+            }
             foreach ($compare as $i => $row):
               $bg = $i % 2 === 0 ? '' : 'background:rgba(255,255,255,0.02);';
-              function renderCell($val) {
-                if ($val === true)  return '<i class="bi bi-check-circle-fill text-success"></i>';
-                if ($val === false) return '<i class="bi bi-x-circle-fill" style="opacity:0.25;"></i>';
-                return '<span class="small">' . htmlspecialchars($val) . '</span>';
-              }
             ?>
             <tr style="<?= $bg ?>border-color:rgba(255,255,255,0.05);">
               <td class="py-3 px-4 fw-medium small border-0"><?= htmlspecialchars($row['feature']) ?></td>
