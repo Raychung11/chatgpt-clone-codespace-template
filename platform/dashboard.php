@@ -7,6 +7,11 @@ Auth::requireLogin();
 $user = Auth::user();
 $pageTitle = 'My Dashboard';
 
+// Trial detection
+$trialEnd     = strtotime($user['created_at']) + (TRIAL_DAYS * 86400);
+$trialDaysLeft = max(0, (int)ceil(($trialEnd - time()) / 86400));
+$isInTrial    = $trialDaysLeft > 0;
+
 // Fetch user's subscriptions
 $subscriptions = DB::fetchAll(
     'SELECT s.*, p.name as product_name, p.slug as product_slug, p.tagline,
@@ -29,25 +34,37 @@ $purchases = DB::fetchAll(
     [$user['id']]
 );
 
-// Recommended products (not owned)
-$ownedIds = array_merge(
-    array_column($subscriptions, 'product_id'),
-    array_column($purchases, 'product_id')
-);
-$placeholders = $ownedIds ? implode(',', array_fill(0, count($ownedIds), '?')) : '0';
-$recommended = DB::fetchAll(
-    "SELECT p.*, c.name as cat_name, c.icon as cat_icon, c.color as cat_color
-     FROM products p LEFT JOIN categories c ON p.category_id=c.id
-     WHERE p.id NOT IN ($placeholders) AND p.is_active=1 ORDER BY p.is_featured DESC, p.sort_order LIMIT 3",
-    $ownedIds
-);
+$hasOwned = !empty($subscriptions) || !empty($purchases);
+
+// Trial capsules — show featured products during trial if no paid capsules yet
+$trialCapsules = [];
+if ($isInTrial && !$hasOwned) {
+    $trialCapsules = DB::fetchAll(
+        'SELECT p.*, c.name as cat_name, c.icon as cat_icon, c.color as cat_color
+         FROM products p LEFT JOIN categories c ON p.category_id=c.id
+         WHERE p.is_active=1 ORDER BY p.is_featured DESC, p.sort_order LIMIT 6'
+    );
+}
+
+// Recommended products (not owned) — only when user has paid capsules
+$recommended = [];
+if ($hasOwned) {
+    $ownedIds    = array_merge(array_column($subscriptions, 'product_id'), array_column($purchases, 'product_id'));
+    $placeholders = implode(',', array_fill(0, count($ownedIds), '?'));
+    $recommended = DB::fetchAll(
+        "SELECT p.*, c.name as cat_name, c.icon as cat_icon, c.color as cat_color
+         FROM products p LEFT JOIN categories c ON p.category_id=c.id
+         WHERE p.id NOT IN ($placeholders) AND p.is_active=1 ORDER BY p.is_featured DESC, p.sort_order LIMIT 3",
+        $ownedIds
+    );
+}
 
 require_once 'includes/header.php';
 ?>
 
 <div class="container py-5">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="text-white fw-bold mb-1">My Dashboard</h2>
             <p class="text-muted mb-0">Welcome back, <?= htmlspecialchars($user['name']) ?>!</p>
@@ -56,6 +73,39 @@ require_once 'includes/header.php';
             <i class="bi bi-plus-circle me-2"></i>Add Capsule
         </a>
     </div>
+
+    <!-- Trial Banner -->
+    <?php if ($isInTrial): ?>
+    <div class="rounded-4 p-4 mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3"
+         style="background:linear-gradient(135deg,rgba(99,102,241,0.2),rgba(139,92,246,0.15));border:1px solid rgba(99,102,241,0.4)">
+        <div class="d-flex align-items-center gap-3">
+            <div style="width:48px;height:48px;border-radius:12px;background:rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center">
+                <i class="bi bi-stars text-primary fs-4"></i>
+            </div>
+            <div>
+                <div class="text-white fw-semibold">Free Trial Active</div>
+                <div class="text-muted small">
+                    <?= $trialDaysLeft ?> day<?= $trialDaysLeft !== 1 ? 's' : '' ?> remaining &bull; Full access to all Capsules
+                </div>
+            </div>
+        </div>
+        <a href="/pricing.php" class="btn btn-primary btn-sm px-4">
+            Upgrade to Keep Access <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+    </div>
+    <?php elseif (!$hasOwned): ?>
+    <div class="rounded-4 p-4 mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3"
+         style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3)">
+        <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-exclamation-triangle-fill text-danger fs-4"></i>
+            <div>
+                <div class="text-white fw-semibold">Your trial has ended</div>
+                <div class="text-muted small">Subscribe to a plan to continue using your Capsules.</div>
+            </div>
+        </div>
+        <a href="/pricing.php" class="btn btn-danger btn-sm px-4">Choose a Plan</a>
+    </div>
+    <?php endif; ?>
 
     <!-- AI Tools Quick Access -->
     <div class="row g-3 mb-4">
@@ -149,21 +199,56 @@ require_once 'includes/header.php';
     </div>
 
     <div class="row g-4">
-        <!-- My Agents -->
+        <!-- My Capsules -->
         <div class="col-lg-8">
             <div class="glass-card rounded-4 p-4">
+
+                <?php if (!$hasOwned && $isInTrial): ?>
+                <!-- Trial capsules -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="text-white fw-semibold mb-0"><i class="bi bi-cpu me-2 text-primary"></i>Your Trial Capsules</h5>
+                    <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 px-3 py-2">
+                        <i class="bi bi-stars me-1"></i>Trial Access
+                    </span>
+                </div>
+                <?php foreach ($trialCapsules as $tc): ?>
+                <div class="agent-row d-flex align-items-center gap-3 p-3 rounded-3 mb-2">
+                    <div class="cat-icon-sm flex-shrink-0" style="background:<?= $tc['cat_color'] ?? '#6366f1' ?>22;color:<?= $tc['cat_color'] ?? '#6366f1' ?>">
+                        <i class="bi <?= $tc['cat_icon'] ?? 'bi-cpu' ?>"></i>
+                    </div>
+                    <div class="flex-grow-1 min-width-0">
+                        <div class="text-white fw-semibold"><?= htmlspecialchars($tc['name']) ?></div>
+                        <div class="text-muted small"><?= htmlspecialchars($tc['tagline'] ?? '') ?></div>
+                    </div>
+                    <div class="text-end flex-shrink-0">
+                        <span class="badge bg-info text-dark">Trial</span>
+                        <div class="text-muted small mt-1"><?= $trialDaysLeft ?> days left</div>
+                    </div>
+                    <div class="flex-shrink-0 d-flex gap-2">
+                        <a href="/product.php?slug=<?= $tc['slug'] ?>" class="btn btn-outline-primary btn-sm">Open</a>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+                <div class="mt-3 pt-3 border-top border-secondary border-opacity-25 text-center">
+                    <a href="/marketplace.php" class="text-muted small text-decoration-none">
+                        <i class="bi bi-grid me-1"></i>Browse all <?= DB::fetch('SELECT COUNT(*) as n FROM products WHERE is_active=1')['n'] ?> Capsules
+                    </a>
+                </div>
+
+                <?php elseif (!$hasOwned): ?>
+                <!-- Trial expired, no subscriptions -->
+                <h5 class="text-white fw-semibold mb-4"><i class="bi bi-cpu me-2 text-primary"></i>My Capsules</h5>
+                <div class="text-center py-5">
+                    <i class="bi bi-lock fs-1 text-muted mb-3 d-block"></i>
+                    <h6 class="text-white">Trial ended</h6>
+                    <p class="text-muted small">Subscribe to a plan to access your Capsules again.</p>
+                    <a href="/pricing.php" class="btn btn-primary btn-sm px-4">View Plans</a>
+                </div>
+
+                <?php else: ?>
+                <!-- Paid subscriptions / purchases -->
                 <h5 class="text-white fw-semibold mb-4"><i class="bi bi-cpu me-2 text-primary"></i>My Capsules</h5>
 
-                <?php if (empty($subscriptions) && empty($purchases)): ?>
-                <div class="text-center py-5">
-                    <i class="bi bi-box-seam fs-1 text-muted mb-3 d-block"></i>
-                    <h6 class="text-white">No capsules yet</h6>
-                    <p class="text-muted small">Browse the Capsule Store to deploy your first Capsule.</p>
-                    <a href="/marketplace.php" class="btn btn-primary btn-sm">Browse Capsule Store</a>
-                </div>
-                <?php else: ?>
-
-                <!-- Subscriptions -->
                 <?php foreach ($subscriptions as $sub): ?>
                 <div class="agent-row d-flex align-items-center gap-3 p-3 rounded-3 mb-2">
                     <div class="cat-icon-sm flex-shrink-0" style="background:<?= $sub['cat_color'] ?? '#6366f1' ?>22;color:<?= $sub['cat_color'] ?? '#6366f1' ?>">
@@ -174,18 +259,16 @@ require_once 'includes/header.php';
                         <div class="text-muted small"><?= htmlspecialchars($sub['tagline'] ?? '') ?></div>
                     </div>
                     <div class="text-end flex-shrink-0">
-                        <div>
-                            <?php
-                            $badgeClass = match($sub['status']) {
-                                'active'   => 'bg-success',
-                                'trialing' => 'bg-info',
-                                'past_due' => 'bg-warning text-dark',
-                                'canceled' => 'bg-danger',
-                                default    => 'bg-secondary',
-                            };
-                            ?>
-                            <span class="badge <?= $badgeClass ?>"><?= ucfirst($sub['status']) ?></span>
-                        </div>
+                        <?php
+                        $badgeClass = match($sub['status']) {
+                            'active'   => 'bg-success',
+                            'trialing' => 'bg-info text-dark',
+                            'past_due' => 'bg-warning text-dark',
+                            'canceled' => 'bg-danger',
+                            default    => 'bg-secondary',
+                        };
+                        ?>
+                        <span class="badge <?= $badgeClass ?>"><?= ucfirst($sub['status']) ?></span>
                         <div class="text-muted small mt-1">
                             <?= ucfirst($sub['plan']) ?> &bull;
                             Renews <?= $sub['current_period_end'] ? date('d M', strtotime($sub['current_period_end'])) : 'N/A' ?>
@@ -197,7 +280,6 @@ require_once 'includes/header.php';
                 </div>
                 <?php endforeach; ?>
 
-                <!-- One-time purchases -->
                 <?php foreach ($purchases as $pur): ?>
                 <div class="agent-row d-flex align-items-center gap-3 p-3 rounded-3 mb-2">
                     <div class="cat-icon-sm flex-shrink-0" style="background:<?= $pur['cat_color'] ?? '#6366f1' ?>22;color:<?= $pur['cat_color'] ?? '#6366f1' ?>">
