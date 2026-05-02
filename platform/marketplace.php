@@ -10,7 +10,7 @@ $cat     = $_GET['cat']    ?? '';
 $q       = trim($_GET['q'] ?? '');
 $sort    = $_GET['sort']   ?? 'featured';
 $minPrice= (int)($_GET['min'] ?? 0);
-$maxPrice= (int)($_GET['max'] ?? 999);
+$maxPrice= (int)($_GET['max'] ?? 99999);
 $page    = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 12;
 $offset  = ($page - 1) * $perPage;
@@ -31,7 +31,7 @@ if ($minPrice > 0) {
     $where[] = 'p.price_monthly >= ?';
     $params[] = $minPrice;
 }
-if ($maxPrice < 999) {
+if ($maxPrice < 99999) {
     $where[] = 'p.price_monthly <= ?';
     $params[] = $maxPrice;
 }
@@ -71,6 +71,7 @@ require_once 'includes/header.php';
                 <p class="text-muted mb-0">
                     <?= $total ?> capsules available
                     <?= $q ? " matching \"<strong class='text-white'>$q</strong>\"" : '' ?>
+                    <?= (!$q && !$cat) ? ' · Prices from <strong class="text-white">RM800/mo</strong>' : '' ?>
                 </p>
             </div>
             <div class="col-lg-6">
@@ -85,6 +86,33 @@ require_once 'includes/header.php';
         </div>
     </div>
 </section>
+
+<!-- Plan Quick-Select Strip -->
+<?php if (!$cat && !$q): ?>
+<div style="background:rgba(99,102,241,0.06);border-top:1px solid rgba(99,102,241,0.15);border-bottom:1px solid rgba(99,102,241,0.15)">
+    <div class="container py-3">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+            <span class="text-muted small fw-semibold me-2">Ready-made bundles:</span>
+            <a href="/pricing.php" class="badge rounded-pill text-decoration-none py-2 px-3"
+               style="background:rgba(99,102,241,0.15);color:#6366f1;border:1px solid rgba(99,102,241,0.3)">
+                <i class="bi bi-lightning-fill me-1"></i>Starter — RM3,500/mo
+            </a>
+            <a href="/pricing.php" class="badge rounded-pill text-decoration-none py-2 px-3"
+               style="background:rgba(99,102,241,0.25);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4)">
+                <i class="bi bi-graph-up-arrow me-1"></i>Growth — RM10,000/mo
+                <span class="ms-1" style="background:#6366f1;border-radius:20px;padding:1px 6px;font-size:10px">Popular</span>
+            </a>
+            <a href="/pricing.php" class="badge rounded-pill text-decoration-none py-2 px-3"
+               style="background:rgba(139,92,246,0.15);color:#c4b5fd;border:1px solid rgba(139,92,246,0.3)">
+                <i class="bi bi-building me-1"></i>Enterprise — RM22,500/mo
+            </a>
+            <a href="/pricing.php" class="text-muted small ms-auto text-decoration-none">
+                Compare plans <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="container py-5">
     <div class="row g-4">
@@ -128,10 +156,10 @@ require_once 'includes/header.php';
                     <input type="hidden" name="sort" value="<?= htmlspecialchars($sort) ?>">
                     <div class="row g-2 mb-3">
                         <div class="col-6">
-                            <input type="number" name="min" value="<?= $minPrice ?>" class="form-control form-control-sm bg-dark border-secondary text-white" placeholder="Min">
+                            <input type="number" name="min" value="<?= $minPrice ?: '' ?>" class="form-control form-control-sm bg-dark border-secondary text-white" placeholder="e.g. 800">
                         </div>
                         <div class="col-6">
-                            <input type="number" name="max" value="<?= $maxPrice < 999 ? $maxPrice : '' ?>" class="form-control form-control-sm bg-dark border-secondary text-white" placeholder="Max">
+                            <input type="number" name="max" value="<?= $maxPrice < 99999 ? $maxPrice : '' ?>" class="form-control form-control-sm bg-dark border-secondary text-white" placeholder="e.g. 5000">
                         </div>
                     </div>
                     <button class="btn btn-outline-primary btn-sm w-100">Apply Filter</button>
