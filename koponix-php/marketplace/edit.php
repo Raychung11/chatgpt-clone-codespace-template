@@ -3,7 +3,7 @@
 //  KOPONIX – Edit Listing (members only, own listings)
 // ============================================================
 require_once __DIR__ . '/../layout.php';
-require_login('member_portal.php');
+require_login();
 
 $member = current_member();
 $kop_id = $member['koperasi_id'];
@@ -41,15 +41,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $update['name']   = $seller['name']; // keep original name
         $update['status'] = $seller['status'];
 
-        // Handle image uploads
-        $img = handle_image_upload('image', 'sellers');
-        if ($img) $update['image'] = $img;
-
-        $g1 = handle_image_upload('gallery1', 'sellers');
-        if ($g1) $update['gallery1'] = $g1;
-
-        $g2 = handle_image_upload('gallery2', 'sellers');
-        if ($g2) $update['gallery2'] = $g2;
+        // Handle image uploads (new upload wins; else clear if "remove" checked)
+        foreach ([['image','delete_image'],['gallery1','delete_gallery1'],['gallery2','delete_gallery2']] as [$col,$del]) {
+            $new = handle_image_upload($col, 'sellers');
+            if ($new) {
+                $update[$col] = $new;
+            } elseif (!empty($_POST[$del])) {
+                $update[$col] = '';
+            }
+        }
 
         update_seller($id, $update);
         flash('Listing updated successfully!');
@@ -137,13 +137,16 @@ html_body_open();
             <?php if ($seller['image']): ?>
                 <div class="mb-2">
                     <img src="<?= e(img_url($seller['image'])) ?>" class="img-thumbnail" style="max-height:120px;object-fit:cover;width:100%">
-                    <div class="small text-muted mt-1">Current photo</div>
+                    <div class="form-check mt-1">
+                        <input class="form-check-input" type="checkbox" name="delete_image" id="del_img" value="1">
+                        <label class="form-check-label small text-danger" for="del_img">Remove this photo</label>
+                    </div>
                 </div>
             <?php endif; ?>
             <input type="file" name="image" class="form-control form-control-sm" accept="image/*"
                 onchange="previewImg(this,'prev_main')">
             <img id="prev_main" src="" class="img-thumbnail mt-1 d-none" style="max-height:100px;width:100%;object-fit:cover">
-            <div class="small text-muted mt-1">JPG/PNG/WebP, max 2MB</div>
+            <div class="small text-muted mt-1">JPG/PNG/WebP, max 2 MB</div>
         </div>
 
         <!-- Gallery 1 -->
@@ -152,11 +155,16 @@ html_body_open();
             <?php if ($seller['gallery1']): ?>
                 <div class="mb-2">
                     <img src="<?= e(img_url($seller['gallery1'])) ?>" class="img-thumbnail" style="max-height:120px;object-fit:cover;width:100%">
+                    <div class="form-check mt-1">
+                        <input class="form-check-input" type="checkbox" name="delete_gallery1" id="del_g1" value="1">
+                        <label class="form-check-label small text-danger" for="del_g1">Remove this photo</label>
+                    </div>
                 </div>
             <?php endif; ?>
             <input type="file" name="gallery1" class="form-control form-control-sm" accept="image/*"
                 onchange="previewImg(this,'prev_g1')">
             <img id="prev_g1" src="" class="img-thumbnail mt-1 d-none" style="max-height:100px;width:100%;object-fit:cover">
+            <div class="small text-muted mt-1">JPG/PNG/WebP, max 2 MB</div>
         </div>
 
         <!-- Gallery 2 -->
@@ -165,11 +173,16 @@ html_body_open();
             <?php if ($seller['gallery2']): ?>
                 <div class="mb-2">
                     <img src="<?= e(img_url($seller['gallery2'])) ?>" class="img-thumbnail" style="max-height:120px;object-fit:cover;width:100%">
+                    <div class="form-check mt-1">
+                        <input class="form-check-input" type="checkbox" name="delete_gallery2" id="del_g2" value="1">
+                        <label class="form-check-label small text-danger" for="del_g2">Remove this photo</label>
+                    </div>
                 </div>
             <?php endif; ?>
             <input type="file" name="gallery2" class="form-control form-control-sm" accept="image/*"
                 onchange="previewImg(this,'prev_g2')">
             <img id="prev_g2" src="" class="img-thumbnail mt-1 d-none" style="max-height:100px;width:100%;object-fit:cover">
+            <div class="small text-muted mt-1">JPG/PNG/WebP, max 2 MB</div>
         </div>
 
         <div class="col-12">

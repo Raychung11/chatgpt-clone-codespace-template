@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../layout.php';
-require_login('member_portal.php');
+require_login();
 
 $member   = current_member();
 $kop_id   = $member['koperasi_id'];

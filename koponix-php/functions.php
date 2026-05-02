@@ -146,9 +146,11 @@ function update_seller(string $id, array $data): void {
             $data['description'] ?? '', $data['contact'] ?? 'WhatsApp available upon request',
             $data['experience'] ?? '', $data['status'] ?? 'active', $id,
         ]);
-    if (!empty($data['image']))    db()->prepare('UPDATE sellers SET image=?    WHERE id=?')->execute([$data['image'],    $id]);
-    if (!empty($data['gallery1'])) db()->prepare('UPDATE sellers SET gallery1=? WHERE id=?')->execute([$data['gallery1'], $id]);
-    if (!empty($data['gallery2'])) db()->prepare('UPDATE sellers SET gallery2=? WHERE id=?')->execute([$data['gallery2'], $id]);
+    foreach (['image', 'gallery1', 'gallery2'] as $col) {
+        if (array_key_exists($col, $data)) {
+            db()->prepare("UPDATE sellers SET {$col}=? WHERE id=?")->execute([$data[$col], $id]);
+        }
+    }
 }
 
 function get_seller_by_id(string $id): ?array {

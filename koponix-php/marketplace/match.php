@@ -50,8 +50,12 @@ html_body_open();
 <div class="section-head">Top <?= count($matches) ?> Matches for <?= e($cat_filter) ?> in <?= e($loc_filter) ?></div>
 <?php foreach ($matches as $i => $s): ?>
     <div class="seller-card d-flex gap-3 align-items-start">
-        <div style="min-width:54px;text-align:center">
-            <div style="font-size:1.4rem;font-weight:800;color:var(--primary)">#<?= $i+1 ?></div>
+        <div style="text-align:center">
+            <?php if (!empty($s['image'])): ?>
+                <img src="<?= e(img_url($s['image'])) ?>"
+                     style="width:72px;height:72px;object-fit:cover;border-radius:10px;display:block;margin-bottom:4px">
+            <?php endif; ?>
+            <div style="min-width:54px;font-size:1.4rem;font-weight:800;color:var(--primary)">#<?= $i+1 ?></div>
             <div style="font-size:.75rem;color:#555">Score</div>
             <div style="font-size:1.1rem;font-weight:700;color:<?= $s['_score']>=80?'#27ae60':($s['_score']>=60?'#e67e22':'#e74c3c') ?>"><?= $s['_score'] ?></div>
         </div>
