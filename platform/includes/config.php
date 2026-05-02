@@ -30,8 +30,12 @@ define('ADMIN_EMAIL', 'admin@yourdomain.com');
 
 // App settings
 define('TRIAL_DAYS', 14);
-define('CURRENCY', 'MYR');
-define('CURRENCY_SYMBOL', 'RM');
+
+// Currency — Malaysian Ringgit
+// IMPORTANT: if these show wrong on your live site, make sure THIS file
+// is the version uploaded to Hostinger (public_html/includes/config.php)
+if (!defined('CURRENCY'))        define('CURRENCY',        'MYR');
+if (!defined('CURRENCY_SYMBOL')) define('CURRENCY_SYMBOL', 'RM');
 
 // Error reporting (set to 0 in production)
 error_reporting(E_ALL);

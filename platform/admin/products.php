@@ -207,11 +207,11 @@ require_once '../includes/admin-header.php';
                             <textarea name="description" rows="3" class="form-control bg-dark border-secondary text-white"><?= htmlspecialchars($editProduct['description'] ?? '') ?></textarea>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label text-muted small">Monthly Price ($)</label>
+                            <label class="form-label text-muted small">Monthly Price (<?= CURRENCY_SYMBOL ?>)</label>
                             <input type="number" name="price_monthly" step="0.01" value="<?= $editProduct['price_monthly'] ?? '' ?>" class="form-control bg-dark border-secondary text-white">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label text-muted small">Yearly Price ($)</label>
+                            <label class="form-label text-muted small">Yearly Price (<?= CURRENCY_SYMBOL ?>)</label>
                             <input type="number" name="price_yearly" step="0.01" value="<?= $editProduct['price_yearly'] ?? '' ?>" class="form-control bg-dark border-secondary text-white">
                         </div>
                         <div class="col-md-4">
