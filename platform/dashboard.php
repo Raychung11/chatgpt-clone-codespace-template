@@ -12,38 +12,59 @@ $trialEnd     = strtotime($user['created_at']) + (TRIAL_DAYS * 86400);
 $trialDaysLeft = max(0, (int)ceil(($trialEnd - time()) / 86400));
 $isInTrial    = $trialDaysLeft > 0;
 
-// Fetch user's subscriptions
+// Fetch user's subscriptions (join ai_modules for direct tool link)
+$moduleJoin = DB::fetch("SHOW TABLES LIKE 'ai_modules'")
+    ? 'LEFT JOIN ai_modules m ON m.product_id=p.id AND m.is_active=1'
+    : '';
+$moduleCol  = $moduleJoin ? ', m.slug as module_slug' : ', NULL as module_slug';
+
 $subscriptions = DB::fetchAll(
-    'SELECT s.*, p.name as product_name, p.slug as product_slug, p.tagline,
-            c.name as cat_name, c.icon as cat_icon, c.color as cat_color
+    "SELECT s.*, p.name as product_name, p.slug as product_slug, p.tagline,
+            c.name as cat_name, c.icon as cat_icon, c.color as cat_color $moduleCol
      FROM subscriptions s
      JOIN products p ON s.product_id = p.id
      LEFT JOIN categories c ON p.category_id = c.id
-     WHERE s.user_id = ? ORDER BY s.created_at DESC',
+     $moduleJoin
+     WHERE s.user_id = ? ORDER BY s.created_at DESC",
     [$user['id']]
 );
 
 // Fetch one-time purchases
 $purchases = DB::fetchAll(
-    'SELECT pu.*, p.name as product_name, p.slug as product_slug, p.tagline,
-            c.name as cat_name, c.icon as cat_icon, c.color as cat_color
+    "SELECT pu.*, p.name as product_name, p.slug as product_slug, p.tagline,
+            c.name as cat_name, c.icon as cat_icon, c.color as cat_color $moduleCol
      FROM purchases pu
      JOIN products p ON pu.product_id = p.id
      LEFT JOIN categories c ON p.category_id = c.id
-     WHERE pu.user_id = ? AND pu.status="completed" ORDER BY pu.created_at DESC',
+     $moduleJoin
+     WHERE pu.user_id = ? AND pu.status='completed' ORDER BY pu.created_at DESC",
     [$user['id']]
 );
 
 $hasOwned = !empty($subscriptions) || !empty($purchases);
 
 // Trial capsules — show featured products during trial if no paid capsules yet
+// Join ai_modules so we can link directly to the tool instead of the product/pricing page
 $trialCapsules = [];
 if ($isInTrial && !$hasOwned) {
-    $trialCapsules = DB::fetchAll(
-        'SELECT p.*, c.name as cat_name, c.icon as cat_icon, c.color as cat_color
-         FROM products p LEFT JOIN categories c ON p.category_id=c.id
-         WHERE p.is_active=1 ORDER BY p.is_featured DESC, p.sort_order LIMIT 6'
-    );
+    $moduleTableExists = DB::fetch("SHOW TABLES LIKE 'ai_modules'");
+    if ($moduleTableExists) {
+        $trialCapsules = DB::fetchAll(
+            'SELECT p.*, c.name as cat_name, c.icon as cat_icon, c.color as cat_color,
+                    m.slug as module_slug
+             FROM products p
+             LEFT JOIN categories c ON p.category_id=c.id
+             LEFT JOIN ai_modules m ON m.product_id=p.id AND m.is_active=1
+             WHERE p.is_active=1 ORDER BY p.is_featured DESC, p.sort_order LIMIT 6'
+        );
+    } else {
+        $trialCapsules = DB::fetchAll(
+            'SELECT p.*, c.name as cat_name, c.icon as cat_icon, c.color as cat_color,
+                    NULL as module_slug
+             FROM products p LEFT JOIN categories c ON p.category_id=c.id
+             WHERE p.is_active=1 ORDER BY p.is_featured DESC, p.sort_order LIMIT 6'
+        );
+    }
 }
 
 // Recommended products (not owned) — only when user has paid capsules
@@ -225,13 +246,20 @@ require_once 'includes/header.php';
                         <div class="text-muted small mt-1"><?= $trialDaysLeft ?> days left</div>
                     </div>
                     <div class="flex-shrink-0 d-flex gap-2">
-                        <a href="/product.php?slug=<?= $tc['slug'] ?>" class="btn btn-outline-primary btn-sm">Open</a>
+                        <?php
+                        $openUrl = $tc['module_slug']
+                            ? '/modules/' . $tc['module_slug'] . '.php'
+                            : '/modules/';
+                        ?>
+                        <a href="<?= htmlspecialchars($openUrl) ?>" class="btn btn-primary btn-sm">
+                            <i class="bi bi-play-fill me-1"></i>Try Now
+                        </a>
                     </div>
                 </div>
                 <?php endforeach; ?>
                 <div class="mt-3 pt-3 border-top border-secondary border-opacity-25 text-center">
-                    <a href="/marketplace.php" class="text-muted small text-decoration-none">
-                        <i class="bi bi-grid me-1"></i>Browse all <?= DB::fetch('SELECT COUNT(*) as n FROM products WHERE is_active=1')['n'] ?> Capsules
+                    <a href="/modules/" class="text-muted small text-decoration-none">
+                        <i class="bi bi-magic me-1"></i>View all AI Tools
                     </a>
                 </div>
 
@@ -275,7 +303,10 @@ require_once 'includes/header.php';
                         </div>
                     </div>
                     <div class="flex-shrink-0">
-                        <a href="/product.php?slug=<?= $sub['product_slug'] ?>" class="btn btn-outline-primary btn-sm">Open</a>
+                        <?php $subUrl = $sub['module_slug'] ? '/modules/'.$sub['module_slug'].'.php' : '/product.php?slug='.$sub['product_slug']; ?>
+                        <a href="<?= htmlspecialchars($subUrl) ?>" class="btn btn-primary btn-sm">
+                            <i class="bi bi-play-fill me-1"></i>Open
+                        </a>
                     </div>
                 </div>
                 <?php endforeach; ?>
@@ -294,7 +325,10 @@ require_once 'includes/header.php';
                         <div class="text-muted small mt-1">Lifetime access</div>
                     </div>
                     <div>
-                        <a href="/product.php?slug=<?= $pur['product_slug'] ?>" class="btn btn-outline-primary btn-sm">Open</a>
+                        <?php $purUrl = $pur['module_slug'] ? '/modules/'.$pur['module_slug'].'.php' : '/product.php?slug='.$pur['product_slug']; ?>
+                        <a href="<?= htmlspecialchars($purUrl) ?>" class="btn btn-primary btn-sm">
+                            <i class="bi bi-play-fill me-1"></i>Open
+                        </a>
                     </div>
                 </div>
                 <?php endforeach; ?>
