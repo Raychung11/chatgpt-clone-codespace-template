@@ -1,15 +1,19 @@
-# Environment & secrets
+# ── Secrets ──────────────────────────────────────────────────
 koponix-php/.env
+.streamlit/secrets.toml
 
-# Uploaded files (large binaries, not tracked)
+# ── Uploaded files (not tracked, lives on server) ────────────
 koponix-php/uploads/sellers/
 koponix-php/uploads/avatars/
 
-# Setup protection flag
+# ── One-run setup flag (server-side only) ────────────────────
 koponix-php/.setup_done
 
-# OS / editor
+# ── OS / editor ──────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
+*.swp
+__pycache__/
+*.pyc
