@@ -4,21 +4,16 @@
 // ============================================================
 require_once __DIR__ . '/../layout.php';
 
-$seller_id = trim($_GET['id'] ?? '');
-if (!$seller_id) { flash('No listing specified.', 'error'); redirect(MARKET_URL . '/'); }
-
-$seller = get_seller_by_id($seller_id);
-if (!$seller || $seller['status'] !== 'active') {
-    flash('Listing not found or no longer available.', 'error');
-    redirect(MARKET_URL . '/');
-}
+$seller_id    = trim($_GET['id'] ?? '');
+$seller       = $seller_id ? get_seller_by_id($seller_id) : null;
+$not_available = !$seller || $seller['status'] !== 'active';
 
 $member = current_member();
 $errors = [];
 $success = false;
 
 // ── Handle POST ───────────────────────────────────────────────
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (!$not_available && $_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
 
     $buyer_name    = trim($_POST['buyer_name']    ?? '');
@@ -57,10 +52,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $icons  = cat_icons();
 $colors = cat_colors();
-$icon   = $icons[$seller['category']]  ?? '⭐';
-$color  = $colors[$seller['category']] ?? '#607d8b';
+$icon   = !$not_available ? ($icons[$seller['category']]  ?? '⭐')    : '⭐';
+$color  = !$not_available ? ($colors[$seller['category']] ?? '#607d8b') : '#607d8b';
 
-html_head('Book Service — ' . $seller['service_title']);
+html_head('Book Service' . (!$not_available ? ' — ' . $seller['service_title'] : ''));
 html_body_open();
 ?>
 
@@ -69,7 +64,15 @@ html_body_open();
     <div class="page-title mb-0">📅 Book a Service</div>
 </div>
 
-<?php if ($success): ?>
+<?php if ($not_available): ?>
+<div class="card p-4 text-center" style="max-width:500px;margin:auto">
+    <div style="font-size:2.5rem">🔍</div>
+    <h5 class="mt-2">Listing Not Available</h5>
+    <p class="text-muted">This listing could not be found or is no longer accepting bookings.</p>
+    <a href="<?= MARKET_URL ?>/" class="btn btn-primary mt-2">Browse Other Services</a>
+</div>
+
+<?php elseif ($success): ?>
 <!-- ── Booking Confirmed ────────────────────────────────────── -->
 <div class="card p-4 text-center" style="max-width:540px;margin:auto;border-radius:16px">
     <div style="font-size:3rem;margin-bottom:.5rem">✅</div>
@@ -115,8 +118,8 @@ html_body_open();
                         <label class="form-label fw-semibold">Contact (Phone / WhatsApp) *</label>
                         <?php
                             $prefill_contact = $_POST['buyer_contact']
-                                ?? ($member['phone'] ?? '')
-                                ?: ($member['email'] ?? '');
+                                ?? ($member ? ($member['phone'] ?? '') : '')
+                                ?: ($member ? ($member['email'] ?? '') : '');
                         ?>
                         <input type="text" name="buyer_contact" class="form-control"
                             value="<?= e($prefill_contact) ?>"
