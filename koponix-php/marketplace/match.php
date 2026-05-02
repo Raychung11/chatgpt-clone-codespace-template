@@ -65,8 +65,8 @@ html_body_open();
             <div class="meta">👤 <strong><?= e($s['name']) ?></strong> &nbsp;|&nbsp; 🏅 <?= e($s['experience']) ?> experience</div>
             <div class="meta">📍 <?= e($s['area']) ?> &nbsp;|&nbsp; 💰 <?= e($s['price_range']) ?></div>
             <div class="desc"><?= e($s['description']) ?></div>
-            <div class="d-flex gap-2 mt-2">
-                <a href="<?= MARKET_URL ?>/request.php?category=<?= urlencode($s['category']) ?>&location=<?= urlencode($s['area']) ?>" class="btn btn-sm btn-primary">Submit Request</a>
+            <div class="d-flex gap-2 mt-2 flex-wrap">
+                <a href="<?= MARKET_URL ?>/book.php?id=<?= urlencode($s['id']) ?>" class="btn btn-sm btn-primary">📅 Book Now</a>
                 <?php if (is_logged_in()): ?>
                 <a href="<?= PORTAL_URL ?>/messages.php?start=1&seller_kop=<?= urlencode($s['koperasi_id']) ?>&seller_name=<?= urlencode($s['name']) ?>&subject=<?= urlencode('Enquiry: '.$s['service_title']) ?>&seller_id=<?= urlencode($s['id']) ?>"
                    class="btn btn-sm btn-outline-primary">💬 Message</a>

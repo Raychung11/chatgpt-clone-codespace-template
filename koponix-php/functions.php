@@ -762,6 +762,103 @@ function notify_referral_bonus(string $referrer_kop_id, string $new_member_name,
     );
 }
 
+// ── Bookings ─────────────────────────────────────────────────
+function save_booking(array $data): string {
+    $id = gen_short_id() . gen_short_id(); // 16-char id
+    db()->prepare('INSERT INTO bookings (id,seller_id,seller_kop_id,seller_name,service_title,category,buyer_kop_id,buyer_name,buyer_contact,booking_date,booking_time,notes,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())')
+        ->execute([
+            $id,
+            $data['seller_id'],     $data['seller_kop_id'], $data['seller_name'],
+            $data['service_title'], $data['category'],
+            $data['buyer_kop_id']  ?? '',
+            $data['buyer_name'],    $data['buyer_contact'],
+            $data['booking_date']  ?: null,
+            $data['booking_time']  ?? '',
+            $data['notes']         ?? '',
+            'pending',
+        ]);
+    return $id;
+}
+
+function get_booking(string $id): ?array {
+    $stmt = db()->prepare('SELECT * FROM bookings WHERE id=?');
+    $stmt->execute([$id]);
+    return $stmt->fetch() ?: null;
+}
+
+function get_bookings_for_buyer(string $kop_id): array {
+    $stmt = db()->prepare('SELECT * FROM bookings WHERE buyer_kop_id=? ORDER BY created_at DESC');
+    $stmt->execute([$kop_id]);
+    return $stmt->fetchAll();
+}
+
+function get_bookings_for_seller(string $kop_id): array {
+    $stmt = db()->prepare('SELECT * FROM bookings WHERE seller_kop_id=? ORDER BY created_at DESC');
+    $stmt->execute([$kop_id]);
+    return $stmt->fetchAll();
+}
+
+function get_all_bookings(): array {
+    return db()->query('SELECT * FROM bookings ORDER BY created_at DESC')->fetchAll();
+}
+
+function update_booking_status(string $id, string $status): void {
+    db()->prepare('UPDATE bookings SET status=? WHERE id=?')->execute([$status, $id]);
+}
+
+function notify_new_booking(array $b): void {
+    $m = get_member_by_kop_id($b['seller_kop_id']);
+    if (!$m || empty($m['email'])) return;
+    $title  = htmlspecialchars($b['service_title'], ENT_QUOTES, 'UTF-8');
+    $buyer  = htmlspecialchars($b['buyer_name'],    ENT_QUOTES, 'UTF-8');
+    $date   = $b['booking_date'] ? date('d M Y', strtotime($b['booking_date'])) : 'Flexible';
+    send_notification_email(
+        $m['email'],
+        "📅 New booking request — {$b['service_title']}",
+        "<h2 style='color:#1a5276'>📅 New Booking Request</h2>
+        <p>Hi <strong>{$m['name']}</strong>,</p>
+        <p><strong>{$buyer}</strong> has requested to book your service <strong>\"{$title}\"</strong>.</p>
+        <table style='width:100%;border-collapse:collapse;font-size:.9rem'>
+            <tr><td style='padding:6px 0;color:#888'>Date requested</td><td><strong>{$date}</strong></td></tr>
+            <tr><td style='padding:6px 0;color:#888'>Contact</td><td><strong>" . htmlspecialchars($b['buyer_contact'], ENT_QUOTES, 'UTF-8') . "</strong></td></tr>
+        </table>
+        <p><a href='" . PORTAL_URL . "/bookings.php' style='background:#1a5276;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:12px'>View &amp; Confirm Booking →</a></p>"
+    );
+}
+
+function notify_booking_confirmed(array $b): void {
+    if (!$b['buyer_kop_id']) return;
+    $m = get_member_by_kop_id($b['buyer_kop_id']);
+    if (!$m || empty($m['email'])) return;
+    $title  = htmlspecialchars($b['service_title'], ENT_QUOTES, 'UTF-8');
+    $seller = htmlspecialchars($b['seller_name'],   ENT_QUOTES, 'UTF-8');
+    send_notification_email(
+        $m['email'],
+        "✅ Booking confirmed — {$b['service_title']}",
+        "<h2 style='color:#1e8449'>✅ Your Booking is Confirmed!</h2>
+        <p>Hi <strong>{$m['name']}</strong>,</p>
+        <p><strong>{$seller}</strong> has confirmed your booking for <strong>\"{$title}\"</strong>.</p>
+        <p>You may now contact the provider directly to arrange the details.</p>
+        <p><a href='" . PORTAL_URL . "/bookings.php' style='background:#1a5276;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:12px'>View My Bookings →</a></p>"
+    );
+}
+
+function notify_booking_cancelled(array $b): void {
+    if (!$b['buyer_kop_id']) return;
+    $m = get_member_by_kop_id($b['buyer_kop_id']);
+    if (!$m || empty($m['email'])) return;
+    $title  = htmlspecialchars($b['service_title'], ENT_QUOTES, 'UTF-8');
+    send_notification_email(
+        $m['email'],
+        "❌ Booking not available — {$b['service_title']}",
+        "<h2 style='color:#c0392b'>❌ Booking Declined</h2>
+        <p>Hi <strong>{$m['name']}</strong>,</p>
+        <p>Your booking request for <strong>\"{$title}\"</strong> could not be accommodated at this time.</p>
+        <p>You may browse other providers or submit a new request.</p>
+        <p><a href='" . MARKET_URL . "/' style='background:#1a5276;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:12px'>Browse Services →</a></p>"
+    );
+}
+
 // ── Escape ───────────────────────────────────────────────────
 function e(string $s): string { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
 

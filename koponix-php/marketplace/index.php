@@ -179,13 +179,11 @@ html_body_open();
 
             <div class="card-footer bg-white border-top-0 pb-3 px-3 pt-0">
                 <div class="d-flex gap-2 flex-wrap">
-                    <button class="btn btn-sm btn-outline-secondary"
-                        data-bs-toggle="collapse" data-bs-target="#contact-<?= e($s['id']) ?>">
-                        📩 Contact
-                    </button>
+                    <a href="<?= MARKET_URL ?>/book.php?id=<?= urlencode($s['id']) ?>"
+                       class="btn btn-sm btn-primary">📅 Book Now</a>
                     <?php if (is_logged_in()): ?>
                     <a href="<?= PORTAL_URL ?>/messages.php?start=1&seller_kop=<?= urlencode($s['koperasi_id']) ?>&seller_name=<?= urlencode($s['name']) ?>&subject=<?= urlencode('Enquiry: '.$s['service_title']) ?>&seller_id=<?= urlencode($s['id']) ?>"
-                       class="btn btn-sm btn-primary">💬 Message</a>
+                       class="btn btn-sm btn-outline-primary">💬 Message</a>
                     <?php else: ?>
                     <a href="<?= PORTAL_URL ?>/?login_required=1" class="btn btn-sm btn-outline-primary">💬 Message</a>
                     <?php endif; ?>

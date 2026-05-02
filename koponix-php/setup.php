@@ -154,6 +154,27 @@ try {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     $done[] = 'Table <b>messages</b> created.';
 
+    // Bookings table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS bookings (
+        id            VARCHAR(20)  PRIMARY KEY,
+        seller_id     VARCHAR(36)  NOT NULL,
+        seller_kop_id VARCHAR(100) NOT NULL,
+        seller_name   VARCHAR(255) NOT NULL,
+        service_title VARCHAR(255) NOT NULL,
+        category      VARCHAR(100) NOT NULL,
+        buyer_kop_id  VARCHAR(100) DEFAULT '',
+        buyer_name    VARCHAR(255) NOT NULL,
+        buyer_contact VARCHAR(255) NOT NULL,
+        booking_date  DATE,
+        booking_time  VARCHAR(50)  DEFAULT '',
+        notes         TEXT,
+        status        VARCHAR(20)  DEFAULT 'pending',
+        created_at    DATETIME     NOT NULL,
+        INDEX idx_book_seller (seller_kop_id),
+        INDEX idx_book_buyer  (buyer_kop_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    $done[] = 'Table <b>bookings</b> created.';
+
     // ── Seed demo sellers ────────────────────────────────────
     $count = (int) $pdo->query('SELECT COUNT(*) FROM sellers')->fetchColumn();
     if ($count === 0) {
