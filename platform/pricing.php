@@ -3,7 +3,7 @@ require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
 $pageTitle = 'Pricing — BOS Plans';
-$pageDesc  = 'AiServe BOS pricing. Choose the plan that fits your business — Starter, Growth, or Enterprise. Includes BOS Core + AI Capsules.';
+$pageDesc  = 'BizAI BOS pricing. Choose the plan that fits your business — Starter, Growth, or Enterprise. Includes BOS Core + AI Capsules.';
 require_once 'includes/header.php';
 ?>
 

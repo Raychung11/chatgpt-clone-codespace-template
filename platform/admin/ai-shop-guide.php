@@ -60,7 +60,7 @@ $cfg = array_merge([
         'pricing'   => 'Plans start from $49/month. Yearly plans save 20%. A 14-day free trial is available for all products.',
         'shipping'  => 'All products are digital — instant access after purchase. No physical shipping.',
         'returns'   => 'We offer a 14-day money-back guarantee on all plans. Contact support within 14 days for a full refund.',
-        'about'     => 'AiServe is the Business Operating System for SMEs — deploy AI Capsules to automate operations and grow faster.',
+        'about'     => 'BizAI is the Business Operating System for SMEs — deploy AI Capsules to automate operations and grow faster.',
     ],
 ], $cfg);
 

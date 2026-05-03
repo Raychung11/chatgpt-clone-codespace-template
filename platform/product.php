@@ -20,7 +20,7 @@ $reviews   = DB::fetchAll('SELECT r.*, u.name FROM reviews r JOIN users u ON r.u
 $related   = DB::fetchAll('SELECT * FROM products WHERE category_id=? AND id!=? AND is_active=1 LIMIT 3', [$product['category_id'], $product['id']]);
 $isOwned   = Auth::owns($product['id']);
 
-$pageTitle = $product['name'] . ' — AiServe Capsule';
+$pageTitle = $product['name'] . ' — BizAI Capsule';
 $pageDesc  = $product['tagline'];
 
 require_once 'includes/header.php';

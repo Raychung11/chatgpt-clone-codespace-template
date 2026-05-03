@@ -3,7 +3,7 @@ require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
 
-$pageTitle = 'Capsule Store — AiServe';
+$pageTitle = 'Capsule Store — BizAI';
 
 // Filters
 $cat     = $_GET['cat']    ?? '';

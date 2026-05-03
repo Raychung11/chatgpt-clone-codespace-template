@@ -3,8 +3,8 @@ require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
 
-$pageTitle = 'AiServe — Business Operating System for SMEs';
-$pageDesc  = 'AiServe is the Business Operating System for SMEs. Deploy AI Capsules to automate operations, grow revenue, and run your business automatically.';
+$pageTitle = 'BizAI — Business Operating System for SMEs';
+$pageDesc  = 'BizAI is the Business Operating System for SMEs. Deploy AI Capsules to automate operations, grow revenue, and run your business automatically.';
 
 $featuredProducts = DB::fetchAll(
     'SELECT p.*, c.name as cat_name, c.icon as cat_icon, c.color as cat_color

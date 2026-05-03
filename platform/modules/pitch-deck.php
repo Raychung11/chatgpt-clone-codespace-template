@@ -22,7 +22,7 @@ require_once '../includes/header.php';
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label text-muted small">Company Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="company_name" placeholder="e.g. AiServe" required>
+                            <input type="text" class="form-control" name="company_name" placeholder="e.g. BizAI" required>
                         </div>
                         <div class="col-6">
                             <label class="form-label text-muted small">Industry</label>
@@ -35,7 +35,7 @@ require_once '../includes/header.php';
                     </div>
                     <div class="mb-3">
                         <label class="form-label text-muted small">Your Solution <span class="text-danger">*</span></label>
-                        <textarea class="form-control" name="solution" rows="3" placeholder="e.g. AiServe is the Business Operating System for SMEs — a single platform of AI Capsules that automates customer service, sales, HR, and finance." required></textarea>
+                        <textarea class="form-control" name="solution" rows="3" placeholder="e.g. BizAI is the Business Operating System for SMEs — a single platform of AI Capsules that automates customer service, sales, HR, and finance." required></textarea>
                     </div>
                     <div class="mb-3">
                         <label class="form-label text-muted small">Target Market</label>

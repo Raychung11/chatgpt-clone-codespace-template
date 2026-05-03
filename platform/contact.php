@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = 'Contact Us';
-$pageDesc  = 'Get in touch with the AiServe team. We\'re here to help you automate smarter.';
+$pageDesc  = 'Get in touch with the BizAI team. We\'re here to help you automate smarter.';
 require_once 'includes/header.php';
 ?>
 

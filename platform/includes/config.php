@@ -1,11 +1,10 @@
 <?php
 // ============================================================
-// AiServe Platform - Configuration
-// Edit these values before deploying to Hostinger
+// BizAI Platform - Configuration
 // ============================================================
 
-define('SITE_NAME', 'AiServe');
-define('SITE_URL', 'https://yourdomain.com'); // Change to your domain
+define('SITE_NAME', 'BizAI');
+define('SITE_URL', 'https://bizai.my');
 
 // Database (Hostinger MySQL)
 define('DB_HOST', 'localhost');
@@ -26,7 +25,7 @@ define('STRIPE_WEBHOOK_SECRET', 'whsec_YOUR_WEBHOOK_SECRET');
 define('SESSION_LIFETIME', 86400); // 24 hours
 
 // Admin email
-define('ADMIN_EMAIL', 'admin@yourdomain.com');
+define('ADMIN_EMAIL', 'admin@bizai.my');
 
 // App settings
 define('TRIAL_DAYS', 14);
@@ -37,6 +36,6 @@ define('TRIAL_DAYS', 14);
 if (!defined('CURRENCY'))        define('CURRENCY',        'MYR');
 if (!defined('APP_CURRENCY')) define('APP_CURRENCY', 'RM');
 
-// Error reporting (set to 0 in production)
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// Error reporting — off in production
+error_reporting(0);
+ini_set('display_errors', 0);

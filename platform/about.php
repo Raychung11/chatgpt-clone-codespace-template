@@ -3,7 +3,7 @@ require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
 $pageTitle = 'About Us';
-$pageDesc  = 'Learn about AiServe — built by founders who know SME pain. Our mission, team, and journey.';
+$pageDesc  = 'Learn about BizAI — built by founders who know SME pain. Our mission, team, and journey.';
 require_once 'includes/header.php';
 ?>
 
@@ -120,7 +120,7 @@ require_once 'includes/header.php';
       <span class="badge bg-primary-soft text-primary px-3 py-2 rounded-pill section-badge mb-3">
         <i class="bi bi-person-badge me-1"></i>The Team
       </span>
-      <h2 class="fw-bold display-6 mb-3">Meet the People Behind AiServe</h2>
+      <h2 class="fw-bold display-6 mb-3">Meet the People Behind BizAI</h2>
       <p class="text-muted">Passionate builders, designers, and operators on a mission.</p>
     </div>
     <div class="row g-4">
@@ -163,10 +163,10 @@ require_once 'includes/header.php';
       <div class="col-lg-8">
         <?php
         $timeline = [
-          ['year'=>'2022', 'title'=>'Founded', 'desc'=>'AiServe was born in a shared coworking space. Three co-founders, one whiteboard, and a clear vision: democratize AI for SMEs.', 'icon'=>'bi-rocket-takeoff', 'color'=>'#6366f1'],
+          ['year'=>'2022', 'title'=>'Founded', 'desc'=>'BizAI was born in a shared coworking space. Three co-founders, one whiteboard, and a clear vision: democratize AI for SMEs.', 'icon'=>'bi-rocket-takeoff', 'color'=>'#6366f1'],
           ['year'=>'2023', 'title'=>'First 10 Capsules Launched', 'desc'=>'We launched our first 10 AI Capsules focused on customer service and sales automation. 47 SMEs signed up in month one.', 'icon'=>'bi-cpu', 'color'=>'#06b6d4'],
           ['year'=>'2024', 'title'=>'100+ Customers', 'desc'=>'We crossed 100 paying customers, raised a seed round, and expanded our team to 22 people across 4 countries.', 'icon'=>'bi-people-fill', 'color'=>'#10b981'],
-          ['year'=>'2025', 'title'=>'BOS Platform Launched', 'desc'=>'We launched the full Business Operating System with 101 specialised AI Capsules across 8 business categories. 500+ SMEs now run on AiServe.', 'icon'=>'bi-trophy-fill', 'color'=>'#f59e0b'],
+          ['year'=>'2025', 'title'=>'BOS Platform Launched', 'desc'=>'We launched the full Business Operating System with 101 specialised AI Capsules across 8 business categories. 500+ SMEs now run on BizAI.', 'icon'=>'bi-trophy-fill', 'color'=>'#f59e0b'],
         ];
         foreach ($timeline as $i => $item):
         ?>
