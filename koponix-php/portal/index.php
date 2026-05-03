@@ -204,10 +204,13 @@ html_body_open();
 <?php else:
 // ── Logged in ────────────────────────────────────────────────
 $kop_id      = $member['koperasi_id'];
-$my_listings = get_sellers(['koperasi_id' => $kop_id]);
-$my_requests = get_requests(['member_kop_id' => $kop_id]);
-$active_l    = array_filter($my_listings, fn($s) => $s['status'] === 'active');
-$open_r      = array_filter($my_requests, fn($r) => $r['status'] === 'open');
+$my_listings  = get_sellers(['koperasi_id' => $kop_id]);
+$my_requests  = get_requests(['member_kop_id' => $kop_id]);
+$my_bookings  = get_bookings_for_buyer($kop_id);
+$inc_bookings = ($role === 'provider' || $role === 'admin') ? get_bookings_for_seller($kop_id) : [];
+$active_l     = array_filter($my_listings, fn($s) => $s['status'] === 'active');
+$open_r       = array_filter($my_requests, fn($r) => $r['status'] === 'open');
+$pending_inc  = array_filter($inc_bookings, fn($b) => $b['status'] === 'pending');
 $credits     = get_credits($kop_id);
 $ref_code    = ensure_referral_code($kop_id);
 $ref_url     = (defined('PORTAL_URL') ? PORTAL_URL : rtrim(defined('SITE_URL') ? SITE_URL : 'https://yourdomain.com', '/') . '/portal')
@@ -218,7 +221,12 @@ $ref_url     = (defined('PORTAL_URL') ? PORTAL_URL : rtrim(defined('SITE_URL') ?
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3"><div class="stat-box"><div class="val"><?= count($my_listings) ?></div><div class="lbl">My Listings</div></div></div>
     <div class="col-6 col-md-3"><div class="stat-box"><div class="val"><?= count($active_l) ?></div><div class="lbl">Active</div></div></div>
-    <div class="col-6 col-md-3"><div class="stat-box"><div class="val"><?= count($my_requests) ?></div><div class="lbl">My Requests</div></div></div>
+    <div class="col-6 col-md-3" onclick="window.location='?tab=bookings'" style="cursor:pointer">
+        <div class="stat-box">
+            <div class="val"><?= count($my_bookings) + count($inc_bookings) ?></div>
+            <div class="lbl">Bookings<?= $pending_inc ? ' 🔴' : '' ?></div>
+        </div>
+    </div>
     <div class="col-6 col-md-3">
         <div class="stat-box" style="background:linear-gradient(135deg,#f6d365,#fda085);cursor:pointer"
             onclick="window.location='?tab=credits'">
@@ -230,10 +238,13 @@ $ref_url     = (defined('PORTAL_URL') ? PORTAL_URL : rtrim(defined('SITE_URL') ?
 
 <ul class="nav nav-tabs mb-3 flex-wrap" id="portalTabs">
     <li class="nav-item"><a class="nav-link <?= $tab==='listings'?'active':'' ?>" href="?tab=listings">📋 My Listings</a></li>
+    <li class="nav-item"><a class="nav-link <?= $tab==='bookings'?'active':'' ?>" href="?tab=bookings">
+        📅 Bookings<?php if ($pending_inc): ?> <span class="badge bg-danger" style="font-size:.65rem"><?= count($pending_inc) ?></span><?php endif; ?>
+    </a></li>
     <li class="nav-item"><a class="nav-link <?= $tab==='requests'?'active':'' ?>" href="?tab=requests">🛒 My Requests</a></li>
     <li class="nav-item"><a class="nav-link <?= $tab==='credits'?'active':'' ?>" href="?tab=credits">💰 Credits &amp; Referral</a></li>
     <li class="nav-item"><a class="nav-link <?= $tab==='coaching'?'active':'' ?>" href="?tab=coaching">🤖 AI Coaching</a></li>
-    <li class="nav-item"><a class="nav-link <?= ($tab==='profile'||!in_array($tab,['listings','requests','credits','coaching']))?'active':'' ?>" href="?tab=profile">👤 Profile</a></li>
+    <li class="nav-item"><a class="nav-link <?= ($tab==='profile'||!in_array($tab,['listings','bookings','requests','credits','coaching']))?'active':'' ?>" href="?tab=profile">👤 Profile</a></li>
 </ul>
 
 <!-- My Listings -->
@@ -288,6 +299,97 @@ $ref_url     = (defined('PORTAL_URL') ? PORTAL_URL : rtrim(defined('SITE_URL') ?
 </div>
 <?php endif; ?>
 <a href="<?= MARKET_URL ?>/list.php" class="btn btn-primary mt-3">+ Add New Listing</a>
+
+<!-- ── Bookings ──────────────────────────────────────────── -->
+<?php elseif ($tab === 'bookings'):
+$bk_status = [
+    'pending'   => ['bg'=>'#fff3cd','color'=>'#856404','label'=>'⏳ Pending'],
+    'confirmed' => ['bg'=>'#d1e7dd','color'=>'#0a3622','label'=>'✅ Confirmed'],
+    'completed' => ['bg'=>'#cff4fc','color'=>'#055160','label'=>'🏁 Completed'],
+    'cancelled' => ['bg'=>'#f8d7da','color'=>'#842029','label'=>'❌ Cancelled'],
+];
+function bk_badge(string $s, array $map): string {
+    $st = $map[$s] ?? ['bg'=>'#eee','color'=>'#555','label'=>ucfirst($s)];
+    return "<span style='background:{$st['bg']};color:{$st['color']};padding:2px 10px;border-radius:20px;font-size:.72rem;font-weight:700'>{$st['label']}</span>";
+}
+
+// ── Seller confirm / decline ──
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['booking_id'], $_POST['action'])) {
+    verify_csrf();
+    $bid    = trim($_POST['booking_id']);
+    $action = trim($_POST['action']);
+    $bk     = get_booking($bid);
+    if ($bk && $bk['seller_kop_id'] === $kop_id && in_array($action, ['confirmed','cancelled'], true)) {
+        update_booking_status($bid, $action);
+        if ($action === 'confirmed') notify_booking_confirmed(get_booking($bid));
+        if ($action === 'cancelled') notify_booking_cancelled(get_booking($bid));
+        flash('Booking ' . $action . '.', 'success');
+        redirect(PORTAL_URL . '/?tab=bookings');
+    }
+}
+?>
+
+<?php if ($inc_bookings): ?>
+<div class="section-head">📥 Incoming Bookings
+    <?php if ($pending_inc): ?><span class="badge bg-danger ms-1"><?= count($pending_inc) ?> new</span><?php endif; ?>
+</div>
+<?php foreach ($inc_bookings as $b): ?>
+<div class="card mb-2 p-3" style="border-left:4px solid <?= $b['status']==='pending'?'#ffc107':($b['status']==='confirmed'?'#28a745':'#ccc') ?>">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+        <div>
+            <strong><?= e($b['service_title']) ?></strong>
+            <div class="small mt-1">👤 <strong><?= e($b['buyer_name']) ?></strong> &nbsp;·&nbsp; 📞 <?= e($b['buyer_contact']) ?></div>
+            <?php if ($b['booking_date']): ?><div class="small text-muted">📅 <?= date('d M Y', strtotime($b['booking_date'])) ?><?= $b['booking_time'] ? '  🕐 '.e($b['booking_time']) : '' ?></div><?php endif; ?>
+            <?php if ($b['notes']): ?><div class="small text-muted mt-1 p-2 rounded" style="background:#f8f9fa">📝 <?= e($b['notes']) ?></div><?php endif; ?>
+            <div class="small text-muted mt-1">Received: <?= date('d M Y, g:ia', strtotime($b['created_at'])) ?></div>
+        </div>
+        <div class="d-flex flex-column align-items-end gap-1">
+            <?= bk_badge($b['status'], $bk_status) ?>
+            <?php if ($b['status'] === 'pending'): ?>
+            <div class="d-flex gap-1 mt-1">
+                <form method="post"><input type="hidden" name="booking_id" value="<?= e($b['id']) ?>"><?= csrf_field() ?>
+                    <input type="hidden" name="action" value="confirmed">
+                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Confirm?')">✅ Confirm</button>
+                </form>
+                <form method="post"><input type="hidden" name="booking_id" value="<?= e($b['id']) ?>"><?= csrf_field() ?>
+                    <input type="hidden" name="action" value="cancelled">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Decline?')">✖ Decline</button>
+                </form>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+<?php endforeach; ?>
+<hr>
+<?php endif; ?>
+
+<div class="section-head">🛒 My Bookings (as buyer)</div>
+<?php if (!$my_bookings): ?>
+    <div class="alert alert-info">No bookings yet. <a href="<?= MARKET_URL ?>/">Browse services →</a></div>
+<?php else: ?>
+<?php foreach ($my_bookings as $b): ?>
+<div class="card mb-2 p-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+        <div>
+            <strong><?= e($b['service_title']) ?></strong>
+            <div class="small text-muted">Provider: <?= e($b['seller_name']) ?> &nbsp;·&nbsp; <?= e($b['category']) ?></div>
+            <?php if ($b['booking_date']): ?><div class="small text-muted">📅 <?= date('d M Y', strtotime($b['booking_date'])) ?><?= $b['booking_time'] ? '  🕐 '.e($b['booking_time']) : '' ?></div><?php endif; ?>
+            <?php if ($b['notes']): ?><div class="small text-muted">📝 <?= e(substr($b['notes'],0,100)) ?></div><?php endif; ?>
+            <div class="small text-muted">Submitted: <?= date('d M Y, g:ia', strtotime($b['created_at'])) ?></div>
+        </div>
+        <div class="d-flex flex-column align-items-end gap-1">
+            <?= bk_badge($b['status'], $bk_status) ?>
+            <?php if ($b['status'] === 'confirmed'): ?>
+            <a href="<?= PORTAL_URL ?>/messages.php?start=1&seller_kop=<?= urlencode($b['seller_kop_id']) ?>&seller_name=<?= urlencode($b['seller_name']) ?>&subject=<?= urlencode('Booking: '.$b['service_title']) ?>&seller_id=<?= urlencode($b['seller_id']) ?>"
+               class="btn btn-sm btn-outline-primary mt-1">💬 Message Provider</a>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+<?php endforeach; ?>
+<?php endif; ?>
+<a href="<?= MARKET_URL ?>/" class="btn btn-primary mt-2">+ New Booking</a>
 
 <!-- My Requests -->
 <?php elseif ($tab === 'requests'): ?>
