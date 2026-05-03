@@ -221,9 +221,9 @@ require_once 'includes/header.php';
                 <div class="pricing-card rounded-4 p-4 h-100">
                     <div class="text-muted small fw-semibold mb-2 text-uppercase tracking-wide">Starter</div>
                     <div class="display-5 fw-bold text-white mb-1">RM3,500<span class="fs-6 text-muted fw-normal">/mo</span></div>
-                    <p class="text-muted small mb-4">BOS Core + Customer Service Capsule. Solve your #1 pain immediately.</p>
+                    <p class="text-muted small mb-4">BizAI Platform + Customer Service Capsule. Solve your #1 pain immediately.</p>
                     <ul class="list-unstyled small mb-4">
-                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>BOS Core Platform</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>BizAI Platform</li>
                         <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Customer Service Capsule</li>
                         <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>FAQ automation</li>
                         <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Multi-language support</li>
@@ -237,9 +237,9 @@ require_once 'includes/header.php';
                     <div class="badge bg-primary position-absolute top-0 start-50 translate-middle px-3 py-2">Most Popular</div>
                     <div class="text-primary small fw-semibold mb-2 text-uppercase">Growth</div>
                     <div class="display-5 fw-bold text-white mb-1">RM10,000<span class="fs-6 text-muted fw-normal">/mo</span></div>
-                    <p class="text-muted small mb-4">BOS Core + 3 Capsules. Automate customer service, sales, and marketing.</p>
+                    <p class="text-muted small mb-4">BizAI Platform + 3 Capsules. Automate customer service, sales, and marketing.</p>
                     <ul class="list-unstyled small mb-4">
-                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>BOS Core Platform</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>BizAI Platform</li>
                         <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Customer Service Capsule</li>
                         <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Sales Conversion Capsule</li>
                         <li class="mb-2 text-muted"><i class="bi bi-check-circle-fill text-success me-2"></i>Marketing Automation Capsule</li>

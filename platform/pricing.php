@@ -2,8 +2,8 @@
 require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
-$pageTitle = 'Pricing — BOS Plans';
-$pageDesc  = 'BizAI BOS pricing. Choose the plan that fits your business — Starter, Growth, or Enterprise. Includes BOS Core + AI Capsules.';
+$pageTitle = 'Pricing — Capsule Plans';
+$pageDesc  = 'BizAI pricing. Choose the Capsule plan that fits your business — Starter, Growth, or Enterprise. 14-day free trial included.';
 require_once 'includes/header.php';
 ?>
 
@@ -17,8 +17,8 @@ require_once 'includes/header.php';
       One System. <span class="text-gradient">Every Department.</span>
     </h1>
     <p class="text-muted mb-2" style="max-width:560px;margin:0 auto">
-      Every plan includes the <strong class="text-white">BOS Core</strong> — your central operating system —
-      plus the AI Capsules that automate the departments you choose.
+      Every plan comes with AI Capsules that automate the departments you choose —
+      <strong class="text-white">plug in, switch on, and let BizAI run it.</strong>
     </p>
     <p class="text-muted small mt-2">Prices in Malaysian Ringgit (RM) · Monthly subscription · 14-day free trial</p>
   </div>
@@ -39,19 +39,19 @@ require_once 'includes/header.php';
               </div>
               <h5 class="fw-bold mb-0">Starter</h5>
             </div>
-            <p class="text-muted small">Solve your #1 pain first. BOS Core + Customer Service Capsule to replace manual customer handling.</p>
+            <p class="text-muted small">Solve your #1 pain first. BizAI Platform + Customer Service Capsule to replace manual customer handling.</p>
           </div>
           <div class="mb-4">
             <div class="d-flex align-items-end gap-1">
               <span class="display-5 fw-bold">RM3,500</span>
               <span class="text-muted mb-2">/mo</span>
             </div>
-            <div class="text-muted small">BOS Core + 1 Capsule</div>
+            <div class="text-muted small">BizAI Platform + 1 Capsule</div>
           </div>
           <ul class="list-unstyled flex-grow-1 mb-4">
             <?php
             $starter_features = [
-              ['text'=>'BOS Core Platform',             'ok'=>true],
+              ['text'=>'BizAI Platform',             'ok'=>true],
               ['text'=>'Customer Service Capsule',       'ok'=>true],
               ['text'=>'WhatsApp AI Inbox (5 users)',    'ok'=>true],
               ['text'=>'CRM — up to 2,000 contacts',    'ok'=>true],
@@ -88,19 +88,19 @@ require_once 'includes/header.php';
               </div>
               <h5 class="fw-bold mb-0">Growth</h5>
             </div>
-            <p class="text-muted small">BOS Core + 3 Capsules. Customer service, sales conversion, and marketing automation — all running automatically.</p>
+            <p class="text-muted small">BizAI Platform + 3 Capsules. Customer service, sales conversion, and marketing automation — all running automatically.</p>
           </div>
           <div class="mb-4">
             <div class="d-flex align-items-end gap-1">
               <span class="display-5 fw-bold text-gradient">RM10,000</span>
               <span class="text-muted mb-2">/mo</span>
             </div>
-            <div class="text-muted small">BOS Core + 3 Capsules · Save RM4,500 vs individual</div>
+            <div class="text-muted small">BizAI Platform + 3 Capsules · Save RM4,500 vs individual</div>
           </div>
           <ul class="list-unstyled flex-grow-1 mb-4">
             <?php
             $growth_features = [
-              ['text'=>'BOS Core Platform',              'ok'=>true],
+              ['text'=>'BizAI Platform',              'ok'=>true],
               ['text'=>'Customer Service Capsule',        'ok'=>true],
               ['text'=>'Sales Conversion Capsule',        'ok'=>true],
               ['text'=>'Marketing Automation Capsule',    'ok'=>true],
@@ -145,7 +145,7 @@ require_once 'includes/header.php';
           <ul class="list-unstyled flex-grow-1 mb-4">
             <?php
             $enterprise_features = [
-              ['text'=>'BOS Core Platform',              'ok'=>true],
+              ['text'=>'BizAI Platform',              'ok'=>true],
               ['text'=>'All 6 Capsules included',        'ok'=>true],
               ['text'=>'AI Decision Layer',               'ok'=>true],
               ['text'=>'WhatsApp AI Inbox (unlimited)',   'ok'=>true],
@@ -183,7 +183,7 @@ require_once 'includes/header.php';
       <span class="badge bg-primary-soft text-primary px-3 py-2 rounded-pill mb-3">
         <i class="bi bi-puzzle-fill me-1"></i>Add-on Capsules
       </span>
-      <h2 class="fw-bold display-6">Expand Your BOS Anytime</h2>
+      <h2 class="fw-bold display-6">Add More Capsules Anytime</h2>
       <p class="text-muted">Already on a plan? Add individual Capsules as your business grows.</p>
     </div>
     <div class="row g-3">
@@ -240,7 +240,7 @@ require_once 'includes/header.php';
           <tbody>
             <?php
             $compare = [
-              ['feature'=>'BOS Core Platform',          'starter'=>true,          'growth'=>true,            'enterprise'=>true],
+              ['feature'=>'BizAI Platform',          'starter'=>true,          'growth'=>true,            'enterprise'=>true],
               ['feature'=>'WhatsApp AI Inbox users',    'starter'=>'5',           'growth'=>'20',            'enterprise'=>'Unlimited'],
               ['feature'=>'CRM Contacts',               'starter'=>'2,000',       'growth'=>'Unlimited',     'enterprise'=>'Unlimited'],
               ['feature'=>'Customer Service Capsule',   'starter'=>true,          'growth'=>true,            'enterprise'=>true],
@@ -288,10 +288,10 @@ require_once 'includes/header.php';
         <div class="accordion" id="pricingFAQ">
           <?php
           $pfaqs = [
-            ['q'=>'What is the BOS Core?',
-             'a'=>'BOS Core is the central platform included in every plan — it\'s the WhatsApp AI Inbox, CRM, automation engine, and dashboard. Think of it as the "machine" that runs your business. Capsules are the modules you plug into it.'],
+            ['q'=>'What is the BizAI Platform?',
+             'a'=>'BizAI Platform is the central system included in every plan — it\'s the WhatsApp AI Inbox, CRM, automation engine, and dashboard. Think of it as the "machine" that runs your business. Capsules are the modules you plug into it.'],
             ['q'=>'What is a Capsule?',
-             'a'=>'A Capsule is a plug-and-play AI module built for a specific business function — Customer Service, Sales, HR, Marketing, etc. Each Capsule is pre-built, continuously improved, and activates within your BOS Core instantly.'],
+             'a'=>'A Capsule is a plug-and-play AI module built for a specific business function — Customer Service, Sales, HR, Marketing, etc. Each Capsule is pre-built, continuously improved, and activates within your Capsule plan Core instantly.'],
             ['q'=>'Can I add Capsules later?',
              'a'=>'Yes. You can add individual Capsules at any time from your dashboard. Each add-on Capsule is billed on top of your base plan at the published monthly rate.'],
             ['q'=>'Do I need a credit card to start the trial?',
