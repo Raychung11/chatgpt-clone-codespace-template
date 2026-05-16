@@ -79,11 +79,11 @@ html_body_open();
     <h4 style="color:#1e8449;font-weight:800">Booking Request Sent!</h4>
     <p class="text-muted">Your booking request for <strong><?= e($seller['service_title']) ?></strong> has been submitted.</p>
     <p class="text-muted small">The provider will review and confirm your booking shortly.
-    <?php if ($member): ?>A confirmation will also appear in your <a href="<?= PORTAL_URL ?>/bookings.php">My Bookings</a> page.<?php endif; ?>
+    <?php if ($member): ?>A confirmation will also appear in your <a href="<?= PORTAL_URL ?>/?tab=bookings">My Bookings</a> page.<?php endif; ?>
     </p>
     <div class="d-flex gap-2 justify-content-center mt-3 flex-wrap">
         <?php if ($member): ?>
-            <a href="<?= PORTAL_URL ?>/bookings.php" class="btn btn-primary">📋 View My Bookings</a>
+            <a href="<?= PORTAL_URL ?>/?tab=bookings" class="btn btn-primary">📋 View My Bookings</a>
         <?php endif; ?>
         <a href="<?= MARKET_URL ?>/" class="btn btn-outline-secondary">Browse More Services</a>
     </div>

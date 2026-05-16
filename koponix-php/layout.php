@@ -277,7 +277,7 @@ function csrfFetch(url, opts = {}) {
                 <li><a class="dropdown-item" href="<?= PORTAL_URL ?>/?tab=profile">👤 My Profile</a></li>
                 <li><a class="dropdown-item" href="<?= PORTAL_URL ?>/?tab=listings">📋 My Listings</a></li>
                 <li><a class="dropdown-item" href="<?= PORTAL_URL ?>/?tab=requests">🛒 My Requests</a></li>
-                <li><a class="dropdown-item" href="<?= PORTAL_URL ?>/bookings.php">📅 My Bookings</a></li>
+                <li><a class="dropdown-item" href="<?= PORTAL_URL ?>/?tab=bookings">📅 My Bookings</a></li>
                 <li><a class="dropdown-item" href="<?= PORTAL_URL ?>/messages.php">💬 Messages</a></li>
                 <li><a class="dropdown-item" href="<?= PORTAL_URL ?>/?tab=credits">
                     💰 Credits &amp; Referral

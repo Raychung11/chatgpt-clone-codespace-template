@@ -822,7 +822,7 @@ function notify_new_booking(array $b): void {
             <tr><td style='padding:6px 0;color:#888'>Date requested</td><td><strong>{$date}</strong></td></tr>
             <tr><td style='padding:6px 0;color:#888'>Contact</td><td><strong>" . htmlspecialchars($b['buyer_contact'], ENT_QUOTES, 'UTF-8') . "</strong></td></tr>
         </table>
-        <p><a href='" . PORTAL_URL . "/bookings.php' style='background:#1a5276;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:12px'>View &amp; Confirm Booking →</a></p>"
+        <p><a href='" . PORTAL_URL . "/?tab=bookings' style='background:#1a5276;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:12px'>View &amp; Confirm Booking →</a></p>"
     );
 }
 
@@ -839,7 +839,7 @@ function notify_booking_confirmed(array $b): void {
         <p>Hi <strong>{$m['name']}</strong>,</p>
         <p><strong>{$seller}</strong> has confirmed your booking for <strong>\"{$title}\"</strong>.</p>
         <p>You may now contact the provider directly to arrange the details.</p>
-        <p><a href='" . PORTAL_URL . "/bookings.php' style='background:#1a5276;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:12px'>View My Bookings →</a></p>"
+        <p><a href='" . PORTAL_URL . "/?tab=bookings' style='background:#1a5276;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:12px'>View My Bookings →</a></p>"
     );
 }
 
