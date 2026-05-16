@@ -231,7 +231,7 @@ if (!empty($avatarJobs)) {
             clog("  ERROR (code $apiErrCode): " . ($result['error'] ?? 'unknown'));
             // Give code 50215 a 5-minute grace period: BytePlus can return this
             // transiently while the task is still being validated in their queue.
-            $jobAgeSeconds  = time() - strtotime($job['started_at'] ?: $job['created_at']);
+            $jobAgeSeconds  = time() - (int)strtotime($job['started_at'] ?? $job['created_at'] ?? 'now');
             $pastGrace      = ($jobAgeSeconds > 300);
             $permanentCodes = [50204, 50200];
             $delayedCodes   = [50215];
@@ -378,7 +378,7 @@ if ($caTableExists) {
             if (!$result['ok']) {
                 $apiErrCode = (int)($result['raw']['code'] ?? 0);
                 clog("  ERROR (code $apiErrCode): " . ($result['error'] ?? 'unknown'));
-                $jobAge     = time() - strtotime($job['started_at'] ?: $job['created_at']);
+                $jobAge     = time() - (int)strtotime($job['started_at'] ?? $job['created_at'] ?? 'now');
                 $pastGrace  = ($jobAge > 300);
                 if (in_array($apiErrCode, [50204, 50200], true)
                     || ($apiErrCode === 50215 && $pastGrace)) {

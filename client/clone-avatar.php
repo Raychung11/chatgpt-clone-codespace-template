@@ -126,8 +126,6 @@ if (($_GET['_action'] ?? '') === 'poll') {
     if (!$job) { json_response(['error' => 'Not found'], 404); }
 
     if (in_array($job['status'], ['queued', 'processing'])) {
-        $taskId = $pdo->prepare('SELECT api_task_id FROM clone_avatar_jobs WHERE id=?')
-                      ->execute([$jobId]) ? null : null;
         $row = $pdo->prepare('SELECT api_task_id FROM clone_avatar_jobs WHERE id=?');
         $row->execute([$jobId]);
         $taskId = $row->fetchColumn();
@@ -226,7 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['_action'])) {
     if (!empty($_FILES['audio_file']['tmp_name'])) {
         $file    = $_FILES['audio_file'];
         $allowed = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/wave', 'audio/x-wav', 'audio/ogg', 'audio/webm'];
-        $mime    = mime_content_type($file['tmp_name']);
+        $mime    = (new \finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
         if (!in_array($mime, $allowed, true)) {
             $errors[] = 'Invalid audio format. Upload MP3 or WAV.';
         } elseif ($file['size'] > 50 * 1024 * 1024) {
@@ -258,8 +256,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['_action'])) {
     if (empty($errors)) {
         $pdo->beginTransaction();
         try {
-            wallet_deduct($uid, $creditCost, 'clone_avatar_job', 0, 'Clone Avatar job');
-
             $ins = $pdo->prepare(
                 'INSERT INTO clone_avatar_jobs
                  (user_id, resource_id, audio_path, audio_url, credit_cost, status)
@@ -268,10 +264,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['_action'])) {
             $ins->execute([$uid, $resourceId, $audioPath, $audioUrl, $creditCost]);
             $jobId = (int)$pdo->lastInsertId();
 
-            // Update wallet deduction reference
-            $pdo->prepare(
-                'UPDATE wallet_transactions SET reference_id=? WHERE user_id=? AND reference_type="clone_avatar_job" AND reference_id=0 ORDER BY id DESC LIMIT 1'
-            )->execute([$jobId, $uid]);
+            $deduct = wallet_deduct($uid, $creditCost, 'deduction', 'clone_avatar_job', $jobId,
+                'Clone Avatar job #' . $jobId);
+            if (!$deduct['ok']) {
+                $pdo->rollBack();
+                if ($audioPath && is_file($audioPath)) @unlink($audioPath);
+                $errors[] = $deduct['error'];
+                goto render;
+            }
 
             // Submit to BytePlus immediately
             $submit = clone_avatar_create_task($resourceId, $audioUrl);
@@ -297,6 +297,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['_action'])) {
         if ($audioPath && is_file($audioPath)) @unlink($audioPath);
     }
 }
+render:
 
 // ── Load recent jobs ──────────────────────────────────────────────────────────
 $jobs = [];
