@@ -115,6 +115,23 @@ if (isset($_POST['action']) && $_POST['action'] === 'change_password' && is_logg
 }
 
 $member = current_member();
+
+// ── Handle booking confirm / decline (seller action) ─────────
+if ($member && $_SERVER['REQUEST_METHOD'] === 'POST'
+    && isset($_POST['booking_id'], $_POST['action'])
+    && in_array($_POST['action'], ['confirmed','cancelled'], true)) {
+    $bid    = trim($_POST['booking_id']);
+    $action = $_POST['action'];
+    $bk     = get_booking($bid);
+    if ($bk && $bk['seller_kop_id'] === $member['koperasi_id']) {
+        update_booking_status($bid, $action);
+        if ($action === 'confirmed') notify_booking_confirmed(get_booking($bid));
+        if ($action === 'cancelled') notify_booking_cancelled(get_booking($bid));
+        flash('Booking ' . $action . '.', 'success');
+    }
+    redirect(PORTAL_URL . '/?tab=bookings');
+}
+
 html_head('Member Portal');
 html_body_open();
 ?>
@@ -308,25 +325,10 @@ $bk_status = [
     'completed' => ['bg'=>'#cff4fc','color'=>'#055160','label'=>'🏁 Completed'],
     'cancelled' => ['bg'=>'#f8d7da','color'=>'#842029','label'=>'❌ Cancelled'],
 ];
-function bk_badge(string $s, array $map): string {
+$bk_badge = function(string $s, array $map): string {
     $st = $map[$s] ?? ['bg'=>'#eee','color'=>'#555','label'=>ucfirst($s)];
     return "<span style='background:{$st['bg']};color:{$st['color']};padding:2px 10px;border-radius:20px;font-size:.72rem;font-weight:700'>{$st['label']}</span>";
-}
-
-// ── Seller confirm / decline ──
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['booking_id'], $_POST['action'])) {
-    verify_csrf();
-    $bid    = trim($_POST['booking_id']);
-    $action = trim($_POST['action']);
-    $bk     = get_booking($bid);
-    if ($bk && $bk['seller_kop_id'] === $kop_id && in_array($action, ['confirmed','cancelled'], true)) {
-        update_booking_status($bid, $action);
-        if ($action === 'confirmed') notify_booking_confirmed(get_booking($bid));
-        if ($action === 'cancelled') notify_booking_cancelled(get_booking($bid));
-        flash('Booking ' . $action . '.', 'success');
-        redirect(PORTAL_URL . '/?tab=bookings');
-    }
-}
+};
 ?>
 
 <?php if ($inc_bookings): ?>
@@ -344,7 +346,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['booking_id'], $_POST[
             <div class="small text-muted mt-1">Received: <?= date('d M Y, g:ia', strtotime($b['created_at'])) ?></div>
         </div>
         <div class="d-flex flex-column align-items-end gap-1">
-            <?= bk_badge($b['status'], $bk_status) ?>
+            <?= $bk_badge($b['status'], $bk_status) ?>
             <?php if ($b['status'] === 'pending'): ?>
             <div class="d-flex gap-1 mt-1">
                 <form method="post"><input type="hidden" name="booking_id" value="<?= e($b['id']) ?>"><?= csrf_field() ?>
@@ -379,7 +381,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['booking_id'], $_POST[
             <div class="small text-muted">Submitted: <?= date('d M Y, g:ia', strtotime($b['created_at'])) ?></div>
         </div>
         <div class="d-flex flex-column align-items-end gap-1">
-            <?= bk_badge($b['status'], $bk_status) ?>
+            <?= $bk_badge($b['status'], $bk_status) ?>
             <?php if ($b['status'] === 'confirmed'): ?>
             <a href="<?= PORTAL_URL ?>/messages.php?start=1&seller_kop=<?= urlencode($b['seller_kop_id']) ?>&seller_name=<?= urlencode($b['seller_name']) ?>&subject=<?= urlencode('Booking: '.$b['service_title']) ?>&seller_id=<?= urlencode($b['seller_id']) ?>"
                class="btn btn-sm btn-outline-primary mt-1">💬 Message Provider</a>
