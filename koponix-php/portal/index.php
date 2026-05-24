@@ -116,18 +116,20 @@ if (isset($_POST['action']) && $_POST['action'] === 'change_password' && is_logg
 
 $member = current_member();
 
-// ── Handle booking confirm / decline (seller action) ─────────
+// ── Handle booking status updates (seller action) ────────────
 if ($member && $_SERVER['REQUEST_METHOD'] === 'POST'
     && isset($_POST['booking_id'], $_POST['action'])
-    && in_array($_POST['action'], ['confirmed','cancelled'], true)) {
+    && in_array($_POST['action'], ['confirmed','cancelled','completed'], true)) {
     $bid    = trim($_POST['booking_id']);
     $action = $_POST['action'];
     $bk     = get_booking($bid);
     if ($bk && $bk['seller_kop_id'] === $member['koperasi_id']) {
         update_booking_status($bid, $action);
-        if ($action === 'confirmed') notify_booking_confirmed(get_booking($bid));
-        if ($action === 'cancelled') notify_booking_cancelled(get_booking($bid));
-        flash('Booking ' . $action . '.', 'success');
+        $bk = get_booking($bid);
+        if ($action === 'confirmed')  notify_booking_confirmed($bk);
+        if ($action === 'cancelled')  notify_booking_cancelled($bk);
+        if ($action === 'completed')  notify_booking_completed($bk);
+        flash('Booking marked as ' . $action . '.', 'success');
     }
     redirect(PORTAL_URL . '/?tab=bookings');
 }
@@ -351,13 +353,21 @@ $bk_badge = function(string $s, array $map): string {
             <div class="d-flex gap-1 mt-1">
                 <form method="post"><input type="hidden" name="booking_id" value="<?= e($b['id']) ?>"><?= csrf_field() ?>
                     <input type="hidden" name="action" value="confirmed">
-                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Confirm?')">✅ Confirm</button>
+                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Confirm this booking?')">✅ Confirm</button>
                 </form>
                 <form method="post"><input type="hidden" name="booking_id" value="<?= e($b['id']) ?>"><?= csrf_field() ?>
                     <input type="hidden" name="action" value="cancelled">
-                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Decline?')">✖ Decline</button>
+                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Decline this booking?')">✖ Decline</button>
                 </form>
             </div>
+            <?php elseif ($b['status'] === 'confirmed'): ?>
+            <form method="post" class="mt-1">
+                <input type="hidden" name="booking_id" value="<?= e($b['id']) ?>">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="completed">
+                <button type="submit" class="btn btn-sm btn-outline-info"
+                    onclick="return confirm('Mark this booking as completed?')">🏁 Mark Completed</button>
+            </form>
             <?php endif; ?>
         </div>
     </div>

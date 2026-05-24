@@ -859,6 +859,34 @@ function notify_booking_cancelled(array $b): void {
     );
 }
 
+// ── WhatsApp URL ─────────────────────────────────────────────
+function whatsapp_url(string $contact, string $msg = ''): string {
+    $phone = preg_replace('/\D/', '', $contact);
+    // Malaysian local format: 01x... → 601x...
+    if (strlen($phone) >= 9 && ($phone[0] ?? '') === '0') {
+        $phone = '60' . substr($phone, 1);
+    }
+    if (strlen($phone) < 8) return '';
+    return 'https://wa.me/' . $phone . ($msg ? '?text=' . rawurlencode($msg) : '');
+}
+
+function notify_booking_completed(array $b): void {
+    if (!$b['buyer_kop_id']) return;
+    $m = get_member_by_kop_id($b['buyer_kop_id']);
+    if (!$m || empty($m['email'])) return;
+    $title  = htmlspecialchars($b['service_title'], ENT_QUOTES, 'UTF-8');
+    $seller = htmlspecialchars($b['seller_name'],   ENT_QUOTES, 'UTF-8');
+    send_notification_email(
+        $m['email'],
+        "🏁 Service completed — {$b['service_title']}",
+        "<h2 style='color:#055160'>🏁 Service Completed</h2>
+        <p>Hi <strong>{$m['name']}</strong>,</p>
+        <p><strong>{$seller}</strong> has marked your booking for <strong>\"{$title}\"</strong> as completed.</p>
+        <p>Thank you for using Koponix!</p>
+        <p><a href='" . PORTAL_URL . "/?tab=bookings' style='background:#1a5276;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block;margin-top:12px'>View My Bookings →</a></p>"
+    );
+}
+
 // ── Escape ───────────────────────────────────────────────────
 function e(string $s): string { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
 

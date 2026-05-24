@@ -126,10 +126,13 @@ html_body_open();
         <div class="card h-100" style="border-radius:14px;overflow:hidden;box-shadow:0 3px 12px rgba(0,0,0,.09);border:none">
 
             <!-- Card image / gradient header -->
+            <?php $view_url = MARKET_URL . '/view.php?id=' . urlencode($s['id']); ?>
             <?php if ($has_img): ?>
-                <div style="height:180px;overflow:hidden;position:relative">
+                <a href="<?= $view_url ?>" style="display:block;height:180px;overflow:hidden;position:relative;text-decoration:none">
                     <img src="<?= e(img_url($s['image'])) ?>"
-                        style="width:100%;height:100%;object-fit:cover">
+                        style="width:100%;height:100%;object-fit:cover;transition:transform .3s"
+                        onmouseover="this.style.transform='scale(1.04)'"
+                        onmouseout="this.style.transform='scale(1)'">
                     <div style="position:absolute;bottom:0;left:0;right:0;height:60px;
                                 background:linear-gradient(transparent,rgba(0,0,0,.55))"></div>
                     <span style="position:absolute;bottom:10px;left:12px">
@@ -141,17 +144,17 @@ html_body_open();
                         📷 <?= count($gallery)+1 ?> photos
                     </span>
                     <?php endif; ?>
-                </div>
+                </a>
             <?php else: ?>
-                <div style="height:80px;background:linear-gradient(135deg,<?= $color ?>,<?= $color ?>aa);
-                            display:flex;align-items:center;padding:0 1rem;gap:.75rem">
+                <a href="<?= $view_url ?>" style="display:block;height:80px;background:linear-gradient(135deg,<?= $color ?>,<?= $color ?>aa);
+                            display:flex;align-items:center;padding:0 1rem;gap:.75rem;text-decoration:none">
                     <span style="font-size:2.2rem"><?= $icon ?></span>
                     <span><?= cat_badge($s['category']) ?></span>
-                </div>
+                </a>
             <?php endif; ?>
 
             <div class="card-body p-3">
-                <h6 style="font-weight:700;color:#1a3a52;margin-bottom:.3rem"><?= e($s['service_title']) ?></h6>
+                <a href="<?= $view_url ?>" style="font-weight:700;color:#1a3a52;margin-bottom:.3rem;display:block;text-decoration:none;font-size:1rem;line-height:1.3"><?= e($s['service_title']) ?></a>
                 <div class="meta">👤 <strong><?= e($s['name']) ?></strong>
                     <?php if ($s['experience']): ?>
                         &nbsp;|&nbsp; 🏅 <?= e($s['experience']) ?>
@@ -179,8 +182,9 @@ html_body_open();
 
             <div class="card-footer bg-white border-top-0 pb-3 px-3 pt-0">
                 <div class="d-flex gap-2 flex-wrap">
+                    <a href="<?= $view_url ?>" class="btn btn-sm btn-outline-secondary">👁 View</a>
                     <a href="<?= MARKET_URL ?>/book.php?id=<?= urlencode($s['id']) ?>"
-                       class="btn btn-sm btn-primary">📅 Book Now</a>
+                       class="btn btn-sm btn-primary">📅 Book</a>
                     <?php if (is_logged_in()): ?>
                     <a href="<?= PORTAL_URL ?>/messages.php?start=1&seller_kop=<?= urlencode($s['koperasi_id']) ?>&seller_name=<?= urlencode($s['name']) ?>&subject=<?= urlencode('Enquiry: '.$s['service_title']) ?>&seller_id=<?= urlencode($s['id']) ?>"
                        class="btn btn-sm btn-outline-primary">💬 Message</a>

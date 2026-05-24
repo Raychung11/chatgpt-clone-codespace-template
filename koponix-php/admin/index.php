@@ -92,6 +92,13 @@ if ($is_admin && isset($_POST['action'])) {
             flash('Member ' . e($kop_id) . ' added successfully.');
         }
         $tab = 'members';
+    } elseif ($act === 'update_booking') {
+        $new_status = $_POST['bk_status'] ?? '';
+        if (in_array($new_status, ['pending','confirmed','completed','cancelled'], true)) {
+            update_booking_status($id, $new_status);
+            flash('Booking status updated to ' . $new_status . '.');
+        }
+        $tab = 'bookings';
     } elseif ($act === 'import_csv') {
         $csv = '';
         $csv_file = $_FILES['csv_file'] ?? [];
@@ -128,10 +135,12 @@ $sellers  = $is_admin ? get_sellers() : [];
 $pending  = $is_admin ? get_pending_sellers() : [];
 $requests = $is_admin ? get_requests() : [];
 $members  = $is_admin ? get_all_members() : [];
+$bookings = $is_admin ? get_all_bookings() : [];
 
-$active_count   = count(array_filter($sellers, fn($s) => $s['status'] === 'active'));
-$pending_count  = count($pending);
-$open_requests  = count(array_filter($requests, fn($r) => $r['status'] === 'open'));
+$active_count      = count(array_filter($sellers, fn($s) => $s['status'] === 'active'));
+$pending_count     = count($pending);
+$open_requests     = count(array_filter($requests, fn($r) => $r['status'] === 'open'));
+$pending_bookings  = count(array_filter($bookings, fn($b) => $b['status'] === 'pending'));
 
 html_head('Admin Dashboard');
 html_body_open();
@@ -195,6 +204,12 @@ html_body_open();
             <div class="lbl">Members</div>
         </div>
     </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-box" style="<?= $pending_bookings > 0 ? 'border:2px solid #2e86c1' : '' ?>">
+            <div class="val" style="color:<?= $pending_bookings > 0 ? '#1a5276' : 'var(--primary)' ?>"><?= count($bookings) ?></div>
+            <div class="lbl">Bookings<?= $pending_bookings ? ' 🔵' : '' ?></div>
+        </div>
+    </div>
 </div>
 
 <!-- ── Tabs ── -->
@@ -218,6 +233,14 @@ html_body_open();
     </li>
     <li class="nav-item">
         <a class="nav-link <?= $tab==='members'?'active':'' ?>" href="?tab=members">👥 Members</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <?= $tab==='bookings'?'active':'' ?>" href="?tab=bookings">
+            📅 Bookings
+            <?php if ($pending_bookings > 0): ?>
+                <span class="badge bg-primary ms-1"><?= $pending_bookings ?></span>
+            <?php endif; ?>
+        </a>
     </li>
     <li class="nav-item">
         <a class="nav-link <?= $tab==='import'?'active':'' ?>" href="?tab=import">⬆️ Import</a>
@@ -539,6 +562,87 @@ html_body_open();
         onclick="this.select()"><?= "name,koperasi_id,email,password\nAhmad Bin Ali,KKBR-00101,ahmad@email.com,temppass123\nSiti Binti Omar,KKBR-00102,siti@email.com,temppass456" ?></textarea>
     <small class="text-muted">Click the box above to select all, then copy (Ctrl+C).</small>
 </div>
+
+<?php /* ══════════════════ BOOKINGS ══════════════════ */ elseif ($tab === 'bookings'): ?>
+
+<?php
+$bk_status_styles = [
+    'pending'   => ['bg'=>'#fff3cd','color'=>'#856404','label'=>'⏳ Pending'],
+    'confirmed' => ['bg'=>'#d1e7dd','color'=>'#0a3622','label'=>'✅ Confirmed'],
+    'completed' => ['bg'=>'#cff4fc','color'=>'#055160','label'=>'🏁 Completed'],
+    'cancelled' => ['bg'=>'#f8d7da','color'=>'#842029','label'=>'❌ Cancelled'],
+];
+$adm_bk_badge = function(string $s) use ($bk_status_styles): string {
+    $st = $bk_status_styles[$s] ?? ['bg'=>'#eee','color'=>'#555','label'=>ucfirst($s)];
+    return "<span style='background:{$st['bg']};color:{$st['color']};padding:2px 10px;border-radius:20px;font-size:.72rem;font-weight:700'>{$st['label']}</span>";
+};
+// Filter
+$bk_filter = $_GET['bkstatus'] ?? '';
+$displayed  = $bk_filter ? array_filter($bookings, fn($b) => $b['status'] === $bk_filter) : $bookings;
+?>
+
+<div class="d-flex gap-2 mb-3 flex-wrap">
+    <?php foreach ([''=>'All','pending'=>'⏳ Pending','confirmed'=>'✅ Confirmed','completed'=>'🏁 Completed','cancelled'=>'❌ Cancelled'] as $val => $lbl): ?>
+    <a href="?tab=bookings<?= $val ? '&bkstatus='.$val : '' ?>"
+       class="btn btn-sm <?= $bk_filter === $val ? 'btn-primary' : 'btn-outline-secondary' ?>">
+        <?= $lbl ?> <?php if ($val): ?><span class="badge bg-white text-dark ms-1"><?= count(array_filter($bookings, fn($b) => $b['status'] === $val)) ?></span><?php endif; ?>
+    </a>
+    <?php endforeach; ?>
+</div>
+
+<?php if (empty($displayed)): ?>
+    <div class="alert alert-info">No bookings found<?= $bk_filter ? ' with status: '.$bk_filter : '' ?>.</div>
+<?php else: ?>
+<div class="table-responsive">
+<table class="table table-sm table-hover small align-middle">
+<thead class="table-light">
+    <tr>
+        <th>Buyer</th>
+        <th>Service / Provider</th>
+        <th>Date Requested</th>
+        <th>Preferred Date</th>
+        <th>Status</th>
+        <th>Change Status</th>
+    </tr>
+</thead>
+<tbody>
+<?php foreach ($displayed as $bk): ?>
+<tr>
+    <td>
+        <strong><?= e($bk['buyer_name']) ?></strong><br>
+        <span class="text-muted" style="font-size:.7rem"><?= e($bk['buyer_contact']) ?></span>
+        <?php if ($bk['buyer_kop_id']): ?>
+            <br><span class="text-muted" style="font-size:.7rem"><?= e($bk['buyer_kop_id']) ?></span>
+        <?php endif; ?>
+    </td>
+    <td>
+        <strong><?= e($bk['service_title']) ?></strong><br>
+        <span class="text-muted" style="font-size:.7rem">👤 <?= e($bk['seller_name']) ?> · <?= e($bk['seller_kop_id']) ?></span>
+    </td>
+    <td><?= date('d M Y', strtotime($bk['created_at'])) ?></td>
+    <td><?= $bk['booking_date'] ? date('d M Y', strtotime($bk['booking_date'])) : '<span class="text-muted">Flexible</span>' ?></td>
+    <td><?= $adm_bk_badge($bk['status']) ?></td>
+    <td>
+        <form method="post" class="d-flex gap-1">
+            <?= csrf_field() ?>
+            <input type="hidden" name="id"     value="<?= e($bk['id']) ?>">
+            <input type="hidden" name="action" value="update_booking">
+            <input type="hidden" name="tab"    value="bookings">
+            <select name="bk_status" class="form-select form-select-sm" style="width:auto;font-size:.75rem">
+                <?php foreach (['pending','confirmed','completed','cancelled'] as $st): ?>
+                    <option value="<?= $st ?>" <?= $bk['status']===$st?'selected':'' ?>><?= $st ?></option>
+                <?php endforeach; ?>
+            </select>
+            <button type="submit" class="btn btn-sm btn-outline-primary" style="font-size:.73rem;padding:2px 8px">Save</button>
+        </form>
+    </td>
+</tr>
+<?php endforeach; ?>
+</tbody>
+</table>
+</div>
+<p class="small text-muted">Showing <?= count($displayed) ?> of <?= count($bookings) ?> total booking(s).</p>
+<?php endif; ?>
 
 <?php endif; // end tab switch ?>
 
