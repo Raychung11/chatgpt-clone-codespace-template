@@ -2,7 +2,7 @@
 require_once '../includes/config.php';
 require_once '../includes/db.php';
 require_once '../includes/auth.php';
-Auth::requireLogin();
+Auth::requireModuleAccess('job_description');
 $pageTitle = 'Job Description Writer';
 require_once '../includes/header.php';
 ?>

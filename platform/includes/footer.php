@@ -121,6 +121,26 @@
 
     loadCount();
 })();
+
+// Global fetch interceptor: redirect to upgrade page if API returns upgrade:true
+(function () {
+    const _fetch = window.fetch;
+    window.fetch = async function (...args) {
+        const res = await _fetch(...args);
+        const clone = res.clone();
+        try {
+            const url = typeof args[0] === 'string' ? args[0] : (args[0]?.url ?? '');
+            if (url.includes('ai-generate.php')) {
+                const data = await clone.json();
+                if (data && data.upgrade === true) {
+                    window.location.href = '/upgrade.php';
+                    return res;
+                }
+            }
+        } catch (e) {}
+        return res;
+    };
+})();
 </script>
 </body>
 </html>

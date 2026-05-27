@@ -48,6 +48,56 @@ class Auth {
         }
     }
 
+    /**
+     * True if the current user may use AI modules.
+     * Passes if: admin, active trial, active subscription, or completed purchase.
+     */
+    public static function hasModuleAccess(): bool {
+        if (!self::check()) return false;
+        if (self::isAdmin()) return true;
+
+        $userId = self::id();
+
+        // Trial period (calculated from account creation)
+        try {
+            $u = DB::fetch('SELECT created_at FROM users WHERE id = ?', [$userId]);
+            if ($u && defined('TRIAL_DAYS')) {
+                $trialEnd = strtotime($u['created_at']) + (TRIAL_DAYS * 86400);
+                if (time() <= $trialEnd) return true;
+            }
+        } catch (Throwable $e) {}
+
+        // Active subscription
+        try {
+            $sub = DB::fetch(
+                "SELECT id FROM subscriptions WHERE user_id = ? AND status IN ('active','trialing') LIMIT 1",
+                [$userId]
+            );
+            if ($sub) return true;
+        } catch (Throwable $e) {}
+
+        // Completed one-time purchase
+        try {
+            $pur = DB::fetch(
+                "SELECT id FROM purchases WHERE user_id = ? AND status = 'completed' LIMIT 1",
+                [$userId]
+            );
+            if ($pur) return true;
+        } catch (Throwable $e) {}
+
+        return false;
+    }
+
+    /** Require login + active access; redirect to upgrade page if expired. */
+    public static function requireModuleAccess(string $module = ''): void {
+        self::requireLogin();
+        if (!self::hasModuleAccess()) {
+            $q = $module ? '?from=' . urlencode($module) : '';
+            header('Location: /upgrade.php' . $q);
+            exit;
+        }
+    }
+
     public static function requireAdmin(): void {
         self::requireLogin('/login.php');
         if ($_SESSION['user_role'] !== 'admin') {

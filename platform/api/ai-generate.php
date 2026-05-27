@@ -14,9 +14,13 @@ require_once __DIR__ . '/../includes/ai-memory.php';
 
 header('Content-Type: application/json');
 
-/* Must be logged in */
+/* Must be logged in with active access */
 if (!Auth::check()) {
     echo json_encode(['ok' => false, 'error' => 'Please log in to use AI tools.']);
+    exit;
+}
+if (!Auth::hasModuleAccess()) {
+    echo json_encode(['ok' => false, 'error' => 'Your trial has ended. Please upgrade to continue using AI tools.', 'upgrade' => true]);
     exit;
 }
 
