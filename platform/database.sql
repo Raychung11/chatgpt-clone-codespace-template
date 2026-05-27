@@ -913,6 +913,18 @@ CREATE TABLE IF NOT EXISTS user_leave_requests (
   FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- AI conversation memory (persists context per user per module)
+CREATE TABLE IF NOT EXISTS ai_memory (
+  id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT NOT NULL,
+  module_key VARCHAR(100) NOT NULL,
+  role       ENUM('user','assistant') NOT NULL,
+  content    TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_user_module (user_id, module_key),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- AI tool usage log (optional analytics)
 CREATE TABLE IF NOT EXISTS ai_usage_log (
   id         INT AUTO_INCREMENT PRIMARY KEY,

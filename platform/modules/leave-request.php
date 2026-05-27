@@ -213,6 +213,7 @@ require_once '../includes/header.php';
 </div>
 
 <script>
+window.AI_MODULE_KEY = 'leave_reason';
 // Date pickers — update days count and set end min
 document.getElementById('startDate').addEventListener('change', function() {
     document.getElementById('endDate').min = this.value;
@@ -253,6 +254,7 @@ async function aiSuggest() {
         const json = await res.json();
         if (json.ok) {
             document.getElementById('reasonField').value = json.text.trim();
+            if (typeof refreshMemoryWidget === 'function') refreshMemoryWidget();
         } else {
             alert(json.error || 'AI suggestion failed.');
         }

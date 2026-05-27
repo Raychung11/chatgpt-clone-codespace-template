@@ -128,6 +128,7 @@ require_once '../includes/header.php';
 </div>
 
 <script>
+window.AI_MODULE_KEY = 'email';
 const form = document.getElementById('emailForm');
 const generateBtn = document.getElementById('generateBtn');
 
@@ -146,6 +147,7 @@ async function runGenerate() {
         const json = await res.json();
         if (json.ok) {
             showResult(json.text);
+                    if (typeof refreshMemoryWidget === 'function') refreshMemoryWidget();
         } else {
             showError(json.error || 'Generation failed. Please try again.');
         }

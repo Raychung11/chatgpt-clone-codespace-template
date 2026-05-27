@@ -10,6 +10,7 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/claude.php';
+require_once __DIR__ . '/../includes/ai-memory.php';
 
 header('Content-Type: application/json');
 
@@ -25,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $module = trim($_POST['module'] ?? '');
+$userId = Auth::id();
 
 /* ── Helpers ── */
 function req(string $key, string $default = ''): string {
@@ -58,7 +60,7 @@ Subject: [subject line here]
 
 [email body here]";
 
-        $result = Claude::generate($system, $user, 800);
+        $result = Claude::generate($system, $user, 800, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -88,7 +90,7 @@ Format each as:
 [post content]
 ---";
 
-        $result = Claude::generate($system, $user, 1200);
+        $result = Claude::generate($system, $user, 1200, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -135,7 +137,7 @@ Notes: {$notes}
 
 Generate a well-formatted HTML invoice. Use a white background, clean table for line items, include totals row with subtotal and total. Professional style.";
 
-        $result = Claude::generate($system, $user, 2000);
+        $result = Claude::generate($system, $user, 2000, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -155,7 +157,7 @@ Brief reason: {$brief}
 
 Output ONLY the leave request message (2-3 sentences). No greeting needed.";
 
-        $result = Claude::generate($system, $user, 300);
+        $result = Claude::generate($system, $user, 300, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -172,7 +174,7 @@ Output ONLY the leave request message (2-3 sentences). No greeting needed.";
 
         $system = "You are a professional meeting secretary. Transform raw notes into clear, structured meeting minutes. Output in the specified language.";
         $user   = "Meeting: {$title}\nDate: {$date}\nAttendees: {$attendees}\nAgenda: {$agenda}\nRaw notes: {$notes}\nLanguage: {$language}\n\nWrite formal meeting minutes with these sections:\nMEETING MINUTES\n[Title & Date]\n\nATTENDEES\n[list]\n\nAGENDA\n[items]\n\nDISCUSSION & DECISIONS\n[key points and decisions]\n\nACTION ITEMS\n[Owner | Task | Deadline]\n\nNEXT MEETING\n[if mentioned]";
-        $result = Claude::generate($system, $user, 1200);
+        $result = Claude::generate($system, $user, 1200, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -192,7 +194,7 @@ Output ONLY the leave request message (2-3 sentences). No greeting needed.";
 
         $system = "You are an experienced HR specialist. Write compelling, clear job descriptions that attract the right candidates.";
         $user   = "Write a complete job description:\n\nJob Title: {$title}\nDepartment: {$dept}\nEmployment Type: {$empType}\nLocation: {$location}\nCompany: {$company}\nKey Responsibilities: {$resp}\nRequirements: {$reqs}\nNice to Have: {$niceToHave}\nSalary Range: {$salary}\n\nStructure:\nJOB TITLE\nABOUT THE ROLE\nKEY RESPONSIBILITIES\nREQUIREMENTS\nNICE TO HAVE\nWHAT WE OFFER\nHOW TO APPLY";
-        $result = Claude::generate($system, $user, 1500);
+        $result = Claude::generate($system, $user, 1500, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -211,7 +213,7 @@ Output ONLY the leave request message (2-3 sentences). No greeting needed.";
 
         $system = "You are a senior sales consultant. Write persuasive, professional sales proposals that win deals.";
         $user   = "Write a {$tone} sales proposal:\n\nFrom: {$ourCompany}\nTo: {$clientName} at {$clientCompany}\nClient challenges: {$painPoints}\nProposed solution: {$solution}\nPricing: {$pricing}\nTimeline: {$timeline}\n\nStructure:\nSALES PROPOSAL\nEXECUTIVE SUMMARY\nUNDERSTANDING YOUR CHALLENGES\nOUR PROPOSED SOLUTION\nHOW WE WORK\nTIMELINE\nINVESTMENT\nWHY CHOOSE US\nNEXT STEPS";
-        $result = Claude::generate($system, $user, 1800);
+        $result = Claude::generate($system, $user, 1800, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -230,7 +232,7 @@ Output ONLY the leave request message (2-3 sentences). No greeting needed.";
 
         $system = "You are an expert digital advertising copywriter. Write high-converting ad copy for each platform, respecting their best practices and character limits.";
         $user   = "Write ad copy for:\n\nProduct/Service: {$product}\nDescription: {$desc}\nTarget Audience: {$audience}\nPlatforms: {$platforms}\nObjective: {$objective}\nUnique Selling Point: {$usp}\nTone: {$tone}\n\nFor each platform include headline, body copy, and CTA. Separate each platform section with ---\nGoogle Search: 3 headlines (≤30 chars each) + 2 descriptions (≤90 chars each)\nFacebook/Instagram: headline + body + CTA\nTikTok: hook line + 15-30s script outline + CTA\nLinkedIn: professional headline + body + CTA";
-        $result = Claude::generate($system, $user, 1500);
+        $result = Claude::generate($system, $user, 1500, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -247,7 +249,7 @@ Output ONLY the leave request message (2-3 sentences). No greeting needed.";
 
         $system = "You are a customer service expert. Write professional, empathetic replies that resolve issues and retain customers.";
         $user   = "Write a {$tone} reply to this customer {$msgType}:\n\nCUSTOMER MESSAGE:\n{$message}\n\nResolution/Action: {$resolution}\nReply from: {$yourName} at {$company}\n\nWrite a complete response that acknowledges the concern, explains the resolution, and closes positively. Output only the reply.";
-        $result = Claude::generate($system, $user, 800);
+        $result = Claude::generate($system, $user, 800, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -265,7 +267,7 @@ Output ONLY the leave request message (2-3 sentences). No greeting needed.";
 
         $system = "You are an expert product copywriter. Write compelling, SEO-friendly product descriptions that convert browsers into buyers.";
         $user   = "Write a {$tone} product description for {$platform}:\n\nProduct: {$name}\nCategory: {$category}\nKey Features: {$features}\nTarget Customer: {$customer}\nLength: {$length}\n\nInclude: compelling headline, short description (1-2 sentences), key benefits (bullets), detailed description, and 5-8 SEO keywords.";
-        $result = Claude::generate($system, $user, 1200);
+        $result = Claude::generate($system, $user, 1200, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -283,7 +285,7 @@ Output ONLY the leave request message (2-3 sentences). No greeting needed.";
 
         $system = "You are an operations management expert. Write clear, comprehensive Standard Operating Procedures that anyone can follow.";
         $user   = "Write a formal SOP:\n\nProcess: {$processName}\nDepartment: {$dept}\nObjective: {$objective}\nSteps: {$steps}\nTools Required: {$tools}\nFrequency: {$frequency}\nVersion: {$version}\n\nStructure:\nSTANDARD OPERATING PROCEDURE\nDocument Title | Version | Department | Frequency\n\n1. PURPOSE\n2. SCOPE\n3. TOOLS & RESOURCES REQUIRED\n4. RESPONSIBILITIES\n5. PROCEDURE (numbered, detailed steps)\n6. QUALITY CHECKS\n7. NOTES & EXCEPTIONS";
-        $result = Claude::generate($system, $user, 1800);
+        $result = Claude::generate($system, $user, 1800, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -303,7 +305,7 @@ Output ONLY the leave request message (2-3 sentences). No greeting needed.";
 
         $system = "You are an experienced HR manager. Write balanced, constructive performance reviews that motivate employees and support their development.";
         $user   = "Write a {$revType} performance review:\n\nEmployee: {$empName} | Role: {$role}\nReview Period: {$period} | Overall Rating: {$rating}\nReviewer: {$reviewer}\n\nAchievements/Strengths: {$achieve}\nAreas for Improvement: {$improve}\nGoals for Next Period: {$goals}\n\nStructure:\nPERFORMANCE REVIEW\nEmployee & Role | Period | Rating\n\nPERFORMANCE SUMMARY\nKEY ACHIEVEMENTS\nAREAS FOR DEVELOPMENT\nGOALS FOR NEXT PERIOD\nREVIEWER'S COMMENTS\nReviewed by: {$reviewer}";
-        $result = Claude::generate($system, $user, 1500);
+        $result = Claude::generate($system, $user, 1500, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -340,7 +342,7 @@ After all templates, add:
 BEST PRACTICE TIPS
 [3 tips for sending this type of message]";
 
-        $result = Claude::generate($system, $user, 1500);
+        $result = Claude::generate($system, $user, 1500, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -387,7 +389,7 @@ RECOMMENDATIONS & NEXT STEPS
 OUTLOOK
 Prepared by: {$preparedBy}";
 
-        $result = Claude::generate($system, $user, 1800);
+        $result = Claude::generate($system, $user, 1800, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -424,7 +426,7 @@ After the sequence, add:
 SEND TIPS
 [timing, follow-up rules, personalisation advice]";
 
-        $result = Claude::generate($system, $user, 1800);
+        $result = Claude::generate($system, $user, 1800, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -469,7 +471,7 @@ Include these sections:
 Add placeholder [DATE], [SIGNATURE], [NRIC/SSM] where appropriate.
 End with: ⚠️ This is an AI-generated draft for reference only. Have a qualified lawyer review before signing.";
 
-        $result = Claude::generate($system, $user, 2500);
+        $result = Claude::generate($system, $user, 2500, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -527,7 +529,7 @@ TOP 3 RECOMMENDATIONS
 CASH FLOW OUTLOOK
 [Near-term cash position advice]";
 
-        $result = Claude::generate($system, $user, 1800);
+        $result = Claude::generate($system, $user, 1800, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -571,7 +573,7 @@ MODULE OUTLINE
 KEY TAKEAWAYS
 [5 bullet points summarising the most important lessons]{$quizSection}";
 
-        $result = Claude::generate($system, $user, 3000);
+        $result = Claude::generate($system, $user, 3000, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -631,7 +633,7 @@ CLOSING MESSAGE
 IMPLEMENTATION NOTES
 [Tips for setting this up on {$channel}]";
 
-        $result = Claude::generate($system, $user, 2500);
+        $result = Claude::generate($system, $user, 2500, $module, $userId);
         echo json_encode($result);
         break;
 
@@ -709,7 +711,7 @@ SLIDE 12 — THE ASK
 
 For each slide: write the HEADLINE (bold) and 3-5 bullet points or short paragraphs of content.";
 
-        $result = Claude::generate($system, $user, 3000);
+        $result = Claude::generate($system, $user, 3000, $module, $userId);
         echo json_encode($result);
         break;
 

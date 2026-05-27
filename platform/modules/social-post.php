@@ -104,6 +104,7 @@ require_once '../includes/header.php';
 </div>
 
 <script>
+window.AI_MODULE_KEY = 'social';
 const platformIcons = { 'Facebook': 'bi-facebook', 'Instagram': 'bi-instagram', 'LinkedIn': 'bi-linkedin', 'Twitter/X': 'bi-twitter-x' };
 const platformColors = { 'Facebook': '#1877f2', 'Instagram': '#e1306c', 'LinkedIn': '#0a66c2', 'Twitter/X': '#000' };
 
@@ -124,7 +125,8 @@ form.addEventListener('submit', async (e) => {
     try {
         const res = await fetch('/api/ai-generate.php', { method: 'POST', body: data });
         const json = await res.json();
-        if (json.ok) { lastRawText = json.text; showResult(json.text); }
+        if (json.ok) { lastRawText = json.text; showResult(json.text); if (typeof refreshMemoryWidget === 'function') refreshMemoryWidget();
+                    if (typeof refreshMemoryWidget === 'function') refreshMemoryWidget(); }
         else showError(json.error || 'Generation failed.');
     } catch (err) {
         showError('Network error. Please check your connection.');

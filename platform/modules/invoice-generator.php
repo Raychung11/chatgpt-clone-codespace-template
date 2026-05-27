@@ -131,6 +131,7 @@ require_once '../includes/header.php';
 <iframe id="printFrame" style="display:none"></iframe>
 
 <script>
+window.AI_MODULE_KEY = 'invoice';
 function addItem() {
     const row = document.createElement('div');
     row.className = 'line-item row g-1 mb-2 align-items-center';
@@ -188,7 +189,7 @@ form.addEventListener('submit', async (e) => {
     try {
         const res = await fetch('/api/ai-generate.php', { method: 'POST', body: data });
         const json = await res.json();
-        if (json.ok) showPreview(json.text);
+        if (json.ok) { showPreview(json.text); if (typeof refreshMemoryWidget === 'function') refreshMemoryWidget(); }
         else showError(json.error || 'Generation failed.');
     } catch(err) {
         showError('Network error. Please try again.');

@@ -66,5 +66,61 @@
 <!-- AI Chat Widget -->
 <script src="/assets/js/chat-widget.js"></script>
 <?= isset($extraScripts) ? $extraScripts : '' ?>
+
+<!-- AI Memory Widget (auto-shows on module pages that set window.AI_MODULE_KEY) -->
+<div id="memoryWidget" style="display:none;position:fixed;bottom:24px;left:24px;z-index:1050">
+    <div style="background:#1a1a2e;border:1px solid rgba(99,102,241,0.35);border-radius:50px;padding:7px 14px 7px 10px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,0.5)">
+        <i class="bi bi-brain" style="color:#6366f1;font-size:15px"></i>
+        <span id="memoryCount" style="color:#a5b4fc;font-size:12px;font-weight:500">0 exchanges</span>
+        <button id="memoryClearBtn" title="Clear conversation memory"
+            style="background:none;border:none;padding:0 2px;cursor:pointer;color:#6b7280;line-height:1"
+            onclick="clearMemory()">
+            <i class="bi bi-trash3" style="font-size:12px"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+(function () {
+    if (typeof window.AI_MODULE_KEY === 'undefined') return;
+
+    const moduleKey = window.AI_MODULE_KEY;
+    const widget    = document.getElementById('memoryWidget');
+    const countEl   = document.getElementById('memoryCount');
+
+    function loadCount() {
+        fetch('/api/memory-status.php?module=' + encodeURIComponent(moduleKey))
+            .then(r => r.json())
+            .then(d => {
+                if (d.ok) {
+                    const n = d.count;
+                    countEl.textContent = n === 1 ? '1 exchange' : n + ' exchanges';
+                    widget.style.display = n > 0 ? 'block' : 'none';
+                }
+            })
+            .catch(() => {});
+    }
+
+    window.clearMemory = function () {
+        if (!confirm('Clear AI memory for this tool? The AI will forget your previous context.')) return;
+        const fd = new FormData();
+        fd.append('module', moduleKey);
+        fetch('/api/clear-memory.php', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(d => {
+                if (d.ok) {
+                    countEl.textContent = '0 exchanges';
+                    widget.style.display = 'none';
+                }
+            })
+            .catch(() => {});
+    };
+
+    // Expose refresh so modules can call it after each generation
+    window.refreshMemoryWidget = loadCount;
+
+    loadCount();
+})();
+</script>
 </body>
 </html>

@@ -91,6 +91,7 @@ require_once '../includes/header.php';
 </div>
 
 <script>
+window.AI_MODULE_KEY = 'sop';
 const form = document.getElementById('moduleForm');
 const btn  = document.getElementById('generateBtn');
 form.addEventListener('submit', e => { e.preventDefault(); generate(); });
@@ -101,7 +102,7 @@ async function generate() {
     try {
         const res  = await fetch('/api/ai-generate.php', { method:'POST', body:data });
         const json = await res.json();
-        json.ok ? setState('result', json.text) : setState('error', json.error || 'Generation failed.');
+        json.ok ? (setState('result', json.text), typeof refreshMemoryWidget === 'function' && refreshMemoryWidget()) : setState('error', json.error || 'Generation failed.');
     } catch { setState('error', 'Network error. Please check your connection.'); }
 }
 function setState(s, content='') {
