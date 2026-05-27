@@ -1,8 +1,96 @@
 <?php
 // ============================================================
-// BizAI Debug — upload to public_html/debug.php
+// BizAI Debug v2 — upload to public_html/debug.php
 // DELETE THIS FILE after you fix the issue!
 // ============================================================
+
+// Override config.php's error suppression
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/biz_debug.log');
+
+echo '<pre style="font-family:monospace;font-size:13px;background:#111;color:#0f0;padding:20px">';
+echo "=== BizAI Debug v2 ===\n\n";
+
+echo "PHP: " . PHP_VERSION . " | Server: " . ($_SERVER['SERVER_SOFTWARE'] ?? 'unknown') . "\n\n";
+
+// Step 1 — load core files individually and catch each error
+$files = [
+    'includes/config.php',
+    'includes/db.php',
+    'includes/auth.php',
+    'includes/header.php',
+];
+
+foreach ($files as $f) {
+    echo "Loading $f ... ";
+    ob_start();
+    try {
+        require_once __DIR__ . '/' . $f;
+        $out = ob_get_clean();
+        echo "OK" . ($out ? " (output: " . strlen($out) . " bytes)" : "") . "\n";
+    } catch (Throwable $e) {
+        ob_end_clean();
+        echo "FATAL ERROR:\n  " . get_class($e) . ": " . $e->getMessage() . "\n  File: " . $e->getFile() . ":" . $e->getLine() . "\n";
+        echo "\nFix this error first, then re-run debug.\n</pre>";
+        exit;
+    }
+}
+
+echo "\n--- Testing index.php key logic ---\n";
+// Test the DB calls index.php makes
+try {
+    $featuredProducts = DB::fetchAll(
+        'SELECT p.*, c.name as cat_name, c.icon as cat_icon, c.color as cat_color
+         FROM products p LEFT JOIN categories c ON p.category_id = c.id
+         WHERE p.is_featured = 1 AND p.is_active = 1 ORDER BY p.sort_order LIMIT 6'
+    );
+    echo "OK: featured products query (" . count($featuredProducts) . " rows)\n";
+} catch (Throwable $e) {
+    echo "ERROR in featured products query: " . $e->getMessage() . "\n";
+}
+
+try {
+    $categories = DB::fetchAll('SELECT *, (SELECT COUNT(*) FROM products WHERE category_id=categories.id AND is_active=1) as product_count FROM categories ORDER BY sort_order');
+    echo "OK: categories query (" . count($categories) . " rows)\n";
+} catch (Throwable $e) {
+    echo "ERROR in categories query: " . $e->getMessage() . "\n";
+}
+
+try {
+    $n = DB::fetch('SELECT COUNT(*) as n FROM products WHERE is_active=1')['n'];
+    echo "OK: products count = $n\n";
+} catch (Throwable $e) {
+    echo "ERROR: " . $e->getMessage() . "\n";
+}
+
+echo "\n--- Testing footer.php ---\n";
+ob_start();
+try {
+    require_once __DIR__ . '/includes/footer.php';
+    $out = ob_get_clean();
+    echo "OK: footer.php loaded (" . strlen($out) . " bytes output)\n";
+} catch (Throwable $e) {
+    ob_end_clean();
+    echo "FATAL ERROR in footer.php:\n  " . $e->getMessage() . "\n  File: " . $e->getFile() . ":" . $e->getLine() . "\n";
+}
+
+// Check error log we just created
+echo "\n--- biz_debug.log (PHP warnings/notices) ---\n";
+$log = __DIR__ . '/biz_debug.log';
+if (file_exists($log)) {
+    $lines = array_slice(file($log), -30);
+    echo htmlspecialchars(implode('', $lines));
+    unlink($log); // clean up
+} else {
+    echo "No PHP warnings/notices logged — good!\n";
+}
+
+echo "\n=== Done ===\n";
+echo '</pre>';
+echo '<p style="color:red;font-weight:bold;font-family:sans-serif">⚠️ DELETE debug.php after fixing the issue!</p>';
+
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
