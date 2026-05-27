@@ -7,6 +7,38 @@ $pageTitle = 'Cash Flow';
 
 $msg = '';
 
+// Guard — create tables if they don't exist yet
+DB::query("CREATE TABLE IF NOT EXISTS cash_accounts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(200) NOT NULL,
+  account_type ENUM('bank','cash','ewallet','petty_cash') DEFAULT 'bank',
+  bank_name VARCHAR(200),
+  account_number VARCHAR(100),
+  opening_balance DECIMAL(12,2) DEFAULT 0,
+  current_balance DECIMAL(12,2) DEFAULT 0,
+  currency VARCHAR(10) DEFAULT 'MYR',
+  status ENUM('active','inactive') DEFAULT 'active',
+  outlet_id INT DEFAULT NULL,
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)");
+
+DB::query("CREATE TABLE IF NOT EXISTS cash_transactions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  account_id INT NOT NULL,
+  transaction_type ENUM('inflow','outflow','transfer') DEFAULT 'inflow',
+  category VARCHAR(100),
+  description TEXT,
+  amount DECIMAL(12,2) NOT NULL,
+  reference VARCHAR(200),
+  transaction_date DATE NOT NULL,
+  outlet_id INT DEFAULT NULL,
+  reconciled TINYINT(1) DEFAULT 0,
+  created_by INT,
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)");
+
 // ── POST handlers ────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
