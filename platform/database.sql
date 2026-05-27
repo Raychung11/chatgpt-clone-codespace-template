@@ -6,6 +6,35 @@
 CREATE DATABASE IF NOT EXISTS ai101_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE ai101_platform;
 
+-- Company workspaces (Unified Identity)
+-- NOTE: companies table must be created before users (no FK on companies at creation time)
+-- Run these ALTER statements after both tables exist:
+--   ALTER TABLE companies ADD FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL;
+--   ALTER TABLE users     ADD FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL;
+CREATE TABLE IF NOT EXISTS companies (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    name       VARCHAR(200) NOT NULL,
+    slug       VARCHAR(200) NOT NULL UNIQUE,
+    industry   VARCHAR(100) DEFAULT '',
+    size       ENUM('1-5','6-20','21-50','51-200','200+') DEFAULT '1-5',
+    owner_id   INT DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Team invitations
+CREATE TABLE IF NOT EXISTS company_invitations (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    company_id  INT NOT NULL,
+    email       VARCHAR(200) NOT NULL,
+    token       VARCHAR(64) NOT NULL UNIQUE,
+    role        ENUM('admin','member') DEFAULT 'member',
+    invited_by  INT DEFAULT NULL,
+    expires_at  DATETIME NOT NULL,
+    accepted_at DATETIME DEFAULT NULL,
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+);
+
 -- Users (customers + admins)
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -14,6 +43,8 @@ CREATE TABLE users (
     password VARCHAR(255) NOT NULL,
     role ENUM('admin','customer') DEFAULT 'customer',
     company VARCHAR(150),
+    company_id INT DEFAULT NULL,
+    company_role ENUM('owner','admin','member') DEFAULT 'owner',
     phone VARCHAR(30),
     avatar VARCHAR(255),
     stripe_customer_id VARCHAR(100),

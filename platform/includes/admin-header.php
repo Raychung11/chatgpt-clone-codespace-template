@@ -52,6 +52,9 @@ function adminBadge(string $sql): int {
         <a href="/admin/clients.php" class="admin-nav-link <?= $adminPage === 'clients' ? 'active' : '' ?>">
             <i class="bi bi-people"></i> Customers
         </a>
+        <a href="/admin/companies.php" class="admin-nav-link <?= $adminPage === 'companies' ? 'active' : '' ?>">
+            <i class="bi bi-buildings"></i> Companies
+        </a>
         <a href="/admin/subscriptions.php" class="admin-nav-link <?= $adminPage === 'subscriptions' ? 'active' : '' ?>">
             <i class="bi bi-repeat"></i> Subscriptions
         </a>

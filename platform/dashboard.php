@@ -367,10 +367,42 @@ require_once 'includes/header.php';
                         <?php endif; ?>
                     </div>
                 </div>
-                <a href="/account.php" class="btn btn-outline-secondary btn-sm w-100">
+                <a href="/account.php" class="btn btn-outline-secondary btn-sm w-100 mb-2">
                     <i class="bi bi-gear me-1"></i>Account Settings
                 </a>
+                <a href="/team.php" class="btn btn-outline-primary btn-sm w-100">
+                    <i class="bi bi-people me-1"></i>Team &amp; Workspace
+                </a>
             </div>
+
+            <!-- Team / Workspace Widget -->
+            <?php
+            $teamCompany = null;
+            $teamCount   = 0;
+            try {
+                $cid = $user['company_id'] ?? null;
+                if (!$cid) {
+                    $uc  = DB::fetch('SELECT company_id FROM users WHERE id = ?', [$user['id']]);
+                    $cid = $uc['company_id'] ?? null;
+                }
+                if ($cid) {
+                    $teamCompany = DB::fetch('SELECT name FROM companies WHERE id = ?', [$cid]);
+                    $teamCount   = (int)(DB::fetch('SELECT COUNT(*) as n FROM users WHERE company_id = ?', [$cid])['n'] ?? 0);
+                }
+            } catch (Throwable $e) {}
+            if ($teamCompany):
+            ?>
+            <div class="glass-card rounded-4 p-4 mb-4">
+                <h6 class="text-white fw-semibold mb-2"><i class="bi bi-buildings me-2 text-primary"></i>Workspace</h6>
+                <div class="text-white fw-semibold small mb-1"><?= htmlspecialchars($teamCompany['name']) ?></div>
+                <div class="text-muted small mb-3">
+                    <i class="bi bi-people me-1"></i><?= $teamCount ?> member<?= $teamCount !== 1 ? 's' : '' ?>
+                </div>
+                <a href="/team.php" class="btn btn-sm btn-outline-secondary w-100">
+                    <i class="bi bi-person-plus me-1"></i>Manage Team
+                </a>
+            </div>
+            <?php endif; ?>
 
             <!-- Recommended -->
             <?php if ($recommended): ?>

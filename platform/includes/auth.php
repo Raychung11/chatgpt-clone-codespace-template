@@ -15,10 +15,15 @@ class Auth {
         self::start();
         $user = DB::fetch('SELECT * FROM users WHERE email = ? LIMIT 1', [strtolower(trim($email))]);
         if ($user && password_verify($password, $user['password'])) {
-            $_SESSION['user_id']   = $user['id'];
-            $_SESSION['user_name'] = $user['name'];
-            $_SESSION['user_role'] = $user['role'];
-            $_SESSION['user_email']= $user['email'];
+            $_SESSION['user_id']    = $user['id'];
+            $_SESSION['user_name']  = $user['name'];
+            $_SESSION['user_role']  = $user['role'];
+            $_SESSION['user_email'] = $user['email'];
+            // Cache company info if columns exist
+            if (array_key_exists('company_id', $user)) {
+                $_SESSION['company_id']   = $user['company_id'];
+                $_SESSION['company_role'] = $user['company_role'] ?? 'member';
+            }
             return true;
         }
         return false;
@@ -60,16 +65,31 @@ class Auth {
     public static function register(string $name, string $email, string $password, string $company = ''): int|false {
         $exists = DB::fetch('SELECT id FROM users WHERE email = ?', [strtolower(trim($email))]);
         if ($exists) return false;
-        $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+        $hash  = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
         $token = bin2hex(random_bytes(32));
-        return DB::insert('users', [
-            'name'          => htmlspecialchars($name),
-            'email'         => strtolower(trim($email)),
-            'password'      => $hash,
-            'company'       => htmlspecialchars($company),
-            'email_token'   => $token,
-            'role'          => 'customer',
+        $userId = DB::insert('users', [
+            'name'        => htmlspecialchars($name),
+            'email'       => strtolower(trim($email)),
+            'password'    => $hash,
+            'company'     => htmlspecialchars($company),
+            'email_token' => $token,
+            'role'        => 'customer',
         ]);
+
+        // Create company workspace and link user as owner
+        try {
+            self::ensureCompanyColumns();
+            $wsName    = $company ?: (trim($name) . "'s Workspace");
+            $slug      = self::makeCompanySlug($wsName);
+            $companyId = DB::insert('companies', [
+                'name'     => htmlspecialchars($wsName),
+                'slug'     => $slug,
+                'owner_id' => $userId,
+            ]);
+            DB::update('users', ['company_id' => $companyId, 'company_role' => 'owner'], 'id = ?', [$userId]);
+        } catch (Throwable $e) { /* graceful if companies table not yet deployed */ }
+
+        return $userId;
     }
 
     public static function id(): ?int {
@@ -80,6 +100,36 @@ class Auth {
     public static function isAdmin(): bool {
         self::start();
         return ($_SESSION['user_role'] ?? '') === 'admin';
+    }
+
+    public static function companyId(): ?int {
+        self::start();
+        if (!self::check()) return null;
+        if (array_key_exists('company_id', $_SESSION)) return $_SESSION['company_id'] ?: null;
+        try {
+            $u = DB::fetch('SELECT company_id FROM users WHERE id = ?', [self::id()]);
+            $_SESSION['company_id'] = $u['company_id'] ?? null;
+        } catch (Throwable $e) {
+            $_SESSION['company_id'] = null;
+        }
+        return $_SESSION['company_id'];
+    }
+
+    public static function companyRole(): string {
+        self::start();
+        if (!self::check()) return '';
+        if (isset($_SESSION['company_role'])) return $_SESSION['company_role'];
+        try {
+            $u = DB::fetch('SELECT company_role FROM users WHERE id = ?', [self::id()]);
+            $_SESSION['company_role'] = $u['company_role'] ?? 'member';
+        } catch (Throwable $e) {
+            $_SESSION['company_role'] = 'member';
+        }
+        return $_SESSION['company_role'];
+    }
+
+    public static function isCompanyOwner(): bool {
+        return in_array(self::companyRole(), ['owner', 'admin']);
     }
 
     /** Check if user owns a product (active subscription or purchase) */
@@ -96,7 +146,22 @@ class Auth {
         );
         return (bool) $purchase;
     }
-}
+
+    public static function ensureCompanyColumns(): void {
+        try { DB::query("ALTER TABLE users ADD COLUMN company_id INT DEFAULT NULL"); } catch (Throwable $e) {}
+        try { DB::query("ALTER TABLE users ADD COLUMN company_role ENUM('owner','admin','member') DEFAULT 'owner'"); } catch (Throwable $e) {}
+    }
+
+    private static function makeCompanySlug(string $name): string {
+        $slug = strtolower(trim(preg_replace('/[^a-z0-9]+/i', '-', $name), '-'));
+        $base = $slug ?: 'company';
+        $i    = 1;
+        while (DB::fetch('SELECT id FROM companies WHERE slug = ?', [$slug])) {
+            $slug = $base . '-' . $i++;
+        }
+        return $slug;
+    }
+
 
 // Auto-start session
 Auth::start();
