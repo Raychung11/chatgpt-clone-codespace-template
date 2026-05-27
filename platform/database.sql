@@ -52,6 +52,8 @@ CREATE TABLE IF NOT EXISTS users (
     email_token VARCHAR(64),
     reset_token VARCHAR(64),
     reset_expires DATETIME,
+    total_points INT DEFAULT 0,
+    wallet_balance DECIMAL(10,2) DEFAULT 0.00,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
