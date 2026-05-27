@@ -1023,3 +1023,100 @@ CREATE TABLE IF NOT EXISTS user_points (
   INDEX idx_user (user_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- ============================================================
+-- Individual AI Tool Products — one per built module
+-- ============================================================
+INSERT IGNORE INTO products (category_id, name, slug, tagline, description, features, badge, is_featured, price_monthly, price_yearly, pricing_model, sort_order) VALUES
+
+-- Content & Writing (category 6)
+(6, 'Email Writer', 'email-writer',
+    'Write professional emails in seconds',
+    'Generate polished sales emails, follow-ups, proposals, apologies, and announcements in any tone and length. Just describe what you need — AI writes it instantly.',
+    '["Sales, follow-up & proposal emails","Adjustable tone (professional/friendly/firm)","Short / medium / long length options","Subject line included","Multi-recipient formats","Unlimited generations"]',
+    NULL, 0, 300.00, 3000.00, 'monthly', 25),
+
+(6, 'Social Post Generator', 'social-post-generator',
+    'Platform-ready posts for every channel',
+    'Create engaging, platform-specific posts for Facebook, Instagram, LinkedIn, and Twitter from a single brief. Includes emojis, hashtags, and character-limit formatting per platform.',
+    '["Facebook, Instagram, LinkedIn & Twitter","Emoji & hashtag optimisation","Adjustable tone and CTA","Up to 4 platforms per request","Brand voice consistency","Unlimited posts"]',
+    NULL, 0, 300.00, 3000.00, 'monthly', 26),
+
+(6, 'Product Description AI', 'product-description-ai',
+    'SEO-ready copy for your products in seconds',
+    'Generate compelling product descriptions for your website, Shopee, Lazada, or Amazon. Includes headline, short blurb, bullet benefits, full description, and SEO keywords.',
+    '["Headline + short + long description","Bullet benefit points","5–8 SEO keywords included","Shopee / Lazada / website formats","Adjustable tone and length","Unlimited descriptions"]',
+    NULL, 0, 300.00, 3000.00, 'monthly', 27),
+
+-- Customer Service (category 1)
+(1, 'Customer Reply AI', 'customer-reply-ai',
+    'Reply to every customer message with confidence',
+    'Paste any customer complaint, enquiry, or review and get a professional, empathetic reply in seconds. Handles complaints, returns, billing disputes, and general enquiries.',
+    '["Complaint, enquiry & review replies","Empathetic & professional tone","Resolution statement included","Positive closing every time","EN & BM language support","Unlimited replies"]',
+    NULL, 0, 400.00, 4000.00, 'monthly', 28),
+
+-- Sales & Marketing (category 2)
+(2, 'Ad Copy Writer', 'ad-copy-writer',
+    'High-converting ad copy for every platform',
+    'Generate platform-specific ad copy for Google, Facebook, Instagram, TikTok, and LinkedIn from a single product brief. Respects character limits and best practices per platform.',
+    '["Google Search (headlines + descriptions)","Facebook / Instagram ads","TikTok video script hooks","LinkedIn professional ads","Adjustable objective & tone","Multiple ad variations"]',
+    NULL, 0, 400.00, 4000.00, 'monthly', 29),
+
+(2, 'Sales Proposal AI', 'sales-proposal-ai',
+    'Win more deals with AI-written proposals',
+    'Enter your client details, their pain points, your solution, and pricing. Get a complete, persuasive sales proposal with executive summary, solution outline, timeline, investment, and next steps.',
+    '["Full 8-section proposal structure","Client pain-point framing","Solution & timeline narrative","Investment & ROI section","Why choose us positioning","Consultative or direct tone"]',
+    NULL, 0, 400.00, 4000.00, 'monthly', 30),
+
+-- Finance & Accounting (category 4)
+(4, 'Invoice Generator', 'invoice-generator-tool',
+    'Create professional invoices instantly',
+    'Generate print-ready HTML invoices with your branding, line items, subtotals, tax, and payment terms. Download or share via link — no accounting software needed.',
+    '["Professional HTML invoice layout","Unlimited line items","Subtotal, tax & total auto-calc","Custom payment terms & notes","Multi-currency support","Print & PDF-ready output"]',
+    NULL, 0, 300.00, 3000.00, 'monthly', 31),
+
+-- Operations (category 5)
+(5, 'SOP Generator', 'sop-generator-tool',
+    'Turn rough process notes into a formal SOP',
+    'Describe any business process and get a complete, formatted Standard Operating Procedure with purpose, scope, responsibilities, numbered steps, quality checks, and exceptions.',
+    '["Full 7-section SOP structure","Department & role assignments","Tools & resources section","Step-by-step procedure detail","Quality checkpoints included","Version control fields"]',
+    NULL, 0, 400.00, 4000.00, 'monthly', 32),
+
+-- HR & Recruitment (category 3)
+(3, 'Job Description Writer', 'job-description-writer',
+    'Write job descriptions that attract the right candidates',
+    'Enter the job title, department, responsibilities, and requirements. Get a complete, compelling job description with role overview, key responsibilities, must-have requirements, nice-to-haves, and how to apply.',
+    '["Full structured JD in minutes","Key responsibilities section","Must-have vs nice-to-have split","Salary range & perks section","Company culture pitch","EN & BM formats"]',
+    NULL, 0, 300.00, 3000.00, 'monthly', 33),
+
+(3, 'Leave Request Manager', 'leave-request-manager',
+    'Professional leave request messages in one click',
+    'Submit leave requests with a polished, professionally worded message generated by AI. Simply select leave type, dates, and provide a brief reason — the AI writes the rest.',
+    '["Annual, sick, unpaid & parental leave","Professional & empathetic wording","Configurable leave duration","Auto-formatted dates","EN & BM language support","Instant generation"]',
+    NULL, 0, 200.00, 2000.00, 'monthly', 34),
+
+(3, 'Performance Review AI', 'performance-review-ai',
+    'Balanced, constructive performance reviews in minutes',
+    'Enter the employee name, role, achievements, areas for improvement, and goals. Get a complete, professional performance review with summary, strengths, development areas, and next-period goals.',
+    '["Full review structure (5 sections)","Achievements & strengths narrative","Constructive development feedback","Next-period goal alignment","Annual, mid-year & probation formats","Manager commentary section"]',
+    NULL, 0, 300.00, 3000.00, 'monthly', 35),
+
+(3, 'Meeting Minutes AI', 'meeting-minutes-ai',
+    'Transform rough notes into structured meeting minutes',
+    'Paste your raw meeting notes and get properly formatted minutes with attendees, agenda, discussion points, decisions made, action items with owners, and next meeting details.',
+    '["Attendees & agenda formatting","Discussion & decision capture","Action items with owner & deadline","Next meeting section","EN & BM language support","Formal or casual style"]',
+    NULL, 0, 200.00, 2000.00, 'monthly', 36);
+
+-- Sync ai_modules → individual tool products by slug
+UPDATE ai_modules am JOIN products p ON p.slug = 'email-writer'          SET am.product_id = p.id WHERE am.module_key = 'email';
+UPDATE ai_modules am JOIN products p ON p.slug = 'social-post-generator'  SET am.product_id = p.id WHERE am.module_key = 'social';
+UPDATE ai_modules am JOIN products p ON p.slug = 'product-description-ai' SET am.product_id = p.id WHERE am.module_key = 'product_description';
+UPDATE ai_modules am JOIN products p ON p.slug = 'customer-reply-ai'      SET am.product_id = p.id WHERE am.module_key = 'customer_reply';
+UPDATE ai_modules am JOIN products p ON p.slug = 'ad-copy-writer'         SET am.product_id = p.id WHERE am.module_key = 'ad_copy';
+UPDATE ai_modules am JOIN products p ON p.slug = 'sales-proposal-ai'      SET am.product_id = p.id WHERE am.module_key = 'sales_proposal';
+UPDATE ai_modules am JOIN products p ON p.slug = 'invoice-generator-tool'  SET am.product_id = p.id WHERE am.module_key = 'invoice';
+UPDATE ai_modules am JOIN products p ON p.slug = 'sop-generator-tool'      SET am.product_id = p.id WHERE am.module_key = 'sop';
+UPDATE ai_modules am JOIN products p ON p.slug = 'job-description-writer'  SET am.product_id = p.id WHERE am.module_key = 'job_description';
+UPDATE ai_modules am JOIN products p ON p.slug = 'leave-request-manager'   SET am.product_id = p.id WHERE am.module_key = 'leave_reason';
+UPDATE ai_modules am JOIN products p ON p.slug = 'performance-review-ai'   SET am.product_id = p.id WHERE am.module_key = 'performance_review';
+UPDATE ai_modules am JOIN products p ON p.slug = 'meeting-minutes-ai'      SET am.product_id = p.id WHERE am.module_key = 'meeting_minutes';
