@@ -2,9 +2,9 @@
 -- AI101 Platform - Database Schema
 -- Compatible with MySQL 5.7+ / MariaDB 10.3+
 -- ============================================================
-
-CREATE DATABASE IF NOT EXISTS ai101_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE ai101_platform;
+-- HOSTINGER: Select your database in phpMyAdmin BEFORE importing.
+-- Do NOT run CREATE DATABASE / USE here — Hostinger creates the DB for you.
+-- ============================================================
 
 -- Company workspaces (Unified Identity)
 -- NOTE: companies table must be created before users (no FK on companies at creation time)
