@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS company_invitations (
 );
 
 -- Users (customers + admins)
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
@@ -57,7 +57,7 @@ CREATE TABLE users (
 );
 
 -- Categories for products
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(80) NOT NULL,
     slug VARCHAR(80) NOT NULL UNIQUE,
@@ -69,7 +69,7 @@ CREATE TABLE categories (
 );
 
 -- Products (the 101 AI agent offerings)
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
     id INT AUTO_INCREMENT PRIMARY KEY,
     category_id INT,
     name VARCHAR(150) NOT NULL,
@@ -100,7 +100,7 @@ CREATE TABLE products (
 );
 
 -- Subscriptions (recurring)
-CREATE TABLE subscriptions (
+CREATE TABLE IF NOT EXISTS subscriptions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     product_id INT NOT NULL,
@@ -120,7 +120,7 @@ CREATE TABLE subscriptions (
 );
 
 -- One-time purchases
-CREATE TABLE purchases (
+CREATE TABLE IF NOT EXISTS purchases (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     product_id INT NOT NULL,
@@ -135,7 +135,7 @@ CREATE TABLE purchases (
 );
 
 -- Demo usage tracking
-CREATE TABLE demo_sessions (
+CREATE TABLE IF NOT EXISTS demo_sessions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
     user_id INT,
@@ -148,7 +148,7 @@ CREATE TABLE demo_sessions (
 );
 
 -- Product reviews
-CREATE TABLE reviews (
+CREATE TABLE IF NOT EXISTS reviews (
     id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
     user_id INT NOT NULL,
@@ -162,7 +162,7 @@ CREATE TABLE reviews (
 );
 
 -- Leads / contact inquiries
-CREATE TABLE leads (
+CREATE TABLE IF NOT EXISTS leads (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL,
@@ -177,7 +177,7 @@ CREATE TABLE leads (
 );
 
 -- Site settings
-CREATE TABLE settings (
+CREATE TABLE IF NOT EXISTS settings (
     `key` VARCHAR(100) PRIMARY KEY,
     `value` TEXT,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
