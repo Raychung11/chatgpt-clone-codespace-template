@@ -211,7 +211,7 @@ class Auth {
         }
         return $slug;
     }
-
+}
 
 // Auto-start session
 Auth::start();
