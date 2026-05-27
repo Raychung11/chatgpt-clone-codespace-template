@@ -965,3 +965,27 @@ CREATE TABLE IF NOT EXISTS ai_usage_log (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- Referral Engine
+CREATE TABLE IF NOT EXISTS referral_codes (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT NOT NULL UNIQUE,
+  code       VARCHAR(16) NOT NULL UNIQUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS referrals (
+  id             INT AUTO_INCREMENT PRIMARY KEY,
+  referrer_id    INT NOT NULL,
+  referred_id    INT DEFAULT NULL,
+  referred_email VARCHAR(200) NOT NULL,
+  status         ENUM('pending','converted','rewarded','expired') DEFAULT 'pending',
+  reward_amount  DECIMAL(10,2) DEFAULT 0.00,
+  notes          TEXT DEFAULT NULL,
+  converted_at   DATETIME DEFAULT NULL,
+  rewarded_at    DATETIME DEFAULT NULL,
+  created_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (referrer_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (referred_id) REFERENCES users(id) ON DELETE SET NULL
+);

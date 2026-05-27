@@ -4,9 +4,19 @@ require_once 'includes/auth.php';
 
 if (Auth::check()) { header('Location: /dashboard.php'); exit; }
 
+// Capture referral code from URL and store in a 30-day cookie
+$refCode = trim($_GET['ref'] ?? '');
+if ($refCode) {
+    $exp = date('D, d M Y H:i:s T', strtotime('+30 days'));
+    header("Set-Cookie: bizai_ref=" . urlencode(strtoupper($refCode)) . "; Path=/; Expires=$exp; HttpOnly; SameSite=Lax");
+}
+// Read from cookie if not in URL
+if (!$refCode && !empty($_COOKIE['bizai_ref'])) {
+    $refCode = strtoupper(trim($_COOKIE['bizai_ref']));
+}
+
 $pageTitle = 'Create Account - Free Trial';
 $errors = [];
-$success = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name     = trim($_POST['name']     ?? '');
@@ -15,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password']      ?? '';
     $confirm  = $_POST['confirm']       ?? '';
     $agree    = isset($_POST['agree']);
+    $refCode  = strtoupper(trim($_POST['ref_code'] ?? $refCode));
 
     if (!$name)    $errors[] = 'Full name is required.';
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Please enter a valid email address.';
@@ -23,10 +34,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$agree)   $errors[] = 'You must agree to the Terms of Service.';
 
     if (empty($errors)) {
-        $userId = Auth::register($name, $email, $password, $company);
+        $userId = Auth::register($name, $email, $password, $company, $refCode);
         if ($userId === false) {
             $errors[] = 'An account with this email already exists. Please log in.';
         } else {
+            // Clear referral cookie
+            header("Set-Cookie: bizai_ref=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT");
             header('Location: /login.php?registered=1');
             exit;
         }
@@ -89,7 +102,15 @@ require_once 'includes/header.php';
                     </div>
                     <?php endif; ?>
 
+                    <?php if ($refCode): ?>
+                    <div class="alert py-2 mb-3 d-flex align-items-center gap-2" style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:10px">
+                        <i class="bi bi-gift-fill text-success"></i>
+                        <span class="text-success small fw-semibold">Referred by a friend — referral bonus applied!</span>
+                    </div>
+                    <?php endif; ?>
+
                     <form method="POST" novalidate>
+                        <input type="hidden" name="ref_code" value="<?= htmlspecialchars($refCode) ?>">
                         <div class="row g-3">
                             <div class="col-12">
                                 <label class="form-label text-muted small">Full Name *</label>

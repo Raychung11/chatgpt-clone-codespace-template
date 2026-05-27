@@ -112,7 +112,7 @@ class Auth {
         return DB::fetch('SELECT * FROM users WHERE id = ?', [$_SESSION['user_id']]);
     }
 
-    public static function register(string $name, string $email, string $password, string $company = ''): int|false {
+    public static function register(string $name, string $email, string $password, string $company = '', string $referralCode = ''): int|false {
         $exists = DB::fetch('SELECT id FROM users WHERE email = ?', [strtolower(trim($email))]);
         if ($exists) return false;
         $hash  = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
@@ -137,9 +137,75 @@ class Auth {
                 'owner_id' => $userId,
             ]);
             DB::update('users', ['company_id' => $companyId, 'company_role' => 'owner'], 'id = ?', [$userId]);
-        } catch (Throwable $e) { /* graceful if companies table not yet deployed */ }
+        } catch (Throwable $e) {}
+
+        // Auto-generate referral code for new user
+        try {
+            self::ensureReferralTables();
+            $newCode = strtoupper(substr(bin2hex(random_bytes(5)), 0, 8));
+            while (DB::fetch('SELECT id FROM referral_codes WHERE code = ?', [$newCode])) {
+                $newCode = strtoupper(substr(bin2hex(random_bytes(5)), 0, 8));
+            }
+            DB::insert('referral_codes', ['user_id' => $userId, 'code' => $newCode]);
+        } catch (Throwable $e) {}
+
+        // Record referral if a valid code was passed
+        if ($referralCode) {
+            try {
+                $referrer = DB::fetch('SELECT user_id FROM referral_codes WHERE code = ?', [strtoupper(trim($referralCode))]);
+                if ($referrer && (int)$referrer['user_id'] !== $userId) {
+                    DB::insert('referrals', [
+                        'referrer_id'    => $referrer['user_id'],
+                        'referred_id'    => $userId,
+                        'referred_email' => strtolower(trim($email)),
+                        'status'         => 'pending',
+                    ]);
+                }
+            } catch (Throwable $e) {}
+        }
 
         return $userId;
+    }
+
+    public static function ensureReferralTables(): void {
+        DB::query("CREATE TABLE IF NOT EXISTS referral_codes (
+            id         INT AUTO_INCREMENT PRIMARY KEY,
+            user_id    INT NOT NULL UNIQUE,
+            code       VARCHAR(16) NOT NULL UNIQUE,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )");
+        DB::query("CREATE TABLE IF NOT EXISTS referrals (
+            id             INT AUTO_INCREMENT PRIMARY KEY,
+            referrer_id    INT NOT NULL,
+            referred_id    INT DEFAULT NULL,
+            referred_email VARCHAR(200) NOT NULL,
+            status         ENUM('pending','converted','rewarded','expired') DEFAULT 'pending',
+            reward_amount  DECIMAL(10,2) DEFAULT 0.00,
+            notes          TEXT DEFAULT NULL,
+            converted_at   DATETIME DEFAULT NULL,
+            rewarded_at    DATETIME DEFAULT NULL,
+            created_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (referrer_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (referred_id) REFERENCES users(id) ON DELETE SET NULL
+        )");
+    }
+
+    /** Get or create a referral code for the current user */
+    public static function getReferralCode(int $userId): string {
+        try {
+            self::ensureReferralTables();
+            $row = DB::fetch('SELECT code FROM referral_codes WHERE user_id = ?', [$userId]);
+            if ($row) return $row['code'];
+            $code = strtoupper(substr(bin2hex(random_bytes(5)), 0, 8));
+            while (DB::fetch('SELECT id FROM referral_codes WHERE code = ?', [$code])) {
+                $code = strtoupper(substr(bin2hex(random_bytes(5)), 0, 8));
+            }
+            DB::insert('referral_codes', ['user_id' => $userId, 'code' => $code]);
+            return $code;
+        } catch (Throwable $e) {
+            return '';
+        }
     }
 
     public static function id(): ?int {

@@ -55,6 +55,11 @@ function adminBadge(string $sql): int {
         <a href="/admin/companies.php" class="admin-nav-link <?= $adminPage === 'companies' ? 'active' : '' ?>">
             <i class="bi bi-buildings"></i> Companies
         </a>
+        <a href="/admin/referrals.php" class="admin-nav-link <?= $adminPage === 'referrals' ? 'active' : '' ?>">
+            <i class="bi bi-gift"></i> Referrals
+            <?php $n = adminBadge("SELECT COUNT(*) as n FROM referrals WHERE status='converted'");
+            if ($n > 0) echo "<span class='badge bg-success ms-auto'>$n</span>"; ?>
+        </a>
         <a href="/admin/subscriptions.php" class="admin-nav-link <?= $adminPage === 'subscriptions' ? 'active' : '' ?>">
             <i class="bi bi-repeat"></i> Subscriptions
         </a>

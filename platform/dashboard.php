@@ -370,10 +370,46 @@ require_once 'includes/header.php';
                 <a href="/account.php" class="btn btn-outline-secondary btn-sm w-100 mb-2">
                     <i class="bi bi-gear me-1"></i>Account Settings
                 </a>
-                <a href="/team.php" class="btn btn-outline-primary btn-sm w-100">
+                <a href="/team.php" class="btn btn-outline-primary btn-sm w-100 mb-2">
                     <i class="bi bi-people me-1"></i>Team &amp; Workspace
                 </a>
+                <a href="/referral.php" class="btn btn-outline-success btn-sm w-100">
+                    <i class="bi bi-gift me-1"></i>Referral Programme
+                </a>
             </div>
+
+            <!-- Referral Widget -->
+            <?php
+            $refStats = ['total' => 0, 'converted' => 0];
+            try {
+                $refStats['total']     = (int)(DB::fetch('SELECT COUNT(*) as n FROM referrals WHERE referrer_id = ?', [$user['id']])['n'] ?? 0);
+                $refStats['converted'] = (int)(DB::fetch("SELECT COUNT(*) as n FROM referrals WHERE referrer_id = ? AND status IN ('converted','rewarded')", [$user['id']])['n'] ?? 0);
+            } catch (Throwable $e) {}
+            $refCode = '';
+            try { $refCode = Auth::getReferralCode($user['id']); } catch (Throwable $e) {}
+            if ($refCode):
+            ?>
+            <div class="glass-card rounded-4 p-4 mb-4" style="border:1px solid rgba(16,185,129,0.2)">
+                <h6 class="text-white fw-semibold mb-2"><i class="bi bi-gift me-2 text-success"></i>Referrals</h6>
+                <div class="d-flex justify-content-between text-center mb-3">
+                    <div>
+                        <div class="text-white fw-bold"><?= $refStats['total'] ?></div>
+                        <div class="text-muted" style="font-size:11px">Referred</div>
+                    </div>
+                    <div>
+                        <div class="text-success fw-bold"><?= $refStats['converted'] ?></div>
+                        <div class="text-muted" style="font-size:11px">Converted</div>
+                    </div>
+                    <div>
+                        <div class="text-white fw-bold" style="font-size:11px;letter-spacing:1px"><?= htmlspecialchars($refCode) ?></div>
+                        <div class="text-muted" style="font-size:11px">Your code</div>
+                    </div>
+                </div>
+                <a href="/referral.php" class="btn btn-success btn-sm w-100">
+                    <i class="bi bi-share me-1"></i>Share &amp; Earn
+                </a>
+            </div>
+            <?php endif; ?>
 
             <!-- Team / Workspace Widget -->
             <?php
