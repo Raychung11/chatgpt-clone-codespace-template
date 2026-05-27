@@ -800,7 +800,7 @@ INSERT IGNORE INTO shoutouts (author_name, author_title, platform, content, rati
 ('Anna Schmidt', 'HR Manager', 'email', 'Leave management used to take me hours every week. The AI HR module does it in minutes. Game changer!', 5, 0, 'pending');
 
 -- Seed: AI Guide Config (if not already present)
-INSERT IGNORE INTO settings (setting_key, setting_value) VALUES
+INSERT IGNORE INTO settings (`key`, `value`) VALUES
 ('ai_guide_config', '{"name":"Aria","emoji":"\ud83e\udd16","greeting":"Hi! I am Aria, your AI shopping guide. How can I help you today?","personality":"friendly","position":"bottom-right","color":"#6366f1","delay":3,"auto_open":["homepage"],"kb":{"products":"We offer 101 AI agents for SMEs covering HR, CRM, Marketing, Finance, and more.","pricing":"Plans start from $49\/month. Yearly plans save 20%. A 14-day free trial is available.","shipping":"All products are digital \u2014 instant access after purchase.","returns":"14-day money-back guarantee on all plans.","about":"AI101 is a marketplace of AI agents designed to help SMEs automate their business."}}');
 
 -- ============================================================
