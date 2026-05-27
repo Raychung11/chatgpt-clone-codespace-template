@@ -4,8 +4,10 @@ require_once 'includes/db.php';
 require_once 'includes/auth.php';
 
 Auth::requireLogin();
+require_once 'includes/membership.php';
 $user = Auth::user();
 $pageTitle = 'My Dashboard';
+Membership::ensureTables();
 
 // Dismissed capsule IDs stored in a cookie (set by JS, read here)
 $dismissedIds = [];
@@ -373,8 +375,35 @@ require_once 'includes/header.php';
                 <a href="/team.php" class="btn btn-outline-primary btn-sm w-100 mb-2">
                     <i class="bi bi-people me-1"></i>Team &amp; Workspace
                 </a>
-                <a href="/referral.php" class="btn btn-outline-success btn-sm w-100">
+                <a href="/referral.php" class="btn btn-outline-success btn-sm w-100 mb-2">
                     <i class="bi bi-gift me-1"></i>Referral Programme
+                </a>
+                <a href="/membership.php" class="btn btn-outline-warning btn-sm w-100" style="color:#f59e0b;border-color:#f59e0b40">
+                    <i class="bi bi-trophy me-1"></i>Membership
+                </a>
+            </div>
+
+            <!-- Membership Widget -->
+            <?php
+            $memPoints = Membership::getPoints($user['id']);
+            $memTier   = Membership::getTierByPoints($memPoints);
+            $memWallet = Membership::getWallet($user['id']);
+            ?>
+            <div class="glass-card rounded-4 p-4 mb-4" style="border:1px solid <?= htmlspecialchars($memTier['color']) ?>33">
+                <h6 class="text-white fw-semibold mb-2">
+                    <i class="bi <?= htmlspecialchars($memTier['icon']) ?> me-2" style="color:<?= htmlspecialchars($memTier['color']) ?>"></i>Membership
+                </h6>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge px-2 py-1" style="background:<?= htmlspecialchars($memTier['color']) ?>22;color:<?= htmlspecialchars($memTier['color']) ?>;border:1px solid <?= htmlspecialchars($memTier['color']) ?>44;font-size:11px">
+                        <?= htmlspecialchars($memTier['name']) ?>
+                    </span>
+                    <span class="text-muted small"><?= number_format($memPoints) ?> pts</span>
+                </div>
+                <?php if ($memWallet > 0): ?>
+                <div class="text-success small mb-2"><i class="bi bi-wallet2 me-1"></i><?= APP_CURRENCY ?><?= number_format($memWallet, 0) ?> wallet credit</div>
+                <?php endif; ?>
+                <a href="/membership.php" class="btn btn-sm w-100" style="background:<?= htmlspecialchars($memTier['color']) ?>22;color:<?= htmlspecialchars($memTier['color']) ?>;border:1px solid <?= htmlspecialchars($memTier['color']) ?>44">
+                    View Rewards
                 </a>
             </div>
 

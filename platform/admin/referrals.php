@@ -2,6 +2,7 @@
 require_once '../includes/config.php';
 require_once '../includes/db.php';
 require_once '../includes/auth.php';
+require_once '../includes/membership.php';
 
 Auth::requireAdmin();
 
@@ -16,12 +17,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'convert' && $refId) {
         $reward = max(0, (float)($_POST['reward_amount'] ?? 0));
+        $ref = DB::fetch('SELECT referrer_id FROM referrals WHERE id = ?', [$refId]);
         DB::update('referrals', [
             'status'       => 'converted',
             'reward_amount'=> $reward,
             'converted_at' => date('Y-m-d H:i:s'),
             'notes'        => htmlspecialchars(trim($_POST['notes'] ?? '')),
         ], 'id = ?', [$refId]);
+        if ($ref) {
+            Membership::ensureTables();
+            try { Membership::awardPoints((int)$ref['referrer_id'], 300, 'referral_conversion', 'Referred user converted to paid plan'); } catch (Throwable $e) {}
+        }
         $flash = 'Referral marked as converted.';
     }
     if ($action === 'reward' && $refId) {

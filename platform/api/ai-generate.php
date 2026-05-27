@@ -41,6 +41,7 @@ function sanitize(string $s): string {
 }
 
 /* ── Route by module ── */
+ob_start();
 switch ($module) {
 
     /* ── Email Writer ── */
@@ -722,3 +723,11 @@ For each slide: write the HEADLINE (bold) and 3-5 bullet points or short paragra
     default:
         echo json_encode(['ok' => false, 'error' => 'Unknown module: ' . htmlspecialchars($module)]);
 }
+
+$output  = ob_get_clean();
+$decoded = json_decode($output, true);
+if (!empty($decoded['ok'])) {
+    require_once __DIR__ . '/../includes/membership.php';
+    try { Membership::awardPoints($userId, 2, 'ai_usage', 'Used AI: ' . $module, 20); } catch (Throwable $e) {}
+}
+echo $output;

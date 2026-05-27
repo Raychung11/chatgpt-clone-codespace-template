@@ -989,3 +989,35 @@ CREATE TABLE IF NOT EXISTS referrals (
   FOREIGN KEY (referrer_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (referred_id) REFERENCES users(id) ON DELETE SET NULL
 );
+
+-- Membership & Tier System
+CREATE TABLE IF NOT EXISTS membership_tiers (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  slug       VARCHAR(50) NOT NULL UNIQUE,
+  name       VARCHAR(50) NOT NULL,
+  min_points INT NOT NULL DEFAULT 0,
+  color      VARCHAR(20) DEFAULT '#6b7280',
+  icon       VARCHAR(50) DEFAULT 'bi-award',
+  benefits   TEXT DEFAULT '[]',
+  sort_order INT DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT IGNORE INTO membership_tiers (slug, name, min_points, color, icon, benefits, sort_order) VALUES
+('starter',  'Starter',  0,     '#6b7280', 'bi-circle',      '["Access to all AI tools","14-day free trial"]', 0),
+('bronze',   'Bronze',   500,   '#cd7f32', 'bi-award',       '["Priority email support","5% renewal discount","+5 AI tools daily cap"]', 1),
+('silver',   'Silver',   2000,  '#94a3b8', 'bi-award-fill',  '["Priority support","10% renewal discount","Extended AI memory (10 exchanges)","Early access to new Capsules"]', 2),
+('gold',     'Gold',     5000,  '#f59e0b', 'bi-trophy',      '["Dedicated support","15% renewal discount","Extended AI memory (15 exchanges)","Custom branding options","Quarterly strategy call"]', 3),
+('platinum', 'Platinum', 10000, '#6366f1', 'bi-trophy-fill', '["Dedicated account manager","20% renewal discount","Unlimited AI memory","White-label options","Monthly strategy call"]', 4);
+
+CREATE TABLE IF NOT EXISTS user_points (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  user_id     INT NOT NULL,
+  points      INT NOT NULL DEFAULT 0,
+  type        ENUM('earn','redeem','adjust','expire') DEFAULT 'earn',
+  source      VARCHAR(100) DEFAULT '',
+  description VARCHAR(255) DEFAULT '',
+  created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_user (user_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
