@@ -1,4 +1,17 @@
 <?php
+// ── TEMP DEBUG — remove after diagnosing ──────────────────────────────────────
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+set_exception_handler(function(\Throwable $e) {
+    echo '<pre style="background:#1a1a2e;color:#f87171;padding:24px;font-size:13px;border-radius:8px;margin:20px">';
+    echo '<strong>ERROR:</strong> ' . htmlspecialchars($e->getMessage()) . "\n";
+    echo '<strong>File:</strong> '  . htmlspecialchars($e->getFile()) . ' line ' . $e->getLine() . "\n\n";
+    echo htmlspecialchars($e->getTraceAsString());
+    echo '</pre>';
+    exit;
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
 require_once '../includes/config.php';
 require_once '../includes/db.php';
 require_once '../includes/auth.php';
