@@ -4,6 +4,17 @@ require_once 'includes/db.php';
 require_once 'includes/auth.php';
 
 Auth::requireLogin();
+
+// Resolve the correct "Open" URL for a capsule row.
+// Capsules backed by a full platform app get a direct route instead of /modules/*.php
+function capsuleOpenUrl(array $row): string {
+    $productSlug = $row['product_slug'] ?? '';
+    $moduleSlug  = $row['module_slug']  ?? '';
+    $platformSlugs = ['project-os' => '/projects/'];
+    if (isset($platformSlugs[$productSlug])) return $platformSlugs[$productSlug];
+    if (isset($platformSlugs[$moduleSlug]))  return $platformSlugs[$moduleSlug];
+    return $moduleSlug ? '/modules/' . $moduleSlug . '.php' : '/modules/';
+}
 require_once 'includes/membership.php';
 $user = Auth::user();
 $pageTitle = 'My Dashboard';
@@ -233,7 +244,7 @@ require_once 'includes/header.php';
                 ?>
                 <div id="trialCapsuleList">
                 <?php foreach ($visibleTrialCapsules as $tc):
-                    $openUrl = $tc['module_slug'] ? '/modules/'.$tc['module_slug'].'.php' : '/modules/';
+                    $openUrl = capsuleOpenUrl($tc);
                 ?>
                 <div class="capsule-card rounded-3 mb-2 p-3" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
                     <!-- Row 1: icon + name + dismiss -->
@@ -292,7 +303,7 @@ require_once 'includes/header.php';
                 <h5 class="text-white fw-semibold mb-4"><i class="bi bi-cpu me-2 text-primary"></i>My Capsules</h5>
 
                 <?php foreach ($subscriptions as $sub):
-                    $subUrl = $sub['module_slug'] ? '/modules/'.$sub['module_slug'].'.php' : '/modules/';
+                    $subUrl = capsuleOpenUrl($sub);
                     $badgeClass = match($sub['status']) {
                         'active'   => 'bg-success',
                         'trialing' => 'bg-info text-dark',
@@ -326,7 +337,7 @@ require_once 'includes/header.php';
                 <?php endforeach; ?>
 
                 <?php foreach ($purchases as $pur):
-                    $purUrl = $pur['module_slug'] ? '/modules/'.$pur['module_slug'].'.php' : '/modules/';
+                    $purUrl = capsuleOpenUrl($pur);
                 ?>
                 <div class="capsule-card rounded-3 mb-2 p-3" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
                     <div class="d-flex align-items-start gap-3 mb-2">

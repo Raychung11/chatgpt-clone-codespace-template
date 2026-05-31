@@ -1306,3 +1306,6 @@ INSERT IGNORE INTO products (category_id, name, slug, tagline, description, feat
 
 INSERT IGNORE INTO ai_modules (name, module_key, slug, category, description, icon, color, tags, is_active, sort_order) VALUES
 ('ProjectOS™', 'project_os', 'project-os', 'Automation & Systems', 'AI-powered project execution OS — meetings, decisions, tasks, issues, milestones, and project memory in one place.', 'bi-kanban', '#8b5cf6', 'project,management,ai', 1, 21);
+
+-- Sync ProjectOS ai_module product_id
+UPDATE ai_modules am JOIN products p ON p.slug = 'project-os' SET am.product_id = p.id WHERE am.module_key = 'project_os';
