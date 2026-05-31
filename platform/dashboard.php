@@ -378,10 +378,47 @@ require_once 'includes/header.php';
                 <a href="/referral.php" class="btn btn-outline-success btn-sm w-100 mb-2">
                     <i class="bi bi-gift me-1"></i>Referral Programme
                 </a>
-                <a href="/membership.php" class="btn btn-outline-warning btn-sm w-100" style="color:#f59e0b;border-color:#f59e0b40">
+                <a href="/membership.php" class="btn btn-outline-warning btn-sm w-100 mb-2" style="color:#f59e0b;border-color:#f59e0b40">
                     <i class="bi bi-trophy me-1"></i>Membership
                 </a>
+                <a href="/projects/" class="btn btn-sm w-100" style="background:rgba(139,92,246,0.15);color:#8b5cf6;border:1px solid rgba(139,92,246,0.3)">
+                    <i class="bi bi-kanban me-1"></i>ProjectOS™
+                </a>
             </div>
+
+            <!-- ProjectOS Widget -->
+            <?php
+            $posProjects = 0; $posActive = 0; $posOverdue = 0;
+            try {
+                require_once 'includes/projectos.php';
+                ProjectOS::ensureTables();
+                $posProjects = (int)(DB::fetch('SELECT COUNT(*) as n FROM projects WHERE created_by = ?', [$user['id']])['n'] ?? 0);
+                $posActive   = (int)(DB::fetch("SELECT COUNT(*) as n FROM projects WHERE created_by = ? AND status = 'active'", [$user['id']])['n'] ?? 0);
+                $posOverdue  = (int)(DB::fetch("SELECT COUNT(*) as n FROM action_items WHERE project_id IN (SELECT id FROM projects WHERE created_by=?) AND due_date < CURDATE() AND status NOT IN ('completed','cancelled')", [$user['id']])['n'] ?? 0);
+            } catch (Throwable $e) {}
+            if ($posProjects > 0):
+            ?>
+            <div class="glass-card rounded-4 p-4 mb-4" style="border:1px solid rgba(139,92,246,0.25)">
+                <h6 class="text-white fw-semibold mb-2"><i class="bi bi-kanban me-2" style="color:#8b5cf6"></i>ProjectOS™</h6>
+                <div class="d-flex justify-content-between text-center mb-3">
+                    <div>
+                        <div class="text-white fw-bold"><?= $posProjects ?></div>
+                        <div class="text-muted" style="font-size:11px">Projects</div>
+                    </div>
+                    <div>
+                        <div class="fw-bold" style="color:#10b981"><?= $posActive ?></div>
+                        <div class="text-muted" style="font-size:11px">Active</div>
+                    </div>
+                    <div>
+                        <div class="fw-bold <?= $posOverdue > 0 ? 'text-danger' : 'text-muted' ?>"><?= $posOverdue ?></div>
+                        <div class="text-muted" style="font-size:11px">Overdue</div>
+                    </div>
+                </div>
+                <a href="/projects/" class="btn btn-sm w-100" style="background:rgba(139,92,246,0.2);color:#8b5cf6;border:1px solid rgba(139,92,246,0.3)">
+                    <i class="bi bi-arrow-right me-1"></i>Open Projects
+                </a>
+            </div>
+            <?php endif; ?>
 
             <!-- Membership Widget -->
             <?php

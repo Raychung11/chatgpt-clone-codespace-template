@@ -1120,3 +1120,189 @@ UPDATE ai_modules am JOIN products p ON p.slug = 'job-description-writer'  SET a
 UPDATE ai_modules am JOIN products p ON p.slug = 'leave-request-manager'   SET am.product_id = p.id WHERE am.module_key = 'leave_reason';
 UPDATE ai_modules am JOIN products p ON p.slug = 'performance-review-ai'   SET am.product_id = p.id WHERE am.module_key = 'performance_review';
 UPDATE ai_modules am JOIN products p ON p.slug = 'meeting-minutes-ai'      SET am.product_id = p.id WHERE am.module_key = 'meeting_minutes';
+-- ProjectOS — AI Project Management & Execution Operating System
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS projects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT DEFAULT NULL,
+    name VARCHAR(200) NOT NULL,
+    code VARCHAR(50) DEFAULT '',
+    client VARCHAR(150) DEFAULT '',
+    department VARCHAR(100) DEFAULT '',
+    manager_id INT DEFAULT NULL,
+    budget DECIMAL(12,2) DEFAULT 0.00,
+    start_date DATE DEFAULT NULL,
+    end_date DATE DEFAULT NULL,
+    status ENUM('planning','active','on_hold','delayed','completed','cancelled') DEFAULT 'planning',
+    completion_pct TINYINT DEFAULT 0,
+    description TEXT DEFAULT NULL,
+    created_by INT DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (manager_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS project_members (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    project_id INT NOT NULL,
+    user_id INT NOT NULL,
+    role ENUM('manager','member','client','viewer') DEFAULT 'member',
+    joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_proj_user (project_id, user_id),
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS meetings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    project_id INT NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    type ENUM('kickoff','weekly','monthly','progress_review','client','uat','go_live','emergency') DEFAULT 'weekly',
+    meeting_date DATE NOT NULL,
+    meeting_time TIME DEFAULT NULL,
+    venue VARCHAR(200) DEFAULT '',
+    objective TEXT DEFAULT NULL,
+    raw_notes TEXT DEFAULT NULL,
+    ai_minutes LONGTEXT DEFAULT NULL,
+    minutes_approved TINYINT(1) DEFAULT 0,
+    approved_by INT DEFAULT NULL,
+    approved_at DATETIME DEFAULT NULL,
+    created_by INT DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS meeting_attendees (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    meeting_id INT NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    attended TINYINT(1) DEFAULT 1,
+    FOREIGN KEY (meeting_id) REFERENCES meetings(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS decisions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    project_id INT NOT NULL,
+    meeting_id INT DEFAULT NULL,
+    decision_ref VARCHAR(20) DEFAULT '',
+    summary TEXT NOT NULL,
+    made_by VARCHAR(150) DEFAULT '',
+    decided_at DATE DEFAULT NULL,
+    impact ENUM('low','medium','high') DEFAULT 'medium',
+    status ENUM('active','replaced','cancelled') DEFAULT 'active',
+    created_by INT DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (meeting_id) REFERENCES meetings(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS action_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    project_id INT NOT NULL,
+    meeting_id INT DEFAULT NULL,
+    task_ref VARCHAR(20) DEFAULT '',
+    title VARCHAR(255) NOT NULL,
+    description TEXT DEFAULT NULL,
+    owner_id INT DEFAULT NULL,
+    owner_name VARCHAR(150) DEFAULT '',
+    due_date DATE DEFAULT NULL,
+    priority ENUM('low','medium','high','critical') DEFAULT 'medium',
+    status ENUM('pending','assigned','in_progress','waiting','completed','cancelled') DEFAULT 'pending',
+    completed_at DATETIME DEFAULT NULL,
+    created_by INT DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (meeting_id) REFERENCES meetings(id) ON DELETE SET NULL,
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS issues (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    project_id INT NOT NULL,
+    issue_ref VARCHAR(20) DEFAULT '',
+    category VARCHAR(100) DEFAULT '',
+    severity ENUM('low','medium','high','critical') DEFAULT 'medium',
+    title VARCHAR(255) NOT NULL,
+    description TEXT DEFAULT NULL,
+    root_cause TEXT DEFAULT NULL,
+    owner_id INT DEFAULT NULL,
+    owner_name VARCHAR(150) DEFAULT '',
+    status ENUM('open','assigned','in_progress','solved','verified','closed','reopened') DEFAULT 'open',
+    resolved_at DATETIME DEFAULT NULL,
+    created_by INT DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS issue_comments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    issue_id INT NOT NULL,
+    user_id INT DEFAULT NULL,
+    author_name VARCHAR(150) DEFAULT '',
+    comment TEXT NOT NULL,
+    status_change VARCHAR(50) DEFAULT '',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS project_milestones (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    project_id INT NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    description TEXT DEFAULT NULL,
+    due_date DATE DEFAULT NULL,
+    completed_date DATE DEFAULT NULL,
+    status ENUM('upcoming','active','delayed','completed') DEFAULT 'upcoming',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS project_activity_logs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    project_id INT DEFAULT NULL,
+    user_id INT DEFAULT NULL,
+    entity_type VARCHAR(50) DEFAULT '',
+    entity_id INT DEFAULT NULL,
+    action VARCHAR(100) DEFAULT '',
+    old_value TEXT DEFAULT NULL,
+    new_value TEXT DEFAULT NULL,
+    note TEXT DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_proj (project_id),
+    INDEX idx_ent (entity_type, entity_id),
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS knowledge_articles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    project_id INT NOT NULL,
+    type ENUM('minutes','decision','sop','lesson','technical','requirement','other') DEFAULT 'other',
+    title VARCHAR(255) NOT NULL,
+    content LONGTEXT NOT NULL,
+    tags VARCHAR(200) DEFAULT '',
+    created_by INT DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- ProjectOS marketplace product
+INSERT IGNORE INTO products (category_id, name, slug, tagline, description, features, badge, is_featured, price_monthly, price_yearly, pricing_model, sort_order) VALUES
+(5, 'ProjectOS™', 'project-os',
+    'Turn Meetings Into Execution.',
+    'ProjectOS is an AI-powered execution operating system that transforms meetings, decisions, issues, and tasks into measurable business outcomes. Every discussion leads to action. Every action has accountability. Every issue has traceable resolution history.',
+    '["AI Meeting Minutes Engine (10-section international standard)","Decision Center — no decision ever forgotten","Action Center with priority & owner tracking","Issue Center with severity & root cause tracking","Rollback Engine — full project memory & history","AI Health Score (0–100) per project","AI Project Assistant (copilot)","Milestone & Timeline tracking","Client Portal — share progress without calls","Knowledge Base for SOPs, lessons learned & requirements"]',
+    'New', 1, 2000.00, 20000.00, 'monthly', 37);
+
+INSERT IGNORE INTO ai_modules (name, module_key, slug, category, description, icon, color, tags, is_active, sort_order) VALUES
+('ProjectOS™', 'project_os', 'project-os', 'Automation & Systems', 'AI-powered project execution OS — meetings, decisions, tasks, issues, milestones, and project memory in one place.', 'bi-kanban', '#8b5cf6', 'project,management,ai', 1, 21);
