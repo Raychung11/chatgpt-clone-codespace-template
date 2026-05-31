@@ -44,10 +44,10 @@
             <div class="col-6 col-lg-2">
                 <h6 class="text-white fw-semibold mb-3">Legal</h6>
                 <ul class="list-unstyled small">
-                    <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Privacy Policy</a></li>
-                    <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Terms of Service</a></li>
-                    <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Refund Policy</a></li>
-                    <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Cookie Policy</a></li>
+                    <li class="mb-2"><a href="/privacy-policy.php" class="text-muted text-decoration-none">Privacy Policy</a></li>
+                    <li class="mb-2"><a href="/terms-of-service.php" class="text-muted text-decoration-none">Terms of Service</a></li>
+                    <li class="mb-2"><a href="/refund-policy.php" class="text-muted text-decoration-none">Refund Policy</a></li>
+                    <li class="mb-2"><a href="/cookie-policy.php" class="text-muted text-decoration-none">Cookie Policy</a></li>
                 </ul>
             </div>
         </div>
