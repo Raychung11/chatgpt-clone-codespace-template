@@ -91,10 +91,15 @@ $totalCount = count($allModules);
                     </div>
                     <h6 class="text-white fw-semibold mb-2"><?= htmlspecialchars($m['name']) ?></h6>
                     <p class="text-muted small mb-4 flex-grow-1" style="font-size:12.5px"><?= htmlspecialchars($m['description'] ?? '') ?></p>
-                    <a href="/modules/<?= htmlspecialchars($m['slug']) ?>.php"
+                    <?php
+                        $isFullApp = $m['slug'] === 'project-os';
+                        $href  = $isFullApp ? '/projects/' : '/modules/' . htmlspecialchars($m['slug']) . '.php';
+                        $label = $isFullApp ? '<i class="bi bi-kanban me-1"></i>Launch App' : '<i class="bi bi-magic me-1"></i>Open Tool';
+                    ?>
+                    <a href="<?= $href ?>"
                        class="btn btn-sm w-100"
                        style="background:<?= htmlspecialchars($m['color']) ?>18;border:1px solid <?= htmlspecialchars($m['color']) ?>33;color:<?= htmlspecialchars($m['color']) ?>">
-                        <i class="bi bi-magic me-1"></i>Open Tool
+                        <?= $label ?>
                     </a>
                 </div>
             </div>
