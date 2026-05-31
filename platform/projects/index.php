@@ -4,7 +4,7 @@ require_once '../includes/db.php';
 require_once '../includes/auth.php';
 require_once '../includes/projectos.php';
 
-ProjectOS::ensureTables();
+try { ProjectOS::ensureTables(); } catch (\Throwable $e) {}
 Auth::requireLogin();
 
 $userId = Auth::id();
@@ -261,10 +261,13 @@ function healthColour(int $score): string {
 <div class="row g-3 mb-5">
     <?php foreach ($projects as $proj): ?>
     <?php
-        $health    = $proj['health'] ?? 0;
-        $hColour   = healthColour((int)$health);
-        $pct       = max(0, min(100, (int)($proj['completion_pct'] ?? 0)));
-        $pctColour = $pct >= 80 ? 'bg-success' : ($pct >= 40 ? 'bg-warning' : 'bg-danger');
+        $healthData = $proj['health'];
+        $healthScore = (int)($healthData['score'] ?? 0);
+        $hColour     = healthColour($healthScore);
+        $hColor      = $healthData['color'] ?? '#6b7280';
+        $hLabel      = $healthData['label'] ?? 'No Data';
+        $pct         = max(0, min(100, (int)($proj['completion_pct'] ?? 0)));
+        $pctColour   = $pct >= 80 ? 'bg-success' : ($pct >= 40 ? 'bg-warning' : 'bg-danger');
     ?>
     <div class="col-12 col-md-6 col-xl-4">
         <div class="glass-card p-4 h-100 d-flex flex-column">
@@ -306,16 +309,10 @@ function healthColour(int $score): string {
 
             <!-- Health Score -->
             <div class="d-flex align-items-center gap-2 mb-3">
-                <span class="fs-4 fw-bold <?= $hColour ?>"><?= (int)$health ?></span>
+                <span class="fs-4 fw-bold" style="color:<?= $hColor ?>"><?= $healthScore ?></span>
                 <div>
                     <div class="small fw-semibold <?= $hColour ?>">Health Score</div>
-                    <div class="text-muted" style="font-size:.72rem;">
-                        <?php
-                        if ($health >= 80)      echo 'On Track';
-                        elseif ($health >= 50)  echo 'At Risk';
-                        else                    echo 'Critical';
-                        ?>
-                    </div>
+                    <div class="text-muted" style="font-size:.72rem;"><?= htmlspecialchars($hLabel) ?></div>
                 </div>
             </div>
 

@@ -10,7 +10,7 @@ require_once '../includes/auth.php';
 require_once '../includes/projectos.php';
 
 Auth::requireLogin();
-ProjectOS::ensureTables();
+try { ProjectOS::ensureTables(); } catch (\Throwable $e) {}
 
 $projectId = (int)($_GET['id'] ?? 0);
 if (!$projectId) {

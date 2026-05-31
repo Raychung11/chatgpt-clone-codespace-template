@@ -4,7 +4,7 @@ require_once '../includes/db.php';
 require_once '../includes/auth.php';
 require_once '../includes/projectos.php';
 
-ProjectOS::ensureTables();
+try { ProjectOS::ensureTables(); } catch (\Throwable $e) {}
 Auth::requireLogin();
 
 $userId = Auth::id();
