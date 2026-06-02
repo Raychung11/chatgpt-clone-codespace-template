@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/auth.php';
+if (file_exists(__DIR__ . '/seo.php')) require_once __DIR__ . '/seo.php';
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 $isLoggedIn  = Auth::check();
 $isAdmin     = Auth::isAdmin();
@@ -12,14 +13,42 @@ try {
         $activeTheme = in_array($themeSetting['value'], $allowed) ? $themeSetting['value'] : 'dark';
     }
 } catch (Exception $e) { /* fallback to dark */ }
+
+/* SEO helpers */
+$_siteUrl  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : 'https://bizai.my';
+$_siteName = defined('SITE_NAME') ? SITE_NAME : 'AiServe';
+$_defaultDesc = 'AiServe is the AI Business Operating System for Malaysian SMEs. Deploy AI Capsules to automate customer service, sales, HR, finance and operations.';
+$_metaDesc    = isset($pageDesc) ? $pageDesc : $_defaultDesc;
+$_metaTitle   = isset($pageTitle) ? $pageTitle . ' | ' . $_siteName : $_siteName . ' — AI Business Operating System for Malaysian SMEs';
+$_canonicalUrl = $_siteUrl . strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
+$_ogImage     = isset($ogImage) ? $ogImage : $_siteUrl . '/assets/img/og-default.png';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" href="/assets/img/favicon.ico" type="image/x-icon">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= isset($pageTitle) ? htmlspecialchars($pageTitle) . ' | ' . SITE_NAME : SITE_NAME ?></title>
-    <meta name="description" content="<?= isset($pageDesc) ? htmlspecialchars($pageDesc) : 'BizAI — the Business Operating System for SMEs. Deploy AI Capsules to automate customer service, sales, HR, finance and more.' ?>">
+    <title><?= htmlspecialchars($_metaTitle) ?></title>
+    <meta name="description" content="<?= htmlspecialchars($_metaDesc, ENT_QUOTES) ?>">
+    <?php if (isset($pageKeywords) && $pageKeywords): ?>
+    <meta name="keywords" content="<?= htmlspecialchars($pageKeywords, ENT_QUOTES) ?>">
+    <?php endif; ?>
+    <link rel="canonical" href="<?= htmlspecialchars($_canonicalUrl, ENT_QUOTES) ?>">
+    <!-- Open Graph -->
+    <meta property="og:type"        content="<?= isset($ogType) ? htmlspecialchars($ogType, ENT_QUOTES) : 'website' ?>">
+    <meta property="og:site_name"   content="<?= htmlspecialchars($_siteName, ENT_QUOTES) ?>">
+    <meta property="og:title"       content="<?= htmlspecialchars($_metaTitle, ENT_QUOTES) ?>">
+    <meta property="og:description" content="<?= htmlspecialchars($_metaDesc, ENT_QUOTES) ?>">
+    <meta property="og:url"         content="<?= htmlspecialchars($_canonicalUrl, ENT_QUOTES) ?>">
+    <meta property="og:image"       content="<?= htmlspecialchars($_ogImage, ENT_QUOTES) ?>">
+    <!-- Twitter Card -->
+    <meta name="twitter:card"        content="summary_large_image">
+    <meta name="twitter:title"       content="<?= htmlspecialchars($_metaTitle, ENT_QUOTES) ?>">
+    <meta name="twitter:description" content="<?= htmlspecialchars($_metaDesc, ENT_QUOTES) ?>">
+    <meta name="twitter:image"       content="<?= htmlspecialchars($_ogImage, ENT_QUOTES) ?>">
+    <!-- Organization JSON-LD (sitewide) -->
+    <?php if (class_exists('SEO')) echo SEO::organization(); ?>
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->

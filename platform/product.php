@@ -2,6 +2,7 @@
 require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
+require_once 'includes/seo.php';
 
 $slug = trim($_GET['slug'] ?? '');
 if (!$slug) { header('Location: /marketplace.php'); exit; }
@@ -20,8 +21,15 @@ $reviews   = DB::fetchAll('SELECT r.*, u.name FROM reviews r JOIN users u ON r.u
 $related   = DB::fetchAll('SELECT * FROM products WHERE category_id=? AND id!=? AND is_active=1 LIMIT 3', [$product['category_id'], $product['id']]);
 $isOwned   = Auth::owns($product['id']);
 
-$pageTitle = $product['name'] . ' — BizAI Capsule';
-$pageDesc  = $product['tagline'];
+$pageTitle = $product['name'] . ' — AI Capsule | AiServe';
+$pageDesc  = $product['tagline'] . ' · ' . substr(strip_tags($product['description'] ?? ''), 0, 150) . '...';
+$extraHead = SEO::softwareApp($product);
+$extraHead .= SEO::breadcrumbs([
+    ['name' => 'Home',        'url' => '/'],
+    ['name' => 'Marketplace', 'url' => '/marketplace.php'],
+    ['name' => $product['cat_name'] ?? 'Capsules', 'url' => '/marketplace.php?cat=' . ($product['cat_slug'] ?? '')],
+    ['name' => $product['name'], 'url' => ''],
+]);
 
 require_once 'includes/header.php';
 ?>

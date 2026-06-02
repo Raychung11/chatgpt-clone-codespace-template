@@ -2,9 +2,25 @@
 require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
+require_once 'includes/seo.php';
 
-$pageTitle = 'BizAI — Business Operating System for SMEs';
-$pageDesc  = 'BizAI is the Business Operating System for SMEs. Deploy AI Capsules to automate operations, grow revenue, and run your business automatically.';
+$pageTitle    = 'AiServe — AI Business Operating System for Malaysian SMEs';
+$pageDesc     = 'Deploy AI Capsules to automate customer service, sales, HR, finance and operations. The complete BOS for SMEs. Start free for 14 days.';
+$pageKeywords = 'AI for business Malaysia, AI automation SME, WhatsApp AI chatbot, business operating system, AI capsules';
+
+$extraHead  = SEO::faq([
+    ['q' => 'What is AiServe?',
+     'a' => 'AiServe is an AI-powered Business Operating System (BOS) for Malaysian SMEs. It provides plug-and-play AI Capsules that automate customer service, sales, HR, finance, and operations — all from one centralised platform.'],
+    ['q' => 'How much does AiServe cost?',
+     'a' => 'AiServe starts at RM3,500/month for the Starter plan (BOS Core + Customer Service Capsule). The Growth plan is RM10,000/month and includes 3 Capsules. Enterprise plans start from RM15,000/month with all Capsules included.'],
+    ['q' => 'Do I need technical knowledge to use AiServe?',
+     'a' => 'No technical skills are required. AiServe Capsules are designed for plug-and-play deployment. Each Capsule comes with a simple setup guide and our team provides onboarding support.'],
+    ['q' => 'Is there a free trial?',
+     'a' => 'Yes! AiServe offers a 14-day free trial on all plans. No credit card is required to get started. You can test the platform with your real business data before committing.'],
+]);
+$extraHead .= SEO::breadcrumbs([
+    ['name' => 'Home', 'url' => '/'],
+]);
 
 $featuredProducts = DB::fetchAll(
     'SELECT p.*, c.name as cat_name, c.icon as cat_icon, c.color as cat_color

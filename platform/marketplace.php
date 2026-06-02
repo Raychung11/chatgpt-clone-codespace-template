@@ -3,8 +3,9 @@ require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
 
-$pageTitle = 'Capsule Store';
-$pageDesc  = 'Browse 21+ AI Capsules for SMEs — customer service, sales, HR, finance, operations and more. Prices from RM200/mo.';
+$pageTitle    = 'Capsule Store';
+$pageDesc     = 'Browse 20+ AI Capsules for Malaysian SMEs — customer service automation, sales AI, HR tools, finance reporting and more. From RM200/month.';
+$pageKeywords = 'AI capsules Malaysia, AI tools for SME, WhatsApp chatbot Malaysia, business automation tools';
 
 // Filters
 $cat      = $_GET['cat']  ?? '';

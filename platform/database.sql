@@ -1309,3 +1309,266 @@ INSERT IGNORE INTO ai_modules (name, module_key, slug, category, description, ic
 
 -- Sync ProjectOS ai_module product_id
 UPDATE ai_modules am JOIN products p ON p.slug = 'project-os' SET am.product_id = p.id WHERE am.module_key = 'project_os';
+
+-- ============================================================
+-- Blog System
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS blog_posts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) NOT NULL UNIQUE,
+    excerpt TEXT,
+    content LONGTEXT,
+    featured_image VARCHAR(255),
+    author_id INT DEFAULT NULL,
+    category VARCHAR(100) DEFAULT 'General',
+    tags VARCHAR(200),
+    status ENUM('draft','published') DEFAULT 'draft',
+    meta_title VARCHAR(255),
+    meta_description VARCHAR(300),
+    views INT DEFAULT 0,
+    published_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_slug (slug),
+    INDEX idx_status (status),
+    INDEX idx_published (published_at)
+);
+
+-- Seed blog posts (6 posts targeting Malaysian SME AI keywords)
+INSERT IGNORE INTO blog_posts (title, slug, excerpt, content, category, tags, meta_title, meta_description, status, published_at, author_id) VALUES
+
+(
+  '5 Ways Malaysian SMEs Can Use AI to Win More Customers in 2026',
+  '5-ways-malaysian-smes-use-ai-win-customers-2026',
+  'Malaysian SMEs are discovering that AI is no longer reserved for large corporations. Here are five practical ways to deploy AI today and win more customers.',
+  '<p>The competitive landscape for Malaysian SMEs has changed dramatically. Customers expect instant responses, personalised experiences, and seamless service — 24 hours a day, seven days a week. The good news? AI makes all of this achievable even for small and medium businesses with limited budgets and teams.</p>
+
+<p>Here are five practical ways Malaysian SMEs are using AI right now to win more customers and grow faster.</p>
+
+<h2>1. Automate Customer Enquiries on WhatsApp</h2>
+<p>WhatsApp is the primary communication channel for most Malaysian consumers. An AI-powered WhatsApp inbox can handle hundreds of simultaneous enquiries, answer FAQs in Bahasa Malaysia and English, qualify leads, and route complex issues to a human agent — all without any staff involved.</p>
+<p>Businesses using WhatsApp AI automation report a 70–80% reduction in response time and significantly higher customer satisfaction scores. The key is deploying an AI that understands your products, prices, and policies — not a generic chatbot.</p>
+
+<h2>2. Use AI to Follow Up on Quotes Automatically</h2>
+<p>One of the biggest revenue leaks for Malaysian SMEs is failing to follow up on quotes. A salesperson sends a quote and then gets busy. The prospect goes cold. Revenue is lost.</p>
+<p>AI Sales Capsules can automatically follow up at the right intervals with personalised messages, track whether the prospect opened the quote, and even suggest a closing script based on previous interactions. Businesses using AI follow-up sequences report 2–3x improvement in quote-to-close rates.</p>
+
+<h2>3. Deploy AI Customer Service to Handle Post-Sale Support</h2>
+<p>Post-sale support is expensive and time-consuming. Returns, delivery tracking, complaints, and warranty queries can overwhelm a small team. An AI Customer Service Capsule can handle all of these automatically, escalating only the truly complex cases to humans.</p>
+<p>This is especially valuable for e-commerce SMEs and retail businesses that experience high volumes of repetitive enquiries. With AI handling Tier-1 support, your team can focus on building relationships and closing new deals.</p>
+
+<h2>4. Personalise Marketing with AI Segmentation</h2>
+<p>Sending the same promotion to your entire customer list is inefficient. AI-powered marketing automation can segment your database by purchase behaviour, engagement level, and demographics — then send the right message to the right customer at the right time.</p>
+<p>Malaysian F&B businesses using AI marketing automation report 40–60% higher open rates and significantly better ROI on promotional campaigns compared to bulk broadcasts.</p>
+
+<h2>5. Generate Daily Business Reports Automatically</h2>
+<p>Most SME owners spend hours every week compiling reports manually. AI reporting tools can pull data from your CRM, inventory system, and sales records to generate a daily summary automatically — complete with anomaly detection that flags unusual patterns before they become problems.</p>
+<p>Imagine waking up every morning to a clear, AI-generated summary of yesterday''s performance, with specific recommendations for action. That''s the power of an AI Business Operating System.</p>
+
+<h2>Getting Started</h2>
+<p>The easiest way to start is with a single AI Capsule that solves your biggest immediate pain point. For most Malaysian SMEs, that is either customer service automation or sales follow-up. Once you see the ROI from one Capsule, expanding to others becomes a natural next step.</p>
+<p>AiServe offers a 14-day free trial on all Capsules. Deploy your first AI Capsule today and see the difference within your first week.</p>',
+  'Sales',
+  'AI for business Malaysia, SME customer service, AI sales automation, WhatsApp AI, Malaysian SME',
+  '5 Ways Malaysian SMEs Can Use AI to Win More Customers in 2026 | AiServe',
+  'Discover 5 practical AI strategies Malaysian SMEs are using right now to win more customers, automate follow-ups, and grow faster in 2026.',
+  'published',
+  '2026-05-15 09:00:00',
+  NULL
+),
+
+(
+  'WhatsApp AI Automation: The Complete Guide for Malaysian Businesses',
+  'whatsapp-ai-automation-complete-guide-malaysian-businesses',
+  'WhatsApp is used by 90%+ of Malaysians. Learn how to deploy AI automation on WhatsApp to handle customer enquiries, generate leads, and close sales — 24/7.',
+  '<p>With over 90% of Malaysians actively using WhatsApp, it has become the most important business communication channel in the country. Yet most SMEs still handle WhatsApp manually — one message at a time, during business hours only, with no system to track conversations or follow up on leads.</p>
+
+<p>This guide explains exactly how WhatsApp AI automation works, what it can and cannot do, and how to implement it in your Malaysian business.</p>
+
+<h2>What is WhatsApp AI Automation?</h2>
+<p>WhatsApp AI automation uses artificial intelligence to handle customer conversations on WhatsApp automatically. Unlike simple chatbots that follow a rigid decision tree, modern AI systems understand natural language in both English and Bahasa Malaysia, can access your product database in real time, and learn from every conversation to improve over time.</p>
+
+<h2>Key Capabilities for Malaysian Businesses</h2>
+<p><strong>Multi-language support:</strong> Handle enquiries in English, Bahasa Malaysia, and even Mandarin without hiring additional staff.</p>
+<p><strong>24/7 availability:</strong> Never miss a customer enquiry again, even during public holidays (and Malaysia has many).</p>
+<p><strong>Lead qualification:</strong> Automatically identify hot leads and escalate them to your sales team with a full conversation history.</p>
+<p><strong>Order tracking and support:</strong> Integrate with your order management system to give customers real-time updates without any human involvement.</p>
+<p><strong>Appointment scheduling:</strong> For clinics, salons, and service businesses, AI can handle the entire booking process including reminders.</p>
+
+<h2>Use Cases by Industry</h2>
+<p><strong>F&B:</strong> Handle table reservations, delivery orders, menu enquiries, and promotional announcements. One Kuala Lumpur restaurant reduced their front-of-house phone calls by 80% after deploying WhatsApp AI.</p>
+<p><strong>Property:</strong> Qualify property enquiries, schedule viewings, and send follow-up information packages automatically.</p>
+<p><strong>Retail:</strong> Answer product questions, check stock availability, process returns, and send order confirmations.</p>
+<p><strong>Healthcare:</strong> Handle appointment bookings, send medication reminders, answer general health FAQs, and manage patient follow-ups.</p>
+
+<h2>Implementation Steps</h2>
+<p>Implementing WhatsApp AI for your business involves four key steps: connecting your WhatsApp Business account, training the AI on your product and service information, setting escalation rules for complex issues, and monitoring performance through a dashboard.</p>
+<p>With AiServe, the entire setup takes less than 48 hours. Our team handles the technical integration while you focus on providing the business knowledge the AI needs to serve your customers.</p>
+
+<h2>What to Expect: Real Numbers</h2>
+<p>Based on deployments across Malaysian SMEs, businesses typically see a 70% reduction in response time, 3x improvement in lead capture rate, 40% reduction in support costs, and 85%+ customer satisfaction scores within the first 30 days.</p>
+
+<h2>Getting Started</h2>
+<p>The best way to experience WhatsApp AI automation is to try it yourself. AiServe''s Customer Service Capsule includes full WhatsApp integration as standard. Start your 14-day free trial today.</p>',
+  'Customer Service',
+  'WhatsApp AI Malaysia, WhatsApp automation, chatbot Malaysia, WhatsApp business automation',
+  'WhatsApp AI Automation: Complete Guide for Malaysian Businesses | AiServe',
+  'Learn how to deploy WhatsApp AI automation for your Malaysian business. Handle enquiries, qualify leads, and close sales 24/7 — complete step-by-step guide.',
+  'published',
+  '2026-05-20 09:00:00',
+  NULL
+),
+
+(
+  'How to Cut HR Admin Time by 80% with AI Capsules',
+  'cut-hr-admin-time-80-percent-ai-capsules',
+  'HR administration consumes enormous time in Malaysian SMEs. AI Capsules can automate leave management, payroll queries, onboarding, and staff FAQs — freeing your HR team to focus on people, not paperwork.',
+  '<p>For most Malaysian SMEs, the HR function is a constant battle against paperwork. Leave applications submitted via WhatsApp message, payroll queries handled manually, onboarding checklists sent by email, and staff policy questions answered one by one. Sound familiar?</p>
+
+<p>AI HR automation is changing this fundamentally. Here''s how Malaysian businesses are cutting HR admin time by up to 80% using AI Capsules.</p>
+
+<h2>The Hidden Cost of Manual HR Administration</h2>
+<p>A Malaysian SME with 50 employees typically spends 15–25 hours per week on routine HR administration. That''s the equivalent of one full-time employee doing nothing but processing leave forms, answering payroll questions, and managing onboarding paperwork. At an average HR executive salary of RM4,000–6,000 per month, the direct cost is significant — but the opportunity cost is even higher.</p>
+
+<h2>Leave Management Automation</h2>
+<p>Leave management is one of the most common HR pain points. Staff submit requests via WhatsApp, email, or paper forms. The HR team checks the leave balance, gets manager approval, updates the system, and notifies the employee — a process that takes 15–30 minutes per request.</p>
+<p>An AI Leave Management system automates the entire workflow. Staff submit leave via a simple chatbot interface. The AI checks balances in real time, routes the request for manager approval, updates the system on approval, and notifies everyone involved — all without HR intervention.</p>
+
+<h2>AI Payroll Query Resolution</h2>
+<p>The most common HR question in any organisation is "why is my salary different this month?" Answering payroll queries manually requires the HR executive to pull up the payslip, cross-reference deductions, and explain each line item. With AI, staff can query their own payslip anytime, and the AI explains every deduction, overtime calculation, and allowance in plain language.</p>
+
+<h2>Automated Onboarding</h2>
+<p>Getting a new employee productive takes weeks of manual coordination — forms to fill, equipment to set up, policies to sign off, and introductions to make. AI onboarding systems automate the entire checklist, send reminders automatically, track completion, and flag anything that is overdue.</p>
+<p>Companies using AI onboarding report that new employees reach full productivity 30–40% faster.</p>
+
+<h2>Staff FAQ Automation</h2>
+<p>HR teams answer the same questions repeatedly: What is the medical leave entitlement? How do I claim expenses? What is the overtime policy? An AI HR assistant can answer all of these questions instantly, 24/7, in English or Bahasa Malaysia.</p>
+
+<h2>Implementation Guide</h2>
+<p>AiServe''s HR & Admin Capsule integrates with your existing HR system and can be deployed in under a week. The AI is pre-trained on Malaysian HR law and common HR policies, then customised for your specific company policies and procedures.</p>
+<p>Start with leave management automation — it delivers the fastest and most visible ROI — then expand to payroll queries and onboarding over time.</p>',
+  'HR & Operations',
+  'HR automation Malaysia, leave management AI, payroll automation, HR AI, SME HR system',
+  'How to Cut HR Admin Time by 80% with AI Capsules | AiServe',
+  'Discover how Malaysian SMEs are automating leave management, payroll queries, and staff onboarding with AI Capsules — cutting HR admin time by up to 80%.',
+  'published',
+  '2026-05-25 09:00:00',
+  NULL
+),
+
+(
+  'AI Financial Reporting for SMEs: From Spreadsheets to Daily Insights',
+  'ai-financial-reporting-sme-spreadsheets-daily-insights',
+  'Most Malaysian SME owners review their financials monthly — if at all. AI financial reporting gives you daily visibility into cash flow, revenue trends, and anomalies before they become problems.',
+  '<p>The majority of Malaysian SME owners check their financial numbers once a month, usually when the accountant sends a report. By the time you see a problem in a monthly report, you are already 30 days behind. AI financial reporting changes this completely.</p>
+
+<h2>The Problem with Monthly Financial Reports</h2>
+<p>Traditional monthly financial reports have three critical weaknesses for SMEs: they are backward-looking, they arrive too late for meaningful action, and they require an accountant or finance manager to interpret them. In a fast-moving business environment, discovering that last month was bad does nothing to help you fix this month.</p>
+
+<h2>What AI Financial Reporting Looks Like</h2>
+<p>Imagine starting every morning with a clear, plain-language summary of your business''s financial health: yesterday''s revenue, today''s expected cash position, overdue invoices that need chasing, and any unusual spending patterns that warrant attention. This is what AI Daily Reporting provides.</p>
+<p>The AI connects to your accounting system, point-of-sale, and bank feeds to create a complete picture of your financial position — updated automatically every day without any manual work.</p>
+
+<h2>Key Features for Malaysian SMEs</h2>
+<p><strong>Daily P&L snapshot:</strong> Know your gross margin, operating costs, and net position every single day.</p>
+<p><strong>Cash flow forecasting:</strong> See your expected cash position 30, 60, and 90 days ahead based on confirmed orders, outstanding invoices, and recurring commitments.</p>
+<p><strong>Anomaly detection:</strong> AI flags unusual expenses, unexpected revenue drops, or payment patterns that deviate from your baseline — before they become crises.</p>
+<p><strong>Debtor ageing alerts:</strong> Automatic alerts when invoices are approaching or exceeding their due date, with suggested follow-up actions.</p>
+<p><strong>GST/SST compliance tracking:</strong> Stay on top of your Malaysian tax obligations with automated tracking of taxable transactions.</p>
+
+<h2>Real Impact for Malaysian Businesses</h2>
+<p>A Petaling Jaya-based retail SME implemented AI financial reporting and discovered, within the first week, that three product categories had been operating at a loss for months due to incorrect cost pricing. The AI flagged the anomaly — something the monthly report had obscured in the aggregate numbers.</p>
+<p>A Penang F&B group used AI cash flow forecasting to predict a cash shortfall 45 days in advance, giving them time to arrange a credit facility before it became a crisis.</p>
+
+<h2>Integration with Your Existing Systems</h2>
+<p>AiServe''s Daily Reporting Capsule integrates with Xero, QuickBooks, SQL Account, and Autocount — the most commonly used accounting systems in Malaysia. Setup typically takes one to two days and requires no changes to your existing accounting workflow.</p>
+
+<h2>From Data to Decisions</h2>
+<p>The ultimate goal of AI financial reporting is not just to show you numbers — it is to help you make better decisions faster. With daily financial insights, you can identify problems early, capitalise on opportunities, and run your business with the confidence that comes from knowing your numbers in real time.</p>',
+  'Finance',
+  'financial reporting Malaysia, AI accounting, cash flow forecasting, SME finance, daily business reports',
+  'AI Financial Reporting for Malaysian SMEs: From Spreadsheets to Daily Insights | AiServe',
+  'Stop reviewing finances monthly. AI financial reporting gives Malaysian SME owners daily cash flow visibility, anomaly alerts, and forward-looking insights.',
+  'published',
+  '2026-05-28 09:00:00',
+  NULL
+),
+
+(
+  'Why Your SME Needs an AI Business Operating System, Not Just a Chatbot',
+  'sme-needs-ai-business-operating-system-not-chatbot',
+  'Chatbots answer questions. An AI Business Operating System runs your entire business. Understand the critical difference and why it matters for Malaysian SMEs in 2026.',
+  '<p>The word "chatbot" has become almost synonymous with AI for business. But there is a fundamental difference between a chatbot — which answers questions — and an AI Business Operating System (BOS), which runs your entire business. Understanding this difference is critical for Malaysian SME owners who want to get real value from AI investment.</p>
+
+<h2>What a Chatbot Can Do</h2>
+<p>A chatbot is a conversational interface that responds to specific inputs with pre-programmed or AI-generated outputs. Modern chatbots are genuinely useful for answering FAQs, handling basic customer service queries, and providing instant responses outside business hours.</p>
+<p>But a chatbot is a single point solution. It answers questions. It does not manage your business, track your performance, automate your workflows, or make your operations more efficient across departments.</p>
+
+<h2>What an AI Business Operating System Does</h2>
+<p>An AI BOS is an integrated platform that connects every function of your business and applies AI intelligence across all of them simultaneously. It is not a single tool — it is an operating system that your entire business runs on.</p>
+<p>Consider the difference: a chatbot answers a customer''s delivery enquiry. An AI BOS answers the enquiry, updates the CRM, triggers a follow-up sequence if the customer showed interest in a related product, flags the delivery delay to your operations team, and includes the interaction data in your daily performance report.</p>
+
+<h2>The Five Layers of an AI BOS</h2>
+<p><strong>Communication Layer:</strong> Centralises all customer communication — WhatsApp, email, social media — into one AI-managed inbox with conversation memory and sentiment analysis.</p>
+<p><strong>Operations Layer:</strong> Automates internal workflows — HR approvals, purchase order generation, inventory alerts, payroll processing — without manual intervention.</p>
+<p><strong>Data Layer:</strong> Captures structured data from every customer interaction and business activity, building a proprietary dataset that becomes increasingly valuable over time.</p>
+<p><strong>Intelligence Layer:</strong> Analyses patterns across all data sources to identify opportunities, predict problems, and recommend specific actions.</p>
+<p><strong>Reporting Layer:</strong> Delivers daily, real-time insights to business owners and managers in plain language — not raw data requiring interpretation.</p>
+
+<h2>Why This Matters for Malaysian SMEs</h2>
+<p>Malaysian SMEs face a specific set of challenges: high staff turnover, multi-language customer communication, complex compliance requirements (GST/SST, EPF, SOCSO), and intense competition from larger businesses with more resources.</p>
+<p>An AI BOS levels the playing field. With the right system, a 10-person Malaysian SME can deliver customer service, operations efficiency, and business intelligence that rivals companies 10 times its size.</p>
+
+<h2>The Capsule Approach: Start Small, Scale Fast</h2>
+<p>AiServe''s Capsule model makes AI BOS accessible without overwhelming upfront investment. Start with the Capsule that solves your biggest immediate pain point — usually Customer Service or Sales Automation — and expand as you see results.</p>
+<p>Each Capsule is plug-and-play, industry-specific, and designed to deliver ROI within 30 days. As you add Capsules, they connect together into a complete BOS that runs your entire business automatically.</p>
+<p>That is the vision. And for Malaysian SMEs ready to compete in 2026, it starts with a single step.</p>',
+  'AI Strategy',
+  'AI business operating system, BOS Malaysia, SME AI strategy, business automation Malaysia, AI Capsules',
+  'Why Your SME Needs an AI Business Operating System, Not Just a Chatbot | AiServe',
+  'Chatbots answer questions. An AI Business Operating System runs your entire business. Discover the critical difference and how AiServe''s Capsule model helps Malaysian SMEs compete.',
+  'published',
+  '2026-06-01 09:00:00',
+  NULL
+),
+
+(
+  'ProjectOS: How AI-Powered Project Management Changes Execution for SMEs',
+  'projectos-ai-powered-project-management-sme-execution',
+  'Most project management tools track tasks. ProjectOS tracks execution — with AI meeting minutes, a Decision Center, an Issue Center, and a project memory that never forgets.',
+  '<p>Malaysian SMEs lose an estimated 20–30% of project value to poor execution: missed deadlines, forgotten decisions, unclear accountability, and issues that resurface because their root causes were never properly resolved. Project management tools help. But most tools only track tasks — they do not actually improve execution.</p>
+<p>ProjectOS takes a fundamentally different approach. Built on the insight that execution fails at the meeting-to-action transition, ProjectOS uses AI to ensure that every discussion becomes a documented decision, every decision triggers an action, and every action has a clear owner and deadline.</p>
+
+<h2>The Meeting-to-Action Problem</h2>
+<p>Think about your last important meeting. Decisions were made. Actions were assigned. Everyone left with good intentions. A week later, half the actions had not been started, two decisions had been forgotten, and the same issues were being discussed again.</p>
+<p>This is not a people problem — it is a systems problem. Without a reliable system to capture what was decided, who is responsible, and when it is due, execution depends entirely on individual memory and discipline. ProjectOS solves this at the system level.</p>
+
+<h2>AI Meeting Minutes Engine</h2>
+<p>ProjectOS''s AI Meeting Minutes Engine generates comprehensive meeting documentation automatically — a 10-section international standard format that captures decisions, actions, issues, risks, and key discussion points. What takes a human 45 minutes to write from notes is produced in under 2 minutes.</p>
+<p>Every set of minutes is stored permanently in the project memory, searchable, and linked to the specific decisions and actions that resulted from that meeting.</p>
+
+<h2>Decision Center: No Decision Ever Forgotten</h2>
+<p>Every important decision made about a project — whether in a meeting, a WhatsApp message, or an email — is captured in the Decision Center with its rationale, the date it was made, and who made it.</p>
+<p>When team members ask "why did we decide to do it this way?" the answer is always available. When a client disputes a decision made six months ago, the documentation is there. This single feature eliminates one of the most common causes of project conflict in Malaysian SMEs.</p>
+
+<h2>Issue Center: Structured Problem Resolution</h2>
+<p>Issues are inevitable in any project. What matters is how they are managed. The Issue Center in ProjectOS captures every issue with its severity, root cause, assigned owner, resolution steps, and outcome.</p>
+<p>The Rollback Engine keeps a complete history of every change to the project — so if a decision turns out to be wrong, you can see exactly what was changed, when, and why, and restore the previous state.</p>
+
+<h2>AI Health Score</h2>
+<p>Every project in ProjectOS has an AI Health Score from 0 to 100, calculated daily based on action completion rate, overdue items, decision velocity, issue resolution speed, and milestone progress. A declining health score is an early warning system — it alerts project managers before the project goes off the rails, not after.</p>
+
+<h2>The Result: Measurable Execution</h2>
+<p>SMEs using ProjectOS report a 40% reduction in overdue actions, 60% faster issue resolution, and a significant improvement in client confidence thanks to the Client Portal that provides transparent, real-time project progress without requiring a single status call.</p>
+<p>If your business runs projects — whether for clients, internal initiatives, or product launches — ProjectOS is the execution layer that turns good intentions into measurable outcomes.</p>',
+  'Project Management',
+  'project management AI, ProjectOS Malaysia, AI meeting minutes, SME project management, execution system',
+  'ProjectOS: How AI-Powered Project Management Changes Execution for Malaysian SMEs | AiServe',
+  'Discover how ProjectOS uses AI meeting minutes, a Decision Center, Issue Center, and project memory to eliminate execution failures in Malaysian SME projects.',
+  'published',
+  '2026-06-02 09:00:00',
+  NULL
+);

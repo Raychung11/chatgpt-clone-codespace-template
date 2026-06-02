@@ -201,6 +201,9 @@ function adminBadge(string $sql): int {
         <a href="/admin/homepage-builder.php" class="admin-nav-link <?= $adminPage === 'homepage-builder' ? 'active' : '' ?>">
             <i class="bi bi-layout-text-window-reverse"></i> Homepage Builder
         </a>
+        <a href="/admin/blog.php" class="admin-nav-link <?= $adminPage === 'blog' ? 'active' : '' ?>">
+            <i class="bi bi-pencil-square"></i> Blog Posts
+        </a>
 
         <div class="nav-section-label mt-3">AI Platform</div>
         <a href="/projects/" class="admin-nav-link">

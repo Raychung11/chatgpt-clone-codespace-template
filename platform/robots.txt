@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /dashboard.php
+Disallow: /checkout.php
+Disallow: /account.php
+Disallow: /team.php
+Disallow: /referral.php
+Disallow: /membership.php
+Disallow: /upgrade.php
+Disallow: /modules/
+Disallow: /projects/
+
+Sitemap: https://bizai.my/sitemap.php
