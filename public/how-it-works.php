@@ -14,7 +14,7 @@ include __DIR__ . '/../inc/public_header.php';
     <div style="font-size:13px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.85);text-transform:uppercase;margin-bottom:var(--space-sm);">Simple &amp; Easy</div>
     <h1 style="color:#fff;font-size:clamp(28px,4vw,50px);margin-bottom:var(--space-md);">How SilverDeals MY Works</h1>
     <p style="color:rgba(255,255,255,.9);font-size:18px;line-height:1.7;margin-bottom:var(--space-xl);">Get started in minutes. Save on every visit. Earn rewards for simply living well.</p>
-    <a href="/public/register.php" class="btn btn--lg" style="background:#fff;color:var(--orange-primary);font-weight:700;border:none;">Join Free Today →</a>
+    <a href="/register.php" class="btn btn--lg" style="background:#fff;color:var(--orange-primary);font-weight:700;border:none;">Join Free Today →</a>
   </div>
 </section>
 
@@ -229,7 +229,7 @@ include __DIR__ . '/../inc/public_header.php';
       ['Is my MyKad information safe?',
        'Absolutely. Your identity documents are encrypted, stored securely, and never shared with merchants or third parties. We comply with Malaysia\'s Personal Data Protection Act 2010 (PDPA).'],
       ['How do I become a merchant partner?',
-       'Visit our <a href="/public/join-merchant.php" style="color:var(--orange-primary);">Become a Partner</a> page to submit your merchant application. Our team will review and get back to you within 2 business days.'],
+       'Visit our <a href="/join-merchant.php" style="color:var(--orange-primary);">Become a Partner</a> page to submit your merchant application. Our team will review and get back to you within 2 business days.'],
     ];
     ?>
 
@@ -254,11 +254,11 @@ include __DIR__ . '/../inc/public_header.php';
     <h2 style="margin-bottom:var(--space-md);">Ready to Start Saving?</h2>
     <p style="color:var(--text-muted);font-size:17px;margin-bottom:var(--space-xl);">Join thousands of Malaysian seniors enjoying exclusive deals, earning rewards, and living better every day.</p>
     <div style="display:flex;justify-content:center;gap:var(--space-md);flex-wrap:wrap;">
-      <a href="/public/register.php" class="btn btn--primary btn--lg">Join Free — Takes 2 Minutes</a>
-      <a href="/public/deals.php" class="btn btn--muted btn--lg">Browse Deals First</a>
+      <a href="/register.php" class="btn btn--primary btn--lg">Join Free — Takes 2 Minutes</a>
+      <a href="/deals.php" class="btn btn--muted btn--lg">Browse Deals First</a>
     </div>
     <p style="font-size:13px;color:var(--text-muted);margin-top:var(--space-lg);">
-      Already a member? <a href="/public/login.php" style="color:var(--orange-primary);font-weight:600;">Log in here</a>
+      Already a member? <a href="/login.php" style="color:var(--orange-primary);font-weight:600;">Log in here</a>
     </p>
   </div>
 </section>

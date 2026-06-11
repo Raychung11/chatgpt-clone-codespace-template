@@ -101,7 +101,7 @@ include __DIR__ . '/../inc/public_header.php';
 
         ['Governing Law', 'These Terms are governed by the laws of Malaysia. Any disputes shall be submitted to the exclusive jurisdiction of the Malaysian courts.'],
 
-        ['Contact', 'For questions about these Terms, email us at <a href="mailto:legal@silverdeals.my" style="color:var(--orange-primary);">legal@silverdeals.my</a> or use our <a href="/public/contact.php" style="color:var(--orange-primary);">contact form</a>.'],
+        ['Contact', 'For questions about these Terms, email us at <a href="mailto:legal@silverdeals.my" style="color:var(--orange-primary);">legal@silverdeals.my</a> or use our <a href="/contact.php" style="color:var(--orange-primary);">contact form</a>.'],
     ];
     ?>
 
@@ -120,9 +120,9 @@ include __DIR__ . '/../inc/public_header.php';
     <div style="padding:var(--space-xl);background:var(--bg-light);border-radius:var(--radius-lg);text-align:center;">
       <p style="color:var(--text-muted);font-size:14px;">By using SilverDeals MY, you acknowledge that you have read, understood, and agreed to these Terms &amp; Conditions.</p>
       <div style="display:flex;justify-content:center;gap:var(--space-md);margin-top:var(--space-md);flex-wrap:wrap;">
-        <a href="/public/privacy.php" class="btn btn--muted btn--sm">Privacy Policy</a>
-        <a href="/public/contact.php" class="btn btn--muted btn--sm">Contact Us</a>
-        <a href="/public/register.php" class="btn btn--primary btn--sm">Join Free</a>
+        <a href="/privacy.php" class="btn btn--muted btn--sm">Privacy Policy</a>
+        <a href="/contact.php" class="btn btn--muted btn--sm">Contact Us</a>
+        <a href="/register.php" class="btn btn--primary btn--sm">Join Free</a>
       </div>
     </div>
   </div>

@@ -305,7 +305,7 @@ include __DIR__ . '/../inc/admin_layout.php';
               <?php foreach ($merchant_deals as $d): ?>
                 <tr>
                   <td style="font-size:14px;font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                    <a href="/public/deal.php?slug=<?= urlencode($d['slug'] ?? '') ?>" target="_blank" style="color:var(--text-dark);"><?= e($d['title']) ?></a>
+                    <a href="/deal.php?slug=<?= urlencode($d['slug'] ?? '') ?>" target="_blank" style="color:var(--text-dark);"><?= e($d['title']) ?></a>
                   </td>
                   <td style="font-size:13px;">
                     <?= $d['deal_price'] ? format_myr((float)$d['deal_price']) : ($d['discount_pct'] ? (int)$d['discount_pct'].'% Off' : '—') ?>

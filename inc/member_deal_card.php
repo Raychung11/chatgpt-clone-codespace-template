@@ -2,7 +2,7 @@
 // ─── SilverDeals MY — Member Deal Card Partial ────────────────────────────────
 // Expects: $d (deal row), $is_claimed (bool), $is_active_member (bool),
 //          $points_balance (int), csrf_field() available
-$detail_url = '/public/deal.php?slug=' . urlencode($d['slug']);
+$detail_url = '/deal.php?slug=' . urlencode($d['slug']);
 $can_claim  = $is_active_member && !$is_claimed
               && ($d['points_required'] <= 0 || $points_balance >= $d['points_required']);
 ?>

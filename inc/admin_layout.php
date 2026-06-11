@@ -95,8 +95,8 @@ $total_pending = array_sum($pending);
       <a href="/admin/settings.php"     class="dash-nav__link <?= $active_nav==='settings'?'active':'' ?>"><span class="dash-nav__icon">⚙️</span> Settings</a>
 
       <div class="dash-nav__group-label">Account</div>
-      <a href="/public/index.php" class="dash-nav__link" target="_blank"><span class="dash-nav__icon">🌐</span> View Public Site</a>
-      <a href="/public/logout.php" class="dash-nav__link" data-confirm="Logout from admin?"><span class="dash-nav__icon">🚪</span> Logout</a>
+      <a href="/index.php" class="dash-nav__link" target="_blank"><span class="dash-nav__icon">🌐</span> View Public Site</a>
+      <a href="/logout.php" class="dash-nav__link" data-confirm="Logout from admin?"><span class="dash-nav__icon">🚪</span> Logout</a>
     </nav>
 
     <div style="padding:var(--space-md) var(--space-lg);border-top:1px solid rgba(255,255,255,.08);font-size:12px;color:rgba(255,255,255,.3);">

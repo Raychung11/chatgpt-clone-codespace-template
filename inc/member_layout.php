@@ -62,8 +62,8 @@ $active_nav = $active_nav ?? '';
       <a href="/member/referrals.php"  class="dash-nav__link <?= $active_nav==='referrals'?'active':'' ?>"><span class="dash-nav__icon">🤝</span> Refer &amp; Earn</a>
 
       <div class="dash-nav__group-label">Account</div>
-      <a href="/public/deals.php"      class="dash-nav__link"><span class="dash-nav__icon">🌐</span> Public Site</a>
-      <a href="/public/logout.php"     class="dash-nav__link" data-confirm="Are you sure you want to logout?"><span class="dash-nav__icon">🚪</span> Logout</a>
+      <a href="/deals.php"      class="dash-nav__link"><span class="dash-nav__icon">🌐</span> Public Site</a>
+      <a href="/logout.php"     class="dash-nav__link" data-confirm="Are you sure you want to logout?"><span class="dash-nav__icon">🚪</span> Logout</a>
     </nav>
 
     <div style="padding:var(--space-lg);border-top:1px solid rgba(255,255,255,.08);">

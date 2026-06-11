@@ -71,8 +71,8 @@ if ($merchant) {
       <a href="/merchant/commissions.php" class="dash-nav__link <?= $active_nav==='commissions'?'active':'' ?>"><span class="dash-nav__icon">💹</span> Commissions</a>
 
       <div class="dash-nav__group-label">Account</div>
-      <a href="/public/index.php"  class="dash-nav__link" target="_blank"><span class="dash-nav__icon">🌐</span> Public Site</a>
-      <a href="/public/logout.php" class="dash-nav__link" data-confirm="Logout?"><span class="dash-nav__icon">🚪</span> Logout</a>
+      <a href="/index.php"  class="dash-nav__link" target="_blank"><span class="dash-nav__icon">🌐</span> Public Site</a>
+      <a href="/logout.php" class="dash-nav__link" data-confirm="Logout?"><span class="dash-nav__icon">🚪</span> Logout</a>
     </nav>
   </aside>
 

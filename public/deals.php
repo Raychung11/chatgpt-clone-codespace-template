@@ -112,15 +112,15 @@ include __DIR__ . '/../inc/public_header.php';
           <option value="expiring" <?= $sort==='expiring'?'selected':'' ?>>Expiring Soon</option>
         </select>
         <button class="btn btn--primary btn--sm">Search</button>
-        <?php if ($search||$cat_slug): ?><a href="/public/deals.php" class="btn btn--muted btn--sm">✕ Clear</a><?php endif; ?>
+        <?php if ($search||$cat_slug): ?><a href="/deals.php" class="btn btn--muted btn--sm">✕ Clear</a><?php endif; ?>
       </div>
     </form>
 
     <!-- Categories -->
     <div class="pill-list" style="margin-bottom:var(--space-xl);">
-      <a href="/public/deals.php" class="pill <?= !$cat_slug?'active':'' ?>">All Deals</a>
+      <a href="/deals.php" class="pill <?= !$cat_slug?'active':'' ?>">All Deals</a>
       <?php foreach ($categories as $cat): ?>
-        <a href="/public/deals.php?cat=<?= urlencode($cat['slug']) ?>" class="pill <?= $cat_slug===$cat['slug']?'active':'' ?>">
+        <a href="/deals.php?cat=<?= urlencode($cat['slug']) ?>" class="pill <?= $cat_slug===$cat['slug']?'active':'' ?>">
           <?= e($cat['icon'].' '.$cat['name']) ?>
         </a>
       <?php endforeach; ?>
@@ -169,7 +169,7 @@ include __DIR__ . '/../inc/public_header.php';
         <div class="empty-state__icon">🎁</div>
         <h3 class="empty-state__title">No deals found</h3>
         <p class="empty-state__text">Try a different search or category, or check back soon — new deals are added every week.</p>
-        <a href="/public/deals.php" class="btn btn--primary">View All Deals</a>
+        <a href="/deals.php" class="btn btn--primary">View All Deals</a>
       </div>
     <?php endif; ?>
 
@@ -178,7 +178,7 @@ include __DIR__ . '/../inc/public_header.php';
       <div style="margin-top:var(--space-2xl);background:linear-gradient(135deg,var(--orange-primary),var(--orange-secondary));border-radius:var(--radius-xl);padding:var(--space-2xl);text-align:center;color:#fff;">
         <h3 style="color:#fff;margin-bottom:var(--space-sm);">🔒 Some deals are for members only</h3>
         <p style="opacity:.9;margin-bottom:var(--space-lg);font-size:17px;">Join free to unlock all exclusive senior deals and earn SilverPoints.</p>
-        <a href="/public/register.php" class="btn btn--ghost btn--lg">Join Free Today →</a>
+        <a href="/register.php" class="btn btn--ghost btn--lg">Join Free Today →</a>
       </div>
     <?php endif; ?>
   </div>

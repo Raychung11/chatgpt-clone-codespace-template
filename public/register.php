@@ -119,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $pdo->commit();
 
                     auth_set_flash('success', 'Welcome to SilverDeals MY! Your account is under review. You can login and complete your profile while you wait.');
-                    redirect('/public/login.php');
+                    redirect('/login.php');
                 }
             } catch (PDOException $e) {
                 if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
@@ -149,7 +149,7 @@ include __DIR__ . '/../inc/public_header.php';
       <div class="alert alert--error"><span class="alert__icon">✕</span><span><?= e($errors['general']) ?></span></div>
     <?php endif; ?>
 
-    <form method="POST" action="/public/register.php" novalidate>
+    <form method="POST" action="/register.php" novalidate>
       <?= csrf_field() ?>
       <input type="hidden" name="ref" value="<?= $ref_code_prefill ?>">
 
@@ -251,8 +251,8 @@ include __DIR__ . '/../inc/public_header.php';
           <input type="checkbox" name="agree" <?= isset($_POST['agree']) ? 'checked' : '' ?>>
           <span>
             I agree to the
-            <a href="/public/terms.php" target="_blank">Terms of Service</a> and
-            <a href="/public/privacy.php" target="_blank">Privacy Policy</a>.
+            <a href="/terms.php" target="_blank">Terms of Service</a> and
+            <a href="/privacy.php" target="_blank">Privacy Policy</a>.
             I confirm I am at least 50 years old or registering on behalf of a senior family member.
             <span class="required">*</span>
           </span>
@@ -268,7 +268,7 @@ include __DIR__ . '/../inc/public_header.php';
     <div class="auth-divider">or</div>
 
     <p class="text-center" style="font-size:16px;">
-      Already have an account? <a href="/public/login.php" style="font-weight:600;">Login here</a>
+      Already have an account? <a href="/login.php" style="font-weight:600;">Login here</a>
     </p>
 
     <p class="text-center text-muted" style="font-size:14px;margin-top:var(--space-lg);">

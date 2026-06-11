@@ -6,20 +6,28 @@ Options -MultiViews
 # Rewrite engine
 RewriteEngine On
 
-# Force HTTPS in production (uncomment on live server)
-# RewriteCond %{HTTPS} off
-# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-
-# www → non-www (optional; configure for your domain)
-# RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
-# RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
+# Force HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # Deny access to sensitive config/system directories
 RewriteRule ^(config|database|inc)/ - [F,L]
 RewriteRule ^\.env$ - [F,L]
 
-# Default document
-DirectoryIndex public/index.php index.php
+# Default document — root loads public/index.php via index.php
+DirectoryIndex index.php public/index.php
+
+# Root → index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^$ index.php [L]
+
+# Route clean root-level URLs to /public/ directory
+# e.g. /deals.php → /public/deals.php, /login.php → /public/login.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/(admin|member|merchant|api|assets|public|database|config|inc)/
+RewriteRule ^([a-z0-9_-]+\.php)$ /public/$1 [L,QSA]
 
 # Custom error pages
 ErrorDocument 403 /public/errors/403.php

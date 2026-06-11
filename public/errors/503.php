@@ -15,7 +15,7 @@
     <p style="color:var(--text-muted);font-size:18px;margin-bottom:var(--space-xl);">
       SilverDeals MY is temporarily undergoing maintenance. Please check back soon.
     </p>
-    <a href="/public/index.php" class="btn btn--primary">Try Again</a>
+    <a href="/index.php" class="btn btn--primary">Try Again</a>
   </div>
 </div>
 </body>

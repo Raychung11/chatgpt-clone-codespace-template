@@ -41,7 +41,7 @@ $canonical  = BASE_URL . parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 <!-- ─── Navigation ─────────────────────────────────────────────── -->
 <nav class="navbar" id="mainNav">
   <div class="navbar__inner">
-    <a href="/public/index.php" class="navbar__logo">
+    <a href="/index.php" class="navbar__logo">
       <div>
         <span class="navbar__logo-text">🟠 SilverDeals MY</span>
         <span class="navbar__logo-sub">Senior Membership &amp; Rewards</span>
@@ -49,20 +49,20 @@ $canonical  = BASE_URL . parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     </a>
 
     <ul class="navbar__menu" id="navMenu">
-      <li><a href="/public/index.php"       class="navbar__link <?= active_nav('/public/index') ?>">Home</a></li>
-      <li><a href="/public/deals.php"       class="navbar__link <?= active_nav('/public/deals') ?>">Deals</a></li>
-      <li><a href="/public/merchants.php"   class="navbar__link <?= active_nav('/merchants') ?>">Merchants</a></li>
-      <li><a href="/public/how-it-works.php" class="navbar__link <?= active_nav('how-it-works') ?>">How It Works</a></li>
-      <li><a href="/public/about.php"       class="navbar__link <?= active_nav('/about') ?>">About</a></li>
-      <li><a href="/public/contact.php"     class="navbar__link <?= active_nav('/contact') ?>">Contact</a></li>
+      <li><a href="/index.php"       class="navbar__link <?= active_nav('/index') ?>">Home</a></li>
+      <li><a href="/deals.php"       class="navbar__link <?= active_nav('/deals') ?>">Deals</a></li>
+      <li><a href="/merchants.php"   class="navbar__link <?= active_nav('/merchants') ?>">Merchants</a></li>
+      <li><a href="/how-it-works.php" class="navbar__link <?= active_nav('how-it-works') ?>">How It Works</a></li>
+      <li><a href="/about.php"       class="navbar__link <?= active_nav('/about') ?>">About</a></li>
+      <li><a href="/contact.php"     class="navbar__link <?= active_nav('/contact') ?>">Contact</a></li>
     </ul>
 
     <div class="navbar__actions">
       <?php if (auth_check()): ?>
         <a href="/member/dashboard.php" class="btn btn--primary btn--sm">My Dashboard</a>
       <?php else: ?>
-        <a href="/public/login.php"       class="btn btn--muted btn--sm">Login</a>
-        <a href="/public/register.php"    class="btn btn--primary btn--sm">Join Free</a>
+        <a href="/login.php"       class="btn btn--muted btn--sm">Login</a>
+        <a href="/register.php"    class="btn btn--primary btn--sm">Join Free</a>
       <?php endif; ?>
     </div>
 

@@ -126,8 +126,8 @@ include __DIR__ . '/../inc/public_header.php';
     <h2 style="margin-bottom:var(--space-md);">Ready to Start Saving?</h2>
     <p style="color:var(--text-muted);font-size:16px;margin-bottom:var(--space-xl);">Join thousands of Malaysian seniors enjoying exclusive deals every day.</p>
     <div style="display:flex;justify-content:center;gap:var(--space-md);flex-wrap:wrap;">
-      <a href="/public/register.php" class="btn btn--primary btn--lg">Join Free Today</a>
-      <a href="/public/deals.php" class="btn btn--muted btn--lg">Browse Deals</a>
+      <a href="/register.php" class="btn btn--primary btn--lg">Join Free Today</a>
+      <a href="/deals.php" class="btn btn--muted btn--lg">Browse Deals</a>
     </div>
   </div>
 </section>

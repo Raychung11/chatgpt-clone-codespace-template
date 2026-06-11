@@ -101,7 +101,7 @@ include __DIR__ . '/../inc/public_header.php';
             <div style="font-size:56px;margin-bottom:var(--space-lg);">✅</div>
             <h3 style="color:var(--success);margin-bottom:var(--space-md);">Message Sent!</h3>
             <p style="color:var(--text-muted);"><?= $success ?></p>
-            <a href="/public/contact.php" class="btn btn--muted btn--sm" style="margin-top:var(--space-lg);">Send Another</a>
+            <a href="/contact.php" class="btn btn--muted btn--sm" style="margin-top:var(--space-lg);">Send Another</a>
           </div>
         <?php else: ?>
           <h3 style="margin-bottom:var(--space-xl);">Send Us a Message</h3>

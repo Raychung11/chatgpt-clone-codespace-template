@@ -111,7 +111,7 @@ include __DIR__ . '/../inc/public_header.php';
       <div class="alert alert--error"><span class="alert__icon">✕</span><span><?= e($errors['general']) ?></span></div>
     <?php endif; ?>
 
-    <form method="POST" action="/public/login.php<?= !empty($_GET['redirect']) ? '?redirect=' . urlencode($_GET['redirect']) : '' ?>" novalidate>
+    <form method="POST" action="/login.php<?= !empty($_GET['redirect']) ? '?redirect=' . urlencode($_GET['redirect']) : '' ?>" novalidate>
       <?= csrf_field() ?>
 
       <div class="form-group">
@@ -128,7 +128,7 @@ include __DIR__ . '/../inc/public_header.php';
       <div class="form-group">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-sm);">
           <label class="form-label" for="password" style="margin-bottom:0;">Password</label>
-          <a href="/public/forgot-password.php" style="font-size:14px;color:var(--orange-primary);">Forgot password?</a>
+          <a href="/forgot-password.php" style="font-size:14px;color:var(--orange-primary);">Forgot password?</a>
         </div>
         <div style="position:relative;">
           <input
@@ -158,7 +158,7 @@ include __DIR__ . '/../inc/public_header.php';
 
     <p class="text-center" style="font-size:16px;">
       New to SilverDeals MY?
-      <a href="/public/register.php" style="font-weight:600;">Create a free account</a>
+      <a href="/register.php" style="font-weight:600;">Create a free account</a>
     </p>
 
     <div style="margin-top:var(--space-xl);background:var(--orange-bg);border-radius:var(--radius-md);padding:var(--space-md);text-align:center;">

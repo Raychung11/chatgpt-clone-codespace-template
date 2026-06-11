@@ -221,7 +221,7 @@ include __DIR__ . '/../inc/public_header.php';
         <div class="form-group">
           <label class="form-check">
             <input type="checkbox" name="agree" <?= isset($_POST['agree'])?'checked':'' ?>>
-            <span>I agree to the <a href="/public/terms.php" target="_blank">Merchant Terms</a> and <a href="/public/privacy.php" target="_blank">Privacy Policy</a>. I authorise SilverDeals MY to list my approved deals on the platform. <span class="required">*</span></span>
+            <span>I agree to the <a href="/terms.php" target="_blank">Merchant Terms</a> and <a href="/privacy.php" target="_blank">Privacy Policy</a>. I authorise SilverDeals MY to list my approved deals on the platform. <span class="required">*</span></span>
           </label>
           <?php if (!empty($errors['agree'])): ?><div class="form-error"><?= e($errors['agree']) ?></div><?php endif; ?>
         </div>

@@ -230,7 +230,7 @@ include __DIR__ . '/../inc/member_layout.php';
           <?php if ($deal['deal_price']): ?>
             <div style="font-size:16px;font-weight:700;color:var(--orange-primary);"><?= format_myr((float)$deal['deal_price']) ?></div>
           <?php endif; ?>
-          <a href="/public/deal.php?slug=<?= urlencode($deal['slug']) ?>" class="btn btn--primary btn--sm btn--full" style="margin-top:var(--space-sm);">Get Deal</a>
+          <a href="/deal.php?slug=<?= urlencode($deal['slug']) ?>" class="btn btn--primary btn--sm btn--full" style="margin-top:var(--space-sm);">Get Deal</a>
         </div>
       </div>
     <?php endforeach; ?>

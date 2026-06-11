@@ -31,7 +31,7 @@ function format_myr(float $amount): string
 
 function referral_link(string $code): string
 {
-    return BASE_URL . '/public/join-member.php?ref=' . urlencode($code);
+    return BASE_URL . '/join-member.php?ref=' . urlencode($code);
 }
 
 function generate_referral_code(int $userId): string

@@ -16,8 +16,8 @@
       Sorry, the page you're looking for doesn't exist or may have moved.
     </p>
     <div style="display:flex;gap:var(--space-md);justify-content:center;flex-wrap:wrap;">
-      <a href="/public/index.php" class="btn btn--primary">🏠 Go to Homepage</a>
-      <a href="/public/deals.php" class="btn btn--secondary">Browse Deals</a>
+      <a href="/index.php" class="btn btn--primary">🏠 Go to Homepage</a>
+      <a href="/deals.php" class="btn btn--secondary">Browse Deals</a>
     </div>
   </div>
 </div>

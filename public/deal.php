@@ -28,7 +28,7 @@ try {
     if ($deal['status'] !== 'active') {
         if (!auth_check() || !in_array($_SESSION['user_role']??'', [ROLE_ADMIN,ROLE_SUPERADMIN])) {
             auth_set_flash('info','This deal is no longer available.');
-            redirect('/public/deals.php');
+            redirect('/deals.php');
         }
     }
 
@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['claim_deal'])) {
     csrf_abort();
     if (!auth_check()) {
         auth_set_flash('info','Please login or register to claim this deal.');
-        redirect('/public/login.php?redirect='.urlencode($_SERVER['REQUEST_URI']));
+        redirect('/login.php?redirect='.urlencode($_SERVER['REQUEST_URI']));
     }
     if ($_SESSION['user_role'] !== ROLE_MEMBER) {
         $claim_error = 'Only member accounts can claim deals.';
@@ -149,8 +149,8 @@ include __DIR__ . '/../inc/public_header.php';
   <div class="container">
     <!-- Breadcrumb -->
     <div style="font-size:14px;color:var(--text-muted);margin-bottom:var(--space-lg);">
-      <a href="/public/deals.php">Deals</a>
-      <?php if ($deal['category']): ?> → <a href="/public/deals.php?cat=<?= urlencode($deal['cat_slug']) ?>"><?= e($deal['cat_icon'].' '.$deal['category']) ?></a><?php endif; ?>
+      <a href="/deals.php">Deals</a>
+      <?php if ($deal['category']): ?> → <a href="/deals.php?cat=<?= urlencode($deal['cat_slug']) ?>"><?= e($deal['cat_icon'].' '.$deal['category']) ?></a><?php endif; ?>
       → <span style="color:var(--text-dark);"><?= e($deal['title']) ?></span>
     </div>
 
@@ -193,7 +193,7 @@ include __DIR__ . '/../inc/public_header.php';
           <?php if ($deal['merchant_desc']): ?>
             <p style="font-size:15px;color:var(--text-muted);margin-bottom:var(--space-md);"><?= e($deal['merchant_desc']) ?></p>
           <?php endif; ?>
-          <a href="/public/merchants.php?slug=<?= urlencode($deal['merchant_slug']) ?>" style="font-size:14px;color:var(--orange-primary);font-weight:600;">View all deals from this merchant →</a>
+          <a href="/merchants.php?slug=<?= urlencode($deal['merchant_slug']) ?>" style="font-size:14px;color:var(--orange-primary);font-weight:600;">View all deals from this merchant →</a>
         </div>
       </div>
 
@@ -281,8 +281,8 @@ include __DIR__ . '/../inc/public_header.php';
 
         <?php else: ?>
           <div style="display:flex;flex-direction:column;gap:var(--space-sm);">
-            <a href="/public/register.php" class="btn btn--primary btn--full btn--lg">🎉 Join Free to Claim</a>
-            <a href="/public/login.php?redirect=<?= urlencode($_SERVER['REQUEST_URI']) ?>" class="btn btn--secondary btn--full">Already a member? Login</a>
+            <a href="/register.php" class="btn btn--primary btn--full btn--lg">🎉 Join Free to Claim</a>
+            <a href="/login.php?redirect=<?= urlencode($_SERVER['REQUEST_URI']) ?>" class="btn btn--secondary btn--full">Already a member? Login</a>
           </div>
           <p style="font-size:13px;color:var(--text-muted);text-align:center;margin-top:var(--space-md);">Free membership. No credit card required.</p>
         <?php endif; ?>

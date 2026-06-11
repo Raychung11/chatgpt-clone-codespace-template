@@ -4,7 +4,7 @@
 // Works on both public/deals.php and member/deals.php
 $is_member   = auth_check() && ($_SESSION['user_role'] ?? '') === ROLE_MEMBER;
 $can_view    = !($d['is_members_only'] ?? false) || auth_check();
-$detail_url  = '/public/deal.php?slug=' . urlencode($d['slug']);
+$detail_url  = '/deal.php?slug=' . urlencode($d['slug']);
 ?>
 <div class="card deal-card">
   <?php if ($d['image']): ?>

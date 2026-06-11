@@ -198,7 +198,7 @@ include __DIR__ . '/../inc/admin_layout.php';
                   <div style="font-size:24px;"><?= e($d['cat_icon'] ?? '🎁') ?></div>
                   <div>
                     <div style="font-weight:600;font-size:14px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                      <a href="/public/deal.php?slug=<?= urlencode($d['slug']) ?>" target="_blank" style="color:var(--text-dark);"><?= e($d['title']) ?></a>
+                      <a href="/deal.php?slug=<?= urlencode($d['slug']) ?>" target="_blank" style="color:var(--text-dark);"><?= e($d['title']) ?></a>
                     </div>
                     <div style="display:flex;gap:6px;margin-top:2px;flex-wrap:wrap;">
                       <?php if ($d['is_featured']): ?>

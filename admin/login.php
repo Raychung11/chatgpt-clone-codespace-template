@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </form>
 
     <p class="text-center" style="margin-top:var(--space-xl);font-size:14px;color:var(--text-muted);">
-      <a href="/public/index.php">← Back to public site</a>
+      <a href="/index.php">← Back to public site</a>
     </p>
   </div>
 </div>

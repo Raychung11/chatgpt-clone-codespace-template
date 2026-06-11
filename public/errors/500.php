@@ -15,7 +15,7 @@
     <p style="color:var(--text-muted);font-size:18px;margin-bottom:var(--space-xl);">
       Our team has been notified. Please try again in a few minutes.
     </p>
-    <a href="/public/index.php" class="btn btn--primary">🏠 Go to Homepage</a>
+    <a href="/index.php" class="btn btn--primary">🏠 Go to Homepage</a>
   </div>
 </div>
 </body>

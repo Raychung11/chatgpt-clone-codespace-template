@@ -9,4 +9,4 @@ if (auth_check()) {
 
 auth_logout();
 auth_set_flash('success', 'You have been logged out successfully.');
-redirect('/public/login.php');
+redirect('/login.php');

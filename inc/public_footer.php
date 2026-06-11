@@ -22,8 +22,8 @@
 
       <div>
         <div class="footer__heading">Members</div>
-        <a href="/public/register.php"    class="footer__link">Join as Member</a>
-        <a href="/public/login.php"       class="footer__link">Login</a>
+        <a href="/register.php"    class="footer__link">Join as Member</a>
+        <a href="/login.php"       class="footer__link">Login</a>
         <a href="/member/dashboard.php"   class="footer__link">My Dashboard</a>
         <a href="/member/rewards.php"     class="footer__link">Rewards &amp; Points</a>
         <a href="/member/referrals.php"   class="footer__link">Refer &amp; Earn</a>
@@ -31,20 +31,20 @@
 
       <div>
         <div class="footer__heading">Partners</div>
-        <a href="/public/join-merchant.php"   class="footer__link">Become a Merchant</a>
-        <a href="/public/join-community.php"  class="footer__link">Community Partner</a>
-        <a href="/public/merchants.php"       class="footer__link">Merchant Directory</a>
-        <a href="/public/deals.php"           class="footer__link">Browse Deals</a>
-        <a href="/public/how-it-works.php"    class="footer__link">How It Works</a>
+        <a href="/join-merchant.php"   class="footer__link">Become a Merchant</a>
+        <a href="/join-community.php"  class="footer__link">Community Partner</a>
+        <a href="/merchants.php"       class="footer__link">Merchant Directory</a>
+        <a href="/deals.php"           class="footer__link">Browse Deals</a>
+        <a href="/how-it-works.php"    class="footer__link">How It Works</a>
       </div>
 
       <div>
         <div class="footer__heading">Support</div>
-        <a href="/public/faq.php"         class="footer__link">FAQ</a>
-        <a href="/public/contact.php"     class="footer__link">Contact Us</a>
-        <a href="/public/about.php"       class="footer__link">About Us</a>
-        <a href="/public/privacy.php"     class="footer__link">Privacy Policy</a>
-        <a href="/public/terms.php"       class="footer__link">Terms of Service</a>
+        <a href="/faq.php"         class="footer__link">FAQ</a>
+        <a href="/contact.php"     class="footer__link">Contact Us</a>
+        <a href="/about.php"       class="footer__link">About Us</a>
+        <a href="/privacy.php"     class="footer__link">Privacy Policy</a>
+        <a href="/terms.php"       class="footer__link">Terms of Service</a>
         <div style="margin-top:var(--space-lg);">
           <a href="<?= whatsapp_url() ?>" class="btn btn--ghost btn--sm" target="_blank" rel="noopener">
             💬 WhatsApp Us

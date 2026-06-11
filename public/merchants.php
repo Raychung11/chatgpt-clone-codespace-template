@@ -100,7 +100,7 @@ include __DIR__ . '/../inc/public_header.php';
         <?php endforeach; ?>
       </select>
       <button class="btn btn--primary btn--sm">Search</button>
-      <?php if ($search || $state || $cat): ?><a href="/public/merchants.php" class="btn btn--muted btn--sm">✕ Clear</a><?php endif; ?>
+      <?php if ($search || $state || $cat): ?><a href="/merchants.php" class="btn btn--muted btn--sm">✕ Clear</a><?php endif; ?>
     </form>
   </div>
 </section>
@@ -110,7 +110,7 @@ include __DIR__ . '/../inc/public_header.php';
   <section style="background:#fff;padding:var(--space-md) 0;border-bottom:1px solid var(--border-color);">
     <div class="container">
       <div class="pill-list">
-        <a href="/public/merchants.php?<?= $search ? 'q='.urlencode($search).'&' : '' ?><?= $state ? 'state='.urlencode($state) : '' ?>" class="pill <?= !$cat?'active':'' ?>">All Categories</a>
+        <a href="/merchants.php?<?= $search ? 'q='.urlencode($search).'&' : '' ?><?= $state ? 'state='.urlencode($state) : '' ?>" class="pill <?= !$cat?'active':'' ?>">All Categories</a>
         <?php foreach ($categories as $c): ?>
           <a href="?cat=<?= urlencode($c) ?><?= $search?'&q='.urlencode($search):'' ?><?= $state?'&state='.urlencode($state):'' ?>" class="pill <?= $cat===$c?'active':'' ?>"><?= e($c) ?></a>
         <?php endforeach; ?>
@@ -131,7 +131,7 @@ include __DIR__ . '/../inc/public_header.php';
       <?php if (auth_user()): ?>
         <a href="/member/deals.php" class="btn btn--primary btn--sm">Browse Deals →</a>
       <?php else: ?>
-        <a href="/public/register.php" class="btn btn--primary btn--sm">Join Free to Claim Deals</a>
+        <a href="/register.php" class="btn btn--primary btn--sm">Join Free to Claim Deals</a>
       <?php endif; ?>
     </div>
 
@@ -170,7 +170,7 @@ include __DIR__ . '/../inc/public_header.php';
 
               <div style="margin-top:auto;display:flex;gap:var(--space-sm);">
                 <?php if ($m['active_deals'] > 0): ?>
-                  <a href="/public/deals.php?merchant=<?= urlencode($m['slug']) ?>" class="btn btn--primary btn--sm" style="flex:1;">View Deals</a>
+                  <a href="/deals.php?merchant=<?= urlencode($m['slug']) ?>" class="btn btn--primary btn--sm" style="flex:1;">View Deals</a>
                 <?php else: ?>
                   <span class="btn btn--muted btn--sm" style="flex:1;opacity:.6;cursor:default;">No Active Deals</span>
                 <?php endif; ?>
@@ -196,7 +196,7 @@ include __DIR__ . '/../inc/public_header.php';
         <div class="empty-state__icon">🏪</div>
         <h3 class="empty-state__title">No merchants found</h3>
         <p class="empty-state__text">Try adjusting your search or filters.</p>
-        <a href="/public/merchants.php" class="btn btn--primary">View All Merchants</a>
+        <a href="/merchants.php" class="btn btn--primary">View All Merchants</a>
       </div>
     <?php endif; ?>
 
@@ -210,7 +210,7 @@ include __DIR__ . '/../inc/public_header.php';
     <h2 style="margin-bottom:var(--space-md);">Want to Reach Malaysian Seniors?</h2>
     <p style="color:var(--text-muted);font-size:16px;margin-bottom:var(--space-xl);">Join our merchant network and offer exclusive deals to thousands of engaged members aged 50+.</p>
     <div style="display:flex;justify-content:center;gap:var(--space-md);flex-wrap:wrap;">
-      <a href="/public/join-merchant.php" class="btn btn--primary btn--lg">Become a Partner</a>
+      <a href="/join-merchant.php" class="btn btn--primary btn--lg">Become a Partner</a>
       <a href="<?= whatsapp_url('Hi, I\'m interested in becoming a SilverDeals MY merchant partner.') ?>" target="_blank" class="btn btn--muted btn--lg">💬 Talk to Us</a>
     </div>
   </div>

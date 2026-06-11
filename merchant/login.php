@@ -79,9 +79,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </form>
 
     <div class="auth-divider">or</div>
-    <p class="text-center" style="font-size:16px;">Not a merchant yet? <a href="/public/join-merchant.php" style="font-weight:600;">Partner with us →</a></p>
+    <p class="text-center" style="font-size:16px;">Not a merchant yet? <a href="/join-merchant.php" style="font-weight:600;">Partner with us →</a></p>
     <p class="text-center" style="margin-top:var(--space-md);font-size:14px;color:var(--text-muted);">
-      <a href="/public/login.php">Member login</a> · <a href="/admin/login.php">Admin login</a>
+      <a href="/login.php">Member login</a> · <a href="/admin/login.php">Admin login</a>
     </p>
   </div>
 </div>

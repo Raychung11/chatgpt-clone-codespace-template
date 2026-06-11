@@ -57,10 +57,10 @@ include __DIR__ . '/../inc/public_header.php';
           Join thousands of seniors living better every day with SilverDeals MY.
         </p>
         <div class="hero__actions">
-          <a href="/public/register.php" class="btn btn--ghost btn--lg">
+          <a href="/register.php" class="btn btn--ghost btn--lg">
             🎉 Join Free Today
           </a>
-          <a href="/public/deals.php" class="btn btn--ghost" style="background:rgba(255,255,255,.15);">
+          <a href="/deals.php" class="btn btn--ghost" style="background:rgba(255,255,255,.15);">
             Browse Deals →
           </a>
         </div>
@@ -134,7 +134,7 @@ include __DIR__ . '/../inc/public_header.php';
     </div>
 
     <div class="text-center" style="margin-top:var(--space-2xl);">
-      <a href="/public/how-it-works.php" class="btn btn--secondary">Learn More →</a>
+      <a href="/how-it-works.php" class="btn btn--secondary">Learn More →</a>
     </div>
   </div>
 </section>
@@ -150,9 +150,9 @@ include __DIR__ . '/../inc/public_header.php';
       <h2 class="section-header__title">Deals By Category</h2>
     </div>
     <div class="pill-list" style="justify-content:center;">
-      <a href="/public/deals.php" class="pill active">All Deals</a>
+      <a href="/deals.php" class="pill active">All Deals</a>
       <?php foreach ($categories as $cat): ?>
-        <a href="/public/deals.php?cat=<?= urlencode($cat['slug']) ?>" class="pill">
+        <a href="/deals.php?cat=<?= urlencode($cat['slug']) ?>" class="pill">
           <?= e($cat['icon'] ?? '') ?> <?= e($cat['name']) ?>
         </a>
       <?php endforeach; ?>
@@ -208,7 +208,7 @@ include __DIR__ . '/../inc/public_header.php';
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;">
                 <span style="font-size:14px;color:var(--text-muted);">by <?= e($deal['merchant_name']) ?></span>
-                <a href="/public/deal.php?slug=<?= urlencode($deal['slug']) ?>" class="btn btn--primary btn--sm">Get Deal</a>
+                <a href="/deal.php?slug=<?= urlencode($deal['slug']) ?>" class="btn btn--primary btn--sm">Get Deal</a>
               </div>
             </div>
           </div>
@@ -219,12 +219,12 @@ include __DIR__ . '/../inc/public_header.php';
         <div class="empty-state__icon">🎁</div>
         <h3 class="empty-state__title">Deals Coming Soon</h3>
         <p class="empty-state__text">We're onboarding amazing merchants. Check back soon!</p>
-        <a href="/public/register.php" class="btn btn--primary">Join Free — Be First to Know</a>
+        <a href="/register.php" class="btn btn--primary">Join Free — Be First to Know</a>
       </div>
     <?php endif; ?>
 
     <div class="text-center" style="margin-top:var(--space-2xl);">
-      <a href="/public/deals.php" class="btn btn--primary btn--lg">View All Deals →</a>
+      <a href="/deals.php" class="btn btn--primary btn--lg">View All Deals →</a>
     </div>
   </div>
 </section>
@@ -251,7 +251,7 @@ include __DIR__ . '/../inc/public_header.php';
           'icon'    => '🆓',
           'perks'   => ['Digital membership card','Browse all deals','Refer friends & earn points','Basic member profile','Community access'],
           'cta'     => 'Join Free',
-          'url'     => '/public/register.php',
+          'url'     => '/register.php',
           'style'   => '',
         ],
         [
@@ -262,7 +262,7 @@ include __DIR__ . '/../inc/public_header.php';
           'icon'    => '🥈',
           'perks'   => ['Everything in Free','500 bonus SilverPoints on upgrade','Priority deal access','Exclusive Silver-only deals','Monthly rewards voucher','Member hotline support'],
           'cta'     => 'Get Silver',
-          'url'     => '/public/register.php?plan=silver',
+          'url'     => '/register.php?plan=silver',
           'style'   => 'border:2px solid var(--orange-primary);transform:scale(1.03);',
         ],
         [
@@ -273,7 +273,7 @@ include __DIR__ . '/../inc/public_header.php';
           'icon'    => '🥇',
           'perks'   => ['Everything in Silver','1,500 bonus SilverPoints on upgrade','VIP deal access','Dedicated relationship manager','Exclusive Gold events','Family add-on slots'],
           'cta'     => 'Get Gold',
-          'url'     => '/public/register.php?plan=gold',
+          'url'     => '/register.php?plan=gold',
           'style'   => '',
         ],
       ];
@@ -316,9 +316,9 @@ include __DIR__ . '/../inc/public_header.php';
     <div class="grid grid-3">
       <?php
       $audiences = [
-        ['👴', 'Senior Members',       '#FF6B00', 'Malaysians aged 50+',        'Enjoy curated deals on health, dining, travel and lifestyle. Earn points, get your digital membership card, and live life fully.', '/public/register.php', 'Join as Member'],
-        ['🏪', 'Merchants & Businesses','#1D4ED8', 'Serving the silver economy', 'Reach thousands of senior customers. List your deals, manage redemptions, and grow your business with a community that values loyalty.', '/public/join-merchant.php', 'Partner with Us'],
-        ['🏢', 'Community Partners',    '#065F46', 'JMBs, Condos, Koperasi',     'Bring SilverDeals to your residents. Track local engagement, earn community commissions, and provide real value to your community.', '/public/join-community.php', 'Become a Partner'],
+        ['👴', 'Senior Members',       '#FF6B00', 'Malaysians aged 50+',        'Enjoy curated deals on health, dining, travel and lifestyle. Earn points, get your digital membership card, and live life fully.', '/register.php', 'Join as Member'],
+        ['🏪', 'Merchants & Businesses','#1D4ED8', 'Serving the silver economy', 'Reach thousands of senior customers. List your deals, manage redemptions, and grow your business with a community that values loyalty.', '/join-merchant.php', 'Partner with Us'],
+        ['🏢', 'Community Partners',    '#065F46', 'JMBs, Condos, Koperasi',     'Bring SilverDeals to your residents. Track local engagement, earn community commissions, and provide real value to your community.', '/join-community.php', 'Become a Partner'],
       ];
       foreach ($audiences as [$icon, $title, $color, $subtitle, $desc, $url, $cta]):
       ?>
@@ -380,7 +380,7 @@ include __DIR__ . '/../inc/public_header.php';
       Get <strong style="color:var(--orange-secondary);">200 SilverPoints</strong> for every friend you refer who joins and verifies their account.
       Plus your friend gets <strong style="color:var(--orange-secondary);">100 welcome points</strong> too!
     </p>
-    <a href="/public/register.php" class="btn btn--primary btn--lg">Start Earning Now →</a>
+    <a href="/register.php" class="btn btn--primary btn--lg">Start Earning Now →</a>
   </div>
 </section>
 
@@ -421,12 +421,12 @@ include __DIR__ . '/../inc/public_header.php';
     <?php else: ?>
       <!-- Static fallback if DB is empty -->
       <div class="card" style="padding:var(--space-lg);">
-        <p style="text-align:center;color:var(--text-muted);">Visit our <a href="/public/faq.php">FAQ page</a> for detailed answers.</p>
+        <p style="text-align:center;color:var(--text-muted);">Visit our <a href="/faq.php">FAQ page</a> for detailed answers.</p>
       </div>
     <?php endif; ?>
 
     <div class="text-center" style="margin-top:var(--space-xl);">
-      <a href="/public/faq.php" class="btn btn--secondary">View All FAQs</a>
+      <a href="/faq.php" class="btn btn--secondary">View All FAQs</a>
     </div>
   </div>
 </section>
@@ -443,7 +443,7 @@ include __DIR__ . '/../inc/public_header.php';
       Membership is free. Deals are real. Your community is waiting.
     </p>
     <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:var(--space-md);">
-      <a href="/public/register.php"   class="btn btn--ghost btn--lg">🎉 Join Free Now</a>
+      <a href="/register.php"   class="btn btn--ghost btn--lg">🎉 Join Free Now</a>
       <a href="<?= whatsapp_url() ?>" class="btn btn--ghost" target="_blank" rel="noopener">💬 WhatsApp Us</a>
     </div>
   </div>
