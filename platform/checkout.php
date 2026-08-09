@@ -50,6 +50,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['start_checkout'])) {
             'current_period_start' => date('Y-m-d H:i:s'),
             'current_period_end'   => date('Y-m-d H:i:s', strtotime('+' . ($plan === 'yearly' ? '1 year' : '1 month'))),
         ]);
+
+        // Record affiliate conversion if an affiliate cookie exists
+        $affCode = strtoupper(trim($_COOKIE['bizai_aff'] ?? ''));
+        if ($affCode) {
+            try {
+                $affiliate = DB::fetch(
+                    "SELECT id, commission_rate FROM affiliates WHERE code = ? AND status = 'active' LIMIT 1",
+                    [$affCode]
+                );
+                if ($affiliate) {
+                    $commRate   = (float)($affiliate['commission_rate'] ?? 20);
+                    $commAmount = round($price * ($commRate / 100), 2);
+                    DB::insert('affiliate_conversions', [
+                        'affiliate_id'     => $affiliate['id'],
+                        'user_id'          => Auth::id(),
+                        'order_ref'        => 'sub_' . ($subId ?? 'demo'),
+                        'plan_name'        => $product['name'] . ' (' . $plan . ')',
+                        'order_amount'     => $price,
+                        'commission_rate'  => $commRate,
+                        'commission_amount'=> $commAmount,
+                        'status'           => 'pending',
+                    ]);
+                    DB::query(
+                        "UPDATE affiliates SET total_referrals = total_referrals + 1, total_earned = total_earned + ? WHERE id = ?",
+                        [$commAmount, $affiliate['id']]
+                    );
+                    // Clear affiliate cookie
+                    setcookie('bizai_aff', '', time() - 3600, '/');
+                }
+            } catch (Throwable $e) { /* non-fatal */ }
+        }
+
         header('Location: /dashboard.php?welcome=1');
         exit;
     }

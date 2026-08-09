@@ -15,6 +15,16 @@ if (!$refCode && !empty($_COOKIE['bizai_ref'])) {
     $refCode = strtoupper(trim($_COOKIE['bizai_ref']));
 }
 
+// Capture affiliate code from URL — separate from user referral code
+$affCode = strtoupper(trim($_GET['aff'] ?? ''));
+if ($affCode) {
+    $exp = date('D, d M Y H:i:s T', strtotime('+30 days'));
+    header("Set-Cookie: bizai_aff=" . urlencode($affCode) . "; Path=/; Expires=$exp; HttpOnly; SameSite=Lax");
+}
+if (!$affCode && !empty($_COOKIE['bizai_aff'])) {
+    $affCode = strtoupper(trim($_COOKIE['bizai_aff']));
+}
+
 $pageTitle = 'Create Account - Free Trial';
 $errors = [];
 

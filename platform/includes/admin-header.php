@@ -204,6 +204,11 @@ function adminBadge(string $sql): int {
         <a href="/admin/blog.php" class="admin-nav-link <?= $adminPage === 'blog' ? 'active' : '' ?>">
             <i class="bi bi-pencil-square"></i> Blog Posts
         </a>
+        <a href="/admin/affiliates.php" class="admin-nav-link <?= $adminPage === 'affiliates' ? 'active' : '' ?>">
+            <i class="bi bi-people"></i> Affiliates
+            <?php $n = adminBadge("SELECT COUNT(*) as n FROM affiliates WHERE status='pending'");
+            if ($n > 0) echo "<span class='badge bg-warning text-dark ms-auto'>$n</span>"; ?>
+        </a>
 
         <div class="nav-section-label mt-3">AI Platform</div>
         <a href="/projects/" class="admin-nav-link">

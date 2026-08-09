@@ -38,7 +38,7 @@
                     <li class="mb-2"><a href="#" class="text-muted text-decoration-none">About Us</a></li>
                     <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Blog</a></li>
                     <li class="mb-2"><a href="#contact" class="text-muted text-decoration-none">Contact</a></li>
-                    <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Affiliates</a></li>
+                    <li class="mb-2"><a href="/affiliate.php" class="text-muted text-decoration-none">Affiliates</a></li>
                 </ul>
             </div>
             <div class="col-6 col-lg-2">

@@ -29,6 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $content     = trim($_POST['content'] ?? '');
             $category    = htmlspecialchars(trim($_POST['category'] ?? 'General'), ENT_QUOTES);
             $tags        = htmlspecialchars(trim($_POST['tags'] ?? ''), ENT_QUOTES);
+            $language    = in_array($_POST['language'] ?? '', ['en','zh','bm']) ? $_POST['language'] : 'en';
             $metaTitle   = htmlspecialchars(trim($_POST['meta_title'] ?? ''), ENT_QUOTES);
             $metaDesc    = htmlspecialchars(trim($_POST['meta_description'] ?? ''), ENT_QUOTES);
             $status      = in_array($_POST['status'] ?? '', ['draft', 'published']) ? $_POST['status'] : 'draft';
@@ -47,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'content'          => $content,
                 'category'         => $category,
                 'tags'             => $tags,
+                'language'         => $language,
                 'meta_title'       => $metaTitle,
                 'meta_description' => $metaDesc,
                 'status'           => $status,
@@ -69,6 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $content     = trim($_POST['content'] ?? '');
             $category    = htmlspecialchars(trim($_POST['category'] ?? 'General'), ENT_QUOTES);
             $tags        = htmlspecialchars(trim($_POST['tags'] ?? ''), ENT_QUOTES);
+            $language    = in_array($_POST['language'] ?? '', ['en','zh','bm']) ? $_POST['language'] : 'en';
             $metaTitle   = htmlspecialchars(trim($_POST['meta_title'] ?? ''), ENT_QUOTES);
             $metaDesc    = htmlspecialchars(trim($_POST['meta_description'] ?? ''), ENT_QUOTES);
             $status      = in_array($_POST['status'] ?? '', ['draft', 'published']) ? $_POST['status'] : 'draft';
@@ -87,6 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'content'          => $content,
                 'category'         => $category,
                 'tags'             => $tags,
+                'language'         => $language,
                 'meta_title'       => $metaTitle,
                 'meta_description' => $metaDesc,
                 'status'           => $status,
@@ -274,6 +278,11 @@ require_once '../includes/admin-header.php';
                     </td>
                     <td class="py-3">
                         <span class="badge bg-secondary bg-opacity-25 text-muted small"><?= htmlspecialchars($p['category'] ?? 'General') ?></span>
+                        <?php if (($p['language'] ?? 'en') === 'zh'): ?>
+                        <span class="badge ms-1" style="background:rgba(239,68,68,0.15);color:#fca5a5;font-size:10px">中文</span>
+                        <?php elseif (($p['language'] ?? 'en') === 'bm'): ?>
+                        <span class="badge ms-1" style="background:rgba(251,191,36,0.15);color:#fcd34d;font-size:10px">BM</span>
+                        <?php endif; ?>
                     </td>
                     <td class="py-3">
                         <?php if ($p['status'] === 'published'): ?>
@@ -394,11 +403,20 @@ require_once '../includes/admin-header.php';
                             <div class="form-text text-muted">Supports basic HTML. Word count: <span id="wordCount">0</span></div>
                         </div>
                         <!-- Tags -->
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label text-muted small">Tags (comma-separated)</label>
                             <input type="text" name="tags" id="formTags"
                                    class="form-control bg-dark border-secondary text-white"
                                    placeholder="AI, automation, SME, Malaysia">
+                        </div>
+                        <!-- Language -->
+                        <div class="col-md-2">
+                            <label class="form-label text-muted small">Language</label>
+                            <select name="language" id="formLanguage" class="form-select bg-dark border-secondary text-white">
+                                <option value="en">🇬🇧 English</option>
+                                <option value="zh">🇨🇳 中文</option>
+                                <option value="bm">🇲🇾 BM</option>
+                            </select>
                         </div>
                         <!-- Status -->
                         <div class="col-md-3">
@@ -484,6 +502,7 @@ function openEditModal(post) {
     document.getElementById('formContent').value          = post.content      || '';
     document.getElementById('formCategory').value         = post.category     || '';
     document.getElementById('formTags').value             = post.tags         || '';
+    document.getElementById('formLanguage').value         = post.language     || 'en';
     document.getElementById('formMetaTitle').value        = post.meta_title   || '';
     document.getElementById('formMetaDesc').value         = post.meta_description || '';
     document.getElementById('formStatus').value           = post.status       || 'draft';

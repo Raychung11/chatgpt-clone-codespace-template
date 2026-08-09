@@ -29,6 +29,7 @@ sitemapUrl("$base/about.php",         $today, 'monthly',  '0.7');
 sitemapUrl("$base/contact.php",       $today, 'monthly',  '0.6');
 sitemapUrl("$base/register.php",      $today, 'monthly',  '0.7');
 sitemapUrl("$base/blog/",             $today, 'daily',    '0.8');
+sitemapUrl("$base/affiliate.php",     $today, 'monthly',  '0.7');
 
 // ── Legal pages ──────────────────────────────────────────────────────────────
 sitemapUrl("$base/privacy-policy.php",    $today, 'yearly', '0.3');

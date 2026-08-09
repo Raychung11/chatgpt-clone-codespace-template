@@ -1324,6 +1324,7 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     author_id INT DEFAULT NULL,
     category VARCHAR(100) DEFAULT 'General',
     tags VARCHAR(200),
+    language VARCHAR(5) DEFAULT 'en',
     status ENUM('draft','published') DEFAULT 'draft',
     meta_title VARCHAR(255),
     meta_description VARCHAR(300),
@@ -1334,8 +1335,12 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE SET NULL,
     INDEX idx_slug (slug),
     INDEX idx_status (status),
-    INDEX idx_published (published_at)
+    INDEX idx_published (published_at),
+    INDEX idx_language (language)
 );
+
+-- Add language column to existing tables (safe on re-run)
+ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS language VARCHAR(5) DEFAULT 'en' AFTER tags;
 
 -- Seed blog posts (6 posts targeting Malaysian SME AI keywords)
 INSERT IGNORE INTO blog_posts (title, slug, excerpt, content, category, tags, meta_title, meta_description, status, published_at, author_id) VALUES
@@ -1572,3 +1577,343 @@ INSERT IGNORE INTO blog_posts (title, slug, excerpt, content, category, tags, me
   '2026-06-02 09:00:00',
   NULL
 );
+
+-- Chinese-language blog posts (targeting Chinese-speaking Malaysian SME market)
+INSERT IGNORE INTO blog_posts (title, slug, excerpt, content, category, tags, language, meta_title, meta_description, status, published_at, author_id) VALUES
+
+(
+  '中小企业AI人力资源管理：告别繁琐，让AI帮你招聘、管理员工',
+  'ai-hr-management-sme-chinese',
+  '人才是中小企业最大的资产，也是最大的管理难题。AI人力资源系统能自动化处理招聘筛选、员工考勤、假期申请和薪资查询，让您的HR团队专注于人才发展而非日常行政。',
+  '<p>对马来西亚中小企业来说，人力资源管理往往是最费时、最头疼的工作之一。招聘要筛选大量简历，员工请假要逐一审批，薪资问题要反复解答——这些重复性工作消耗了HR团队大量宝贵时间。</p>
+
+<p>AI人力资源系统正在改变这一切。以下是马来西亚中小企业如何利用AI将HR行政工作减少80%的实际案例。</p>
+
+<h2>AI招聘筛选：从数百份简历到最佳候选人</h2>
+<p>每次发布职位，可能收到数十甚至数百份简历。传统方式需要HR一份份阅读，耗时数天。AI招聘系统能在几分钟内分析所有简历，根据您设定的标准（工作经验、技能、学历）自动评分排序，并用中文、英文或马来文生成候选人摘要报告。</p>
+<p>一家吉隆坡科技公司使用AI招聘后，筛选50份简历的时间从3天缩短到30分钟，并且成功率提高了40%。</p>
+
+<h2>智能假期管理：员工自助申请，系统自动审批</h2>
+<p>假期管理是最常见的HR烦恼之一。员工通过WhatsApp发请假消息，HR要检查余额、获得主管批准、更新系统——整个过程可能需要一天时间。</p>
+<p>AI假期管理系统让员工通过聊天界面提交申请，系统自动检查余额、路由给主管审批、更新记录并通知所有相关人员——整个过程在5分钟内完成，全程无需HR介入。</p>
+
+<h2>AI薪资助手：24小时回答员工薪资问题</h2>
+<p>"这个月我的工资为什么少了？" 这是HR最常收到的问题。AI薪资助手可以随时回答员工关于薪资明细、扣除项、EPF/SOCSO缴纳的问题，用中文、英文或马来文提供清晰解释。</p>
+
+<h2>员工绩效管理自动化</h2>
+<p>AI系统能追踪员工KPI完成情况，定期生成绩效报告，并在需要人工关注时发出提醒。年度绩效评估不再是临时抱佛脚，而是基于全年持续收集的数据。</p>
+
+<h2>新员工入职自动化</h2>
+<p>新员工的入职流程涉及大量文件、系统权限配置和培训安排。AI入职系统自动分配任务清单、发送提醒、追踪完成进度，确保每位新员工都能在最短时间内融入团队并开始高效工作。</p>
+
+<h2>立即开始</h2>
+<p>BizAI的HR & 行政AI模块专为马来西亚中小企业设计，支持中文、英文和马来文，符合马来西亚劳工法和EPF/SOCSO法规。从请假管理开始，通常在第一个月就能看到明显成效。</p>
+<p>现在注册，享受14天免费试用。</p>',
+  'HR & Operations',
+  'AI人力资源马来西亚, HR自动化, AI招聘, 员工管理AI, 马来西亚中小企业HR',
+  'zh',
+  'AI人力资源管理：马来西亚中小企业HR自动化指南 | BizAI',
+  '了解马来西亚中小企业如何利用AI自动化招聘筛选、假期管理、薪资查询和员工绩效评估，将HR行政工作减少80%。',
+  'published',
+  '2026-06-05 09:00:00',
+  NULL
+),
+
+(
+  'AI客服自动化：马来西亚中小企业如何用AI提升客户满意度',
+  'ai-customer-service-automation-sme-chinese',
+  '客户期待即时回复，但小团队根本无法24小时在线。AI客服系统能用中文、英文和马来文同时处理数百个对话，让您的客户永远不必等待。',
+  '<p>在马来西亚，无论是通过WhatsApp、Facebook Messenger还是电话，客户都期待快速回复。但对大多数中小企业来说，一个客服团队要同时处理几十个对话是不可能的——尤其是在非工作时间。</p>
+
+<p>AI客服自动化正在帮助马来西亚中小企业解决这个根本矛盾：客户需要24小时服务，但企业无法负担全天候的人工客服团队。</p>
+
+<h2>为什么AI客服对马来西亚中小企业特别重要</h2>
+<p>马来西亚消费者有几个特别的习惯：他们喜欢在WhatsApp上联系商家、经常在下班后咨询（晚上8点到11点是高峰时段）、期望用母语（中文、马来文或英文）沟通，并且对没有快速回复的商家很容易流失。</p>
+<p>AI客服系统完美地解决了以上所有问题。</p>
+
+<h2>WhatsApp AI客服：全天候多语言服务</h2>
+<p>WhatsApp是马来西亚最主要的商业沟通渠道。AI WhatsApp客服能够：</p>
+<p>• 同时处理无限数量的对话</p>
+<p>• 用中文、英文、马来文流畅沟通</p>
+<p>• 记住每位客户的历史对话记录</p>
+<p>• 自动回答FAQ、处理订单查询、解决售后问题</p>
+<p>• 识别需要人工介入的复杂情况并无缝转接</p>
+
+<h2>售后服务自动化</h2>
+<p>售后问题是最耗费客服时间的工作之一。退货、换货、保修查询、物流追踪——这些问题有固定的处理流程，完全可以交给AI自动处理。</p>
+<p>一家槟城电商企业使用AI处理售后服务后，人工客服工作量减少了65%，客户满意度从72%提升至91%。</p>
+
+<h2>AI情感分析：识别不满意的客户</h2>
+<p>AI不仅能回答问题，还能分析客户情绪。当系统检测到客户表达不满或愤怒时，会立即升级给人工客服，并附上完整对话记录和情绪分析报告，让客服能够以最佳状态介入处理。</p>
+
+<h2>客户数据智能分析</h2>
+<p>每一次客服对话都是宝贵的数据。AI系统自动分析最常见的问题、客户痛点和产品反馈，每周生成洞察报告，帮助您不断改善产品和服务。</p>
+
+<h2>实施步骤</h2>
+<p>BizAI客服AI模块的部署通常在48小时内完成：连接您的WhatsApp Business账号→上传产品信息和FAQ→设置升级规则→上线测试。整个过程无需技术背景。</p>
+<p>立即开始14天免费试用，体验AI客服的威力。</p>',
+  'Customer Service',
+  'AI客服马来西亚, WhatsApp客服AI, 客服自动化, 中文客服AI, 马来西亚中小企业客服',
+  'zh',
+  'AI客服自动化：马来西亚中小企业提升客户满意度完整指南 | BizAI',
+  '马来西亚中小企业如何用AI实现24/7中文客服自动化，处理WhatsApp咨询、售后服务和客户反馈，让客户满意度大幅提升。',
+  'published',
+  '2026-06-08 09:00:00',
+  NULL
+),
+
+(
+  'AI销售自动化：让AI替您跟进客户、提高成交率',
+  'ai-sales-automation-follow-up-chinese',
+  '大多数中小企业丢失销售机会不是因为产品不好，而是因为跟进不及时。AI销售系统能自动在最佳时机发送个性化跟进信息，让您的成交率提升2到3倍。',
+  '<p>在马来西亚中小企业的销售工作中，有一个普遍存在的问题：报价发出去之后，销售员就忙于其他事务，潜在客户慢慢冷淡，最后选择了竞争对手。</p>
+
+<p>数据显示，80%的销售需要5次以上的跟进才能成交，但44%的销售员在第一次跟进后就放弃了。AI销售自动化系统解决的正是这个执行力问题。</p>
+
+<h2>AI报价跟进系统</h2>
+<p>当您发出报价后，AI系统会自动：</p>
+<p>• 在发送后24小时发送确认和询问信息</p>
+<p>• 在第3天发送价值强化信息（案例分析或相关资料）</p>
+<p>• 在第7天发送最后跟进和限时优惠</p>
+<p>• 追踪客户是否打开了报价文件，并据此调整跟进策略</p>
+<p>• 根据客户的回应自动调整后续跟进内容</p>
+
+<p>使用AI报价跟进系统的马来西亚SME平均将报价成交率从15%提升至35-45%。</p>
+
+<h2>潜在客户自动培育</h2>
+<p>不是每一个潜在客户都准备好立即购买。AI潜在客户培育系统能够：</p>
+<p>• 根据客户行为（点击、浏览、提问）自动评分</p>
+<p>• 为"冷"客户提供教育性内容，慢慢建立信任</p>
+<p>• 当客户行为显示购买意向升温时，自动通知销售团队</p>
+<p>• 从初次联系到成交全程保持个性化沟通</p>
+
+<h2>AI销售脚本生成器</h2>
+<p>面对不同的客户和不同的异议，销售员需要不同的应对策略。AI销售脚本生成器能根据客户背景、行业和之前的对话记录，实时生成个性化的销售建议和异议处理话术。</p>
+
+<h2>WhatsApp销售自动化</h2>
+<p>WhatsApp是马来西亚中小企业销售的主战场。AI WhatsApp销售系统能自动回复产品咨询、发送产品目录、处理常见价格谈判，让您的销售效率翻倍。</p>
+
+<h2>销售数据分析和预测</h2>
+<p>AI分析历史销售数据，识别最佳转化模式——哪种类型的客户最容易成交、哪个时间段联系最有效、哪种产品组合最受欢迎——并将这些洞察直接应用于销售策略优化。</p>
+
+<h2>立即开始</h2>
+<p>BizAI销售AI模块专为马来西亚中小企业设计，支持WhatsApp和电子邮件跟进，14天免费试用，无需信用卡。</p>',
+  'Sales',
+  'AI销售马来西亚, 销售自动化, 客户跟进AI, WhatsApp销售, 中小企业销售',
+  'zh',
+  'AI销售自动化：提高成交率的完整指南 | BizAI马来西亚',
+  '了解马来西亚中小企业如何用AI自动化客户跟进、报价追踪和潜在客户培育，将销售成交率提升2到3倍。',
+  'published',
+  '2026-06-10 09:00:00',
+  NULL
+),
+
+(
+  '中小企业AI财务管理：从每月看账到每日掌握现金流',
+  'ai-financial-management-daily-cashflow-chinese',
+  '大多数中小企业老板每月才看一次财务报告——发现问题时已经晚了30天。AI财务系统每天自动生成现金流预测、异常警告和盈利分析，让您实时掌握公司财务状况。',
+  '<p>在马来西亚，大多数中小企业老板对公司财务状况的了解依赖于每月一次的会计报告。但在快速变化的商业环境中，一个月前的数据往往已经失去参考价值。等到发现现金流问题，可能已经陷入危机。</p>
+
+<p>AI财务管理系统正在彻底改变中小企业主了解和管理财务的方式。</p>
+
+<h2>每日AI财务报告</h2>
+<p>想象一下，每天早上打开手机，就能看到一份清晰的财务摘要：昨天的营业额、本月累计利润、应收账款状况、未来30天的现金流预测以及任何需要关注的异常情况。这就是AI每日财务报告能给您的。</p>
+<p>不需要等会计师，不需要自己查账，AI自动整合来自POS系统、银行账户和会计软件的数据，生成通俗易懂的中文报告。</p>
+
+<h2>智能现金流预测</h2>
+<p>现金流是中小企业最常见的"死亡原因"——不是因为公司不赚钱，而是现金不在正确的时间流入。AI现金流预测系统基于历史数据、已确认订单和定期支出，预测未来30、60、90天的现金位置。</p>
+<p>一家雪兰莪制造商通过AI现金流预测，提前45天发现了即将出现的现金短缺，及时向银行申请信用额度，避免了一次严重的经营危机。</p>
+
+<h2>AI异常检测：第一时间发现问题</h2>
+<p>AI系统持续监控您的财务数据，当发现以下情况时立即发出警报：</p>
+<p>• 某项支出突然大幅增加</p>
+<p>• 某个产品类别的毛利率下降</p>
+<p>• 某个客户的付款模式出现异常</p>
+<p>• 库存成本超出预算范围</p>
+
+<h2>应收账款智能管理</h2>
+<p>追款是最令中小企业老板头疼的工作之一。AI应收账款系统自动追踪所有未付款发票，在到期前发送友善提醒，在逾期后升级催款，并生成详细的应收账款老化报告，帮助您优先追讨风险最高的款项。</p>
+
+<h2>SST/GST合规追踪</h2>
+<p>马来西亚的税务申报是每个中小企业的必要负担。AI财务系统自动分类每笔交易，追踪应税和免税项目，并在申报截止日期前生成完整的SST报表，让税务合规不再是烦恼。</p>
+
+<h2>与现有系统无缝整合</h2>
+<p>BizAI财务AI模块支持与SQL Account、AutoCount、Xero和QuickBooks整合——这些是马来西亚中小企业最常用的会计软件。整合通常在两个工作日内完成，不需要更换现有系统。</p>
+
+<h2>从数字到决策</h2>
+<p>AI财务系统不只是给您看数字，还会根据数据提供具体的行动建议："这三个产品系列的利润率低于目标，建议审查定价策略"或"本月底预计现金余额不足以支付薪资，建议催收以下3张逾期发票"。</p>
+<p>立即开始14天免费试用，体验AI财务管理的力量。</p>',
+  'Finance',
+  'AI财务管理马来西亚, 现金流预测, 财务自动化, 中小企业财务AI, 马来西亚财务系统',
+  'zh',
+  '中小企业AI财务管理：每日现金流监控和智能预测指南 | BizAI',
+  '告别月报，用AI实现每日财务监控。马来西亚中小企业如何用AI预测现金流、检测财务异常和自动化应收账款管理。',
+  'published',
+  '2026-06-12 09:00:00',
+  NULL
+),
+
+(
+  'AI品牌内容创作：让AI为您的品牌生成专业的社交媒体内容',
+  'ai-brand-content-creation-social-media-chinese',
+  '创作高质量的品牌内容需要时间、创意和专业知识。AI内容创作系统能根据您的品牌风格，每天生成专业的社交媒体文案、产品描述和营销材料——用中文、英文或马来文。',
+  '<p>在今天的数字营销环境中，内容就是品牌的声音。但对大多数马来西亚中小企业来说，持续创作高质量内容是一个巨大的挑战：没有专职文案、没有创意团队、甚至不知道从何开始。</p>
+
+<p>AI品牌内容创作系统正在为马来西亚中小企业解决这个难题，让任何规模的企业都能创作出大公司级别的营销内容。</p>
+
+<h2>社交媒体内容自动化</h2>
+<p>Facebook、Instagram、小红书（RedNote）和抖音（TikTok）——每个平台都需要不同风格的内容，并且需要定期更新。AI内容系统能够：</p>
+<p>• 根据您的产品信息和品牌调性生成帖子文案</p>
+<p>• 为不同平台调整内容格式和长度</p>
+<p>• 用中文写适合华人市场的内容风格</p>
+<p>• 自动生成相关话题标签（hashtags）</p>
+<p>• 建议最佳发帖时间以最大化触达</p>
+
+<h2>产品描述和营销文案</h2>
+<p>写出能够转化的产品描述需要技巧。AI文案生成器能根据产品特点、目标客群和营销目标，生成引人注目的产品描述、广告文案和电子邮件营销内容。无论是突出功能卖点、创造情感共鸣，还是驱动立即购买行动，AI都能提供专业的文案支持。</p>
+
+<h2>AI品牌声音一致性</h2>
+<p>品牌一致性是建立信任的关键。AI品牌助手学习您的品牌调性、常用词汇和沟通风格，确保所有生成内容都保持一致的品牌声音——无论是活泼年轻还是专业权威。</p>
+
+<h2>多语言内容本地化</h2>
+<p>马来西亚的多元文化市场意味着您需要用不同语言触达不同群体。AI不只是翻译，而是根据不同文化背景进行内容本地化：</p>
+<p>• 中文内容：了解华人消费者心理，融入文化元素</p>
+<p>• 英文内容：专业、国际化的表达</p>
+<p>• 马来文内容：符合马来文化习俗和表达方式</p>
+
+<h2>节假日营销内容</h2>
+<p>马来西亚节假日多、文化多元。AI系统提前为农历新年、开斋节、屠妖节、圣诞节等各种节日准备营销内容，确保您的品牌在每个重要节点都有声音。</p>
+
+<h2>内容日历管理</h2>
+<p>AI不只是生成内容，还帮助您规划内容日历：根据您的营销目标、产品周期和节假日安排，提前规划一个月的内容发布计划，让营销工作有条不紊。</p>
+
+<h2>开始使用</h2>
+<p>BizAI的广告文案和社交媒体AI模块支持中文、英文和马来文内容创作，预置了适合马来西亚市场的内容模板。立即开始14天免费试用。</p>',
+  'Sales',
+  'AI内容创作马来西亚, 社交媒体AI, 品牌内容AI, 中文营销文案, AI文案生成',
+  'zh',
+  'AI品牌内容创作：马来西亚中小企业社交媒体营销自动化 | BizAI',
+  '马来西亚中小企业如何用AI自动创作中文、英文和马来文社交媒体内容、产品描述和营销文案，节省80%内容创作时间。',
+  'published',
+  '2026-06-15 09:00:00',
+  NULL
+),
+
+(
+  'AI数字广告优化：让每一分广告费都花在刀刃上',
+  'ai-digital-advertising-optimization-chinese',
+  '中小企业的广告预算有限，每一分钱都要值得。AI广告优化系统分析您的Facebook、Google和小红书广告表现，自动调整投放策略，让广告ROI提升50%以上。',
+  '<p>数字广告对马来西亚中小企业来说是一把双刃剑：做得好能快速获客，做得不好就是把钱扔进水里。对于没有专职数字营销团队的中小企业，如何最大化有限的广告预算？</p>
+
+<p>AI广告优化系统正在帮助马来西亚中小企业用更少的预算获得更好的广告效果。</p>
+
+<h2>Facebook和Instagram广告优化</h2>
+<p>Facebook和Instagram广告是马来西亚中小企业最常用的数字广告渠道。AI广告优化系统能够：</p>
+<p>• 分析哪些广告素材（图片、视频、文案）效果最好</p>
+<p>• 自动调整目标受众定向，聚焦最容易转化的人群</p>
+<p>• 识别广告疲劳，及时更新创意素材</p>
+<p>• 优化广告出价策略，在高效时段加大投入</p>
+<p>• 跨广告系列追踪整体ROI和客户获取成本</p>
+
+<h2>小红书（RedNote）广告策略</h2>
+<p>对于针对华人市场的马来西亚品牌，小红书是越来越重要的营销渠道。AI系统分析小红书上与您的产品相关的内容趋势、热门话题和用户行为，帮助您制定有效的内容营销和付费推广策略。</p>
+
+<h2>Google广告关键词优化</h2>
+<p>Google广告的效果很大程度上取决于关键词选择。AI系统持续监控搜索趋势，识别高转化低竞争的关键词机会，并自动调整出价，确保您的广告在正确的时刻出现在正确的搜索结果中。</p>
+
+<h2>AI广告文案生成</h2>
+<p>优秀的广告文案需要引人注目、传递价值主张、驱动行动——同时还要符合每个平台的格式要求。AI广告文案生成器能在几秒钟内生成多个版本的广告标题和描述，并通过A/B测试自动找出效果最好的版本。</p>
+
+<h2>跨渠道营销归因</h2>
+<p>当客户在Facebook看到广告、在Google搜索您的品牌、最后通过WhatsApp下单——这个转化路径应该归功于哪个渠道？AI跨渠道归因系统追踪完整的客户旅程，帮助您了解每个营销渠道的真实贡献，做出更明智的预算分配决策。</p>
+
+<h2>竞争对手广告监测</h2>
+<p>了解竞争对手的广告策略是保持竞争优势的关键。AI系统追踪您的主要竞争对手在各平台的广告活动，分析他们的卖点、促销策略和目标受众，为您提供有价值的竞争情报。</p>
+
+<h2>每周广告洞察报告</h2>
+<p>不需要成为数字营销专家，AI每周报告用通俗易懂的中文呈现您的广告表现：哪些广告在赚钱、哪些在烧钱、下周应该重点投入哪里。报告包含具体的优化建议，让您立即可以采取行动。</p>
+
+<h2>开始使用</h2>
+<p>BizAI广告AI模块帮助马来西亚中小企业优化Facebook、Google和社交媒体广告投放，平均将广告ROI提升50%以上。现在开始14天免费试用。</p>',
+  'Sales',
+  'AI广告优化马来西亚, Facebook广告AI, 数字营销AI, 广告ROI优化, 中小企业数字广告',
+  'zh',
+  'AI数字广告优化：马来西亚中小企业提升广告ROI完整指南 | BizAI',
+  '马来西亚中小企业如何用AI优化Facebook、Google和小红书广告投放，自动调整出价策略，将广告ROI提升50%以上。',
+  'published',
+  '2026-06-18 09:00:00',
+  NULL
+);
+
+-- ============================================================
+-- Affiliate Programme
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS affiliates (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    user_id         INT DEFAULT NULL,
+    code            VARCHAR(20) NOT NULL UNIQUE,
+    name            VARCHAR(150) NOT NULL,
+    email           VARCHAR(191) NOT NULL,
+    website         VARCHAR(255),
+    description     TEXT,
+    commission_rate DECIMAL(5,2) DEFAULT 20.00,   -- percent
+    status          ENUM('pending','active','suspended','rejected') DEFAULT 'pending',
+    payout_method   VARCHAR(50) DEFAULT 'bank_transfer',
+    bank_name       VARCHAR(100),
+    bank_account    VARCHAR(50),
+    bank_holder     VARCHAR(150),
+    total_clicks    INT DEFAULT 0,
+    total_referrals INT DEFAULT 0,
+    total_earned    DECIMAL(10,2) DEFAULT 0.00,
+    total_paid      DECIMAL(10,2) DEFAULT 0.00,
+    notes           TEXT,
+    approved_at     DATETIME,
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_code (code),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS affiliate_clicks (
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    affiliate_id INT NOT NULL,
+    ip_address   VARCHAR(45),
+    user_agent   VARCHAR(500),
+    landing_page VARCHAR(255),
+    referrer     VARCHAR(255),
+    created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_affiliate (affiliate_id),
+    INDEX idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS affiliate_conversions (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    affiliate_id    INT NOT NULL,
+    user_id         INT DEFAULT NULL,
+    order_ref       VARCHAR(100),
+    plan_name       VARCHAR(100),
+    order_amount    DECIMAL(10,2) DEFAULT 0.00,
+    commission_rate DECIMAL(5,2) DEFAULT 20.00,
+    commission_amount DECIMAL(10,2) DEFAULT 0.00,
+    status          ENUM('pending','approved','paid','rejected') DEFAULT 'pending',
+    paid_at         DATETIME,
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_affiliate (affiliate_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS affiliate_payouts (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    affiliate_id    INT NOT NULL,
+    amount          DECIMAL(10,2) NOT NULL,
+    method          VARCHAR(50) DEFAULT 'bank_transfer',
+    reference       VARCHAR(100),
+    status          ENUM('pending','processing','paid','failed') DEFAULT 'pending',
+    notes           TEXT,
+    processed_at    DATETIME,
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_affiliate (affiliate_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

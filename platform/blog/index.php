@@ -15,11 +15,12 @@ $extraHead  = SEO::breadcrumbs([
 $extraHead .= SEO::organization();
 
 // Pagination & filters
-$page    = max(1, (int)($_GET['page'] ?? 1));
-$perPage = 9;
-$offset  = ($page - 1) * $perPage;
-$q       = trim($_GET['q'] ?? '');
+$page      = max(1, (int)($_GET['page'] ?? 1));
+$perPage   = 9;
+$offset    = ($page - 1) * $perPage;
+$q         = trim($_GET['q'] ?? '');
 $catFilter = trim($_GET['cat'] ?? '');
+$langFilter = in_array($_GET['lang'] ?? '', ['en','zh']) ? ($_GET['lang'] ?? '') : '';
 
 $posts      = [];
 $total      = 0;
@@ -38,6 +39,11 @@ try {
         $where[]  = 'category = ?';
         $params[] = $catFilter;
     }
+    if ($langFilter) {
+        $where[]  = '(language = ? OR (language IS NULL AND ? = "en"))';
+        $params[] = $langFilter;
+        $params[] = $langFilter;
+    }
 
     $whereSQL = 'WHERE ' . implode(' AND ', $where);
 
@@ -53,8 +59,9 @@ try {
     );
 
     // Distinct categories for filter chips
+    $catWhere = "WHERE status='published' AND published_at <= NOW()" . ($langFilter ? " AND (language = '$langFilter' OR (language IS NULL AND '$langFilter' = 'en'))" : '');
     $categories = DB::fetchAll(
-        "SELECT DISTINCT category FROM blog_posts WHERE status='published' AND published_at <= NOW() ORDER BY category"
+        "SELECT DISTINCT category FROM blog_posts $catWhere ORDER BY category"
     );
 } catch (Exception $e) {
     // blog_posts table not yet created — show empty state gracefully
@@ -84,8 +91,11 @@ require_once '../includes/header.php';
                     <?php if ($catFilter): ?>
                     <input type="hidden" name="cat" value="<?= htmlspecialchars($catFilter, ENT_QUOTES) ?>">
                     <?php endif; ?>
+                    <?php if ($langFilter): ?>
+                    <input type="hidden" name="lang" value="<?= htmlspecialchars($langFilter, ENT_QUOTES) ?>">
+                    <?php endif; ?>
                     <input type="search" name="q" class="form-control bg-dark border-secondary text-white"
-                           placeholder="Search articles..." value="<?= htmlspecialchars($q, ENT_QUOTES) ?>">
+                           placeholder="Search articles…" value="<?= htmlspecialchars($q, ENT_QUOTES) ?>">
                     <button type="submit" class="btn btn-primary px-3">
                         <i class="bi bi-search"></i>
                     </button>
@@ -93,22 +103,42 @@ require_once '../includes/header.php';
             </div>
         </div>
 
-        <?php if (!empty($categories)): ?>
-        <!-- Category filter chips -->
-        <div class="d-flex flex-wrap gap-2 mt-4">
-            <a href="/blog/<?= $q ? '?q=' . urlencode($q) : '' ?>"
+        <!-- Language toggle + Category filter chips -->
+        <div class="d-flex flex-wrap align-items-center gap-3 mt-4">
+          <!-- Language toggle -->
+          <div class="btn-group btn-group-sm" role="group">
+            <a href="/blog/?<?= $q ? 'q=' . urlencode($q) . '&' : '' ?><?= $catFilter ? 'cat=' . urlencode($catFilter) . '&' : '' ?>"
+               class="btn <?= !$langFilter ? 'btn-primary' : 'btn-outline-secondary' ?> px-3">
+              🌐 All
+            </a>
+            <a href="/blog/?lang=en<?= $q ? '&q=' . urlencode($q) : '' ?><?= $catFilter ? '&cat=' . urlencode($catFilter) : '' ?>"
+               class="btn <?= $langFilter === 'en' ? 'btn-primary' : 'btn-outline-secondary' ?> px-3">
+              🇬🇧 English
+            </a>
+            <a href="/blog/?lang=zh<?= $q ? '&q=' . urlencode($q) : '' ?><?= $catFilter ? '&cat=' . urlencode($catFilter) : '' ?>"
+               class="btn <?= $langFilter === 'zh' ? 'btn-primary' : 'btn-outline-secondary' ?> px-3">
+              🇨🇳 中文
+            </a>
+          </div>
+
+          <?php if (!empty($categories)): ?>
+          <div class="vr opacity-25 d-none d-md-block"></div>
+          <!-- Category filter chips -->
+          <div class="d-flex flex-wrap gap-2">
+            <a href="/blog/<?= $langFilter ? '?lang=' . $langFilter : '' ?><?= $q ? ($langFilter ? '&' : '?') . 'q=' . urlencode($q) : '' ?>"
                class="badge rounded-pill px-3 py-2 text-decoration-none <?= !$catFilter ? 'bg-primary' : 'bg-secondary bg-opacity-25 text-muted' ?>">
-                All Topics
+              All Topics
             </a>
             <?php foreach ($categories as $c): ?>
             <?php $active = ($catFilter === $c['category']); ?>
-            <a href="/blog/?cat=<?= urlencode($c['category']) ?><?= $q ? '&q=' . urlencode($q) : '' ?>"
+            <a href="/blog/?cat=<?= urlencode($c['category']) ?><?= $langFilter ? '&lang=' . $langFilter : '' ?><?= $q ? '&q=' . urlencode($q) : '' ?>"
                class="badge rounded-pill px-3 py-2 text-decoration-none <?= $active ? 'bg-primary' : 'bg-secondary bg-opacity-25 text-muted' ?>">
-                <?= htmlspecialchars($c['category']) ?>
+              <?= htmlspecialchars($c['category']) ?>
             </a>
             <?php endforeach; ?>
+          </div>
+          <?php endif; ?>
         </div>
-        <?php endif; ?>
     </div>
 </section>
 
