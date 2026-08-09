@@ -1,0 +1,369 @@
+/* ============================================================
+   AI101 Platform — Theme System
+   Each theme overrides BOTH --theme-* vars and Bootstrap --bs-* vars
+   so all components (headings, text, cards, tables) respect the theme.
+   ============================================================ */
+
+/* ── Dark Theme (Default) ── */
+body.theme-dark {
+  --theme-bg:             #0a0a0f;
+  --theme-bg-card:        #111118;
+  --theme-bg-section:     #0d0d14;
+  --theme-text:           #e5e7eb;
+  --theme-text-muted:     #6b7280;
+  --theme-border:         rgba(255,255,255,0.08);
+  --theme-primary:        #6366f1;
+  --theme-primary-dark:   #4f46e5;
+  --theme-hero-bg:        #0a0a0f;
+  --theme-nav-bg:         rgba(10,10,15,0.95);
+  --theme-footer-bg:      #0d0d14;
+  --theme-input-bg:       #16161e;
+  /* Bootstrap overrides */
+  --bs-body-color:        #e5e7eb;
+  --bs-body-bg:           #0a0a0f;
+  --bs-heading-color:     #ffffff;
+  --bs-border-color:      rgba(255,255,255,0.08);
+  --bs-secondary-color:   #9ca3af;
+  --bs-secondary-bg:      #111118;
+  --bs-tertiary-bg:       #16161e;
+  --bs-link-color:        #818cf8;
+  --bs-link-hover-color:  #a5b4fc;
+}
+
+/* ── Bright Theme ── */
+body.theme-bright {
+  --theme-bg:             #f8f9ff;
+  --theme-bg-card:        #ffffff;
+  --theme-bg-section:     #f0f2ff;
+  --theme-text:           #111827;
+  --theme-text-muted:     #6b7280;
+  --theme-border:         rgba(0,0,0,0.10);
+  --theme-primary:        #6366f1;
+  --theme-primary-dark:   #4f46e5;
+  --theme-hero-bg:        #f8f9ff;
+  --theme-nav-bg:         rgba(255,255,255,0.97);
+  --theme-footer-bg:      #1e1e2e;
+  --theme-input-bg:       #f3f4f6;
+  /* Bootstrap overrides */
+  --bs-body-color:        #111827;
+  --bs-body-bg:           #f8f9ff;
+  --bs-heading-color:     #111827;
+  --bs-border-color:      rgba(0,0,0,0.10);
+  --bs-secondary-color:   #6b7280;
+  --bs-secondary-bg:      #f0f2ff;
+  --bs-tertiary-bg:       #e8eaff;
+  --bs-link-color:        #4f46e5;
+  --bs-link-hover-color:  #4338ca;
+}
+
+/* ── Modern Theme ── */
+body.theme-modern {
+  --theme-bg:             #0f172a;
+  --theme-bg-card:        #1e293b;
+  --theme-bg-section:     #162032;
+  --theme-text:           #e2e8f0;
+  --theme-text-muted:     #64748b;
+  --theme-border:         rgba(6,182,212,0.15);
+  --theme-primary:        #06b6d4;
+  --theme-primary-dark:   #0891b2;
+  --theme-hero-bg:        #0f172a;
+  --theme-nav-bg:         rgba(15,23,42,0.97);
+  --theme-footer-bg:      #0a1628;
+  --theme-input-bg:       #0f172a;
+  /* Bootstrap overrides */
+  --bs-body-color:        #e2e8f0;
+  --bs-body-bg:           #0f172a;
+  --bs-heading-color:     #f1f5f9;
+  --bs-border-color:      rgba(6,182,212,0.15);
+  --bs-secondary-color:   #94a3b8;
+  --bs-secondary-bg:      #1e293b;
+  --bs-tertiary-bg:       #162032;
+  --bs-link-color:        #22d3ee;
+  --bs-link-hover-color:  #67e8f9;
+}
+
+/* ── Zen Theme ── */
+body.theme-zen {
+  --theme-bg:             #faf7f0;
+  --theme-bg-card:        #ffffff;
+  --theme-bg-section:     #f0ebe0;
+  --theme-text:           #2d3748;
+  --theme-text-muted:     #718096;
+  --theme-border:         rgba(5,150,105,0.15);
+  --theme-primary:        #059669;
+  --theme-primary-dark:   #047857;
+  --theme-hero-bg:        #faf7f0;
+  --theme-nav-bg:         rgba(250,247,240,0.97);
+  --theme-footer-bg:      #2d3748;
+  --theme-input-bg:       #f7f3ea;
+  /* Bootstrap overrides */
+  --bs-body-color:        #2d3748;
+  --bs-body-bg:           #faf7f0;
+  --bs-heading-color:     #1a202c;
+  --bs-border-color:      rgba(5,150,105,0.15);
+  --bs-secondary-color:   #718096;
+  --bs-secondary-bg:      #f0ebe0;
+  --bs-tertiary-bg:       #e8e0d0;
+  --bs-link-color:        #059669;
+  --bs-link-hover-color:  #047857;
+}
+
+/* ── Punk Theme ── */
+body.theme-punk {
+  --theme-bg:             #0d0008;
+  --theme-bg-card:        #1a0014;
+  --theme-bg-section:     #110010;
+  --theme-text:           #f0e6ff;
+  --theme-text-muted:     #a07ab8;
+  --theme-border:         rgba(240,0,184,0.20);
+  --theme-primary:        #f000b8;
+  --theme-primary-dark:   #c0008f;
+  --theme-hero-bg:        #0d0008;
+  --theme-nav-bg:         rgba(13,0,8,0.97);
+  --theme-footer-bg:      #0a0006;
+  --theme-input-bg:       #1a0014;
+  /* Bootstrap overrides */
+  --bs-body-color:        #f0e6ff;
+  --bs-body-bg:           #0d0008;
+  --bs-heading-color:     #ffffff;
+  --bs-border-color:      rgba(240,0,184,0.20);
+  --bs-secondary-color:   #a07ab8;
+  --bs-secondary-bg:      #1a0014;
+  --bs-tertiary-bg:       #110010;
+  --bs-link-color:        #f000b8;
+  --bs-link-hover-color:  #ff33cc;
+}
+
+/* ============================================================
+   Apply theme vars globally
+   ============================================================ */
+
+/* Body background + text */
+body.theme-dark, body.theme-bright, body.theme-modern, body.theme-zen, body.theme-punk {
+  background-color: var(--theme-bg) !important;
+  color: var(--theme-text) !important;
+}
+
+/* Headings — dark themes: white */
+body.theme-dark  h1, body.theme-dark  h2, body.theme-dark  h3,
+body.theme-dark  h4, body.theme-dark  h5, body.theme-dark  h6,
+body.theme-modern h1, body.theme-modern h2, body.theme-modern h3,
+body.theme-modern h4, body.theme-modern h5, body.theme-modern h6,
+body.theme-punk  h1, body.theme-punk  h2, body.theme-punk  h3,
+body.theme-punk  h4, body.theme-punk  h5, body.theme-punk  h6 { color: #ffffff; }
+
+/* Headings — light themes: dark */
+body.theme-bright h1, body.theme-bright h2, body.theme-bright h3,
+body.theme-bright h4, body.theme-bright h5, body.theme-bright h6 { color: #111827; }
+body.theme-zen    h1, body.theme-zen    h2, body.theme-zen    h3,
+body.theme-zen    h4, body.theme-zen    h5, body.theme-zen    h6 { color: #1a202c; }
+
+/* Navbar */
+body.theme-dark #mainNav, body.theme-bright #mainNav,
+body.theme-modern #mainNav, body.theme-zen #mainNav, body.theme-punk #mainNav {
+  background: var(--theme-nav-bg) !important;
+  border-bottom-color: var(--theme-border) !important;
+}
+
+/* Navbar links */
+body.theme-dark   #mainNav .nav-link,
+body.theme-modern #mainNav .nav-link,
+body.theme-punk   #mainNav .nav-link { color: #9ca3af !important; }
+body.theme-dark   #mainNav .nav-link:hover, body.theme-dark   #mainNav .nav-link.active,
+body.theme-modern #mainNav .nav-link:hover, body.theme-modern #mainNav .nav-link.active,
+body.theme-punk   #mainNav .nav-link:hover, body.theme-punk   #mainNav .nav-link.active { color:#fff !important; background:rgba(255,255,255,0.06) !important; }
+
+body.theme-bright #mainNav .nav-link { color: #374151 !important; }
+body.theme-bright #mainNav .nav-link:hover, body.theme-bright #mainNav .nav-link.active { color:#111 !important; background:rgba(0,0,0,0.06) !important; }
+body.theme-bright #mainNav .navbar-brand { color: #111 !important; }
+
+body.theme-zen    #mainNav .nav-link { color: #4a5568 !important; }
+body.theme-zen    #mainNav .nav-link:hover, body.theme-zen #mainNav .nav-link.active { color:#2d3748 !important; background:rgba(5,150,105,0.08) !important; }
+body.theme-zen    #mainNav .navbar-brand { color: #2d3748 !important; }
+
+body.theme-punk   #mainNav .nav-link { color:#c09fd4 !important; font-weight:600; text-transform:uppercase; font-size:12px; letter-spacing:0.08em; }
+body.theme-punk   #mainNav .nav-link:hover, body.theme-punk #mainNav .nav-link.active { color:#f000b8 !important; background:rgba(240,0,184,0.10) !important; }
+
+/* Footer */
+body.theme-dark .footer-dark, body.theme-bright .footer-dark,
+body.theme-modern .footer-dark, body.theme-zen .footer-dark, body.theme-punk .footer-dark {
+  background: var(--theme-footer-bg) !important;
+  border-top-color: var(--theme-border) !important;
+}
+body.theme-bright .footer-dark, body.theme-zen .footer-dark { color: #e5e7eb; }
+
+/* Cards */
+body.theme-dark .glass-card, body.theme-bright .glass-card,
+body.theme-modern .glass-card, body.theme-zen .glass-card, body.theme-punk .glass-card { border-color: var(--theme-border) !important; }
+
+body.theme-dark .product-card, body.theme-bright .product-card, body.theme-modern .product-card, body.theme-zen .product-card, body.theme-punk .product-card,
+body.theme-dark .category-card, body.theme-bright .category-card, body.theme-modern .category-card, body.theme-zen .category-card, body.theme-punk .category-card,
+body.theme-dark .pricing-card, body.theme-bright .pricing-card, body.theme-modern .pricing-card, body.theme-zen .pricing-card, body.theme-punk .pricing-card,
+body.theme-dark .testimonial-card, body.theme-bright .testimonial-card, body.theme-modern .testimonial-card, body.theme-zen .testimonial-card, body.theme-punk .testimonial-card,
+body.theme-dark .stat-card, body.theme-bright .stat-card, body.theme-modern .stat-card, body.theme-zen .stat-card, body.theme-punk .stat-card {
+  background: var(--theme-bg-card) !important;
+  border-color: var(--theme-border) !important;
+}
+
+/* Light theme card text */
+body.theme-bright .product-card, body.theme-bright .category-card, body.theme-bright .pricing-card,
+body.theme-bright .testimonial-card, body.theme-bright .glass-card, body.theme-bright .stat-card { color: #111827 !important; }
+body.theme-zen    .product-card, body.theme-zen    .category-card, body.theme-zen    .pricing-card,
+body.theme-zen    .testimonial-card, body.theme-zen    .glass-card, body.theme-zen    .stat-card { color: #2d3748 !important; }
+
+/* Section backgrounds */
+body.theme-dark .bg-section, body.theme-bright .bg-section,
+body.theme-modern .bg-section, body.theme-zen .bg-section, body.theme-punk .bg-section { background: var(--theme-bg-section) !important; }
+
+/* Hero */
+body.theme-dark   .hero-section { background: radial-gradient(ellipse at 20% 50%,rgba(99,102,241,0.12) 0%,transparent 60%), radial-gradient(ellipse at 80% 20%,rgba(139,92,246,0.06) 0%,transparent 50%), #0a0a0f !important; }
+body.theme-bright .hero-section { background: radial-gradient(ellipse at 20% 50%,rgba(99,102,241,0.08) 0%,transparent 60%), radial-gradient(ellipse at 80% 20%,rgba(139,92,246,0.05) 0%,transparent 50%), #f8f9ff !important; }
+body.theme-modern .hero-section { background: radial-gradient(ellipse at 20% 50%,rgba(6,182,212,0.15) 0%,transparent 60%), radial-gradient(ellipse at 80% 20%,rgba(59,130,246,0.08) 0%,transparent 50%), #0f172a !important; }
+body.theme-zen    .hero-section { background: radial-gradient(ellipse at 20% 50%,rgba(5,150,105,0.10) 0%,transparent 60%), radial-gradient(ellipse at 80% 20%,rgba(16,185,129,0.06) 0%,transparent 50%), #faf7f0 !important; }
+body.theme-punk   .hero-section { background: radial-gradient(ellipse at 20% 50%,rgba(240,0,184,0.18) 0%,transparent 60%), radial-gradient(ellipse at 80% 20%,rgba(0,255,159,0.08) 0%,transparent 50%), #0d0008 !important; }
+
+/* Light theme hero text */
+body.theme-bright .hero-section h1, body.theme-bright .hero-section h2 { color: #111827 !important; }
+body.theme-zen    .hero-section h1, body.theme-zen    .hero-section h2 { color: #1a202c !important; }
+body.theme-bright .hero-section p,  body.theme-zen    .hero-section p  { color: #4b5563 !important; }
+
+/* Forms */
+body.theme-dark   .form-control, body.theme-dark   .form-select { background:#16161e !important; border-color:rgba(255,255,255,0.08) !important; color:#e5e7eb !important; }
+body.theme-bright .form-control, body.theme-bright .form-select { background:#f3f4f6 !important; border-color:rgba(0,0,0,0.15) !important;       color:#111827 !important; }
+body.theme-modern .form-control, body.theme-modern .form-select { background:#0f172a !important; border-color:rgba(6,182,212,0.20) !important;    color:#e2e8f0 !important; }
+body.theme-zen    .form-control, body.theme-zen    .form-select { background:#f7f3ea !important; border-color:rgba(5,150,105,0.20) !important;     color:#2d3748 !important; }
+body.theme-punk   .form-control, body.theme-punk   .form-select { background:#1a0014 !important; border-color:rgba(240,0,184,0.30) !important;     color:#f0e6ff !important; }
+
+body.theme-modern .form-control:focus, body.theme-modern .form-select:focus { border-color:#06b6d4 !important; box-shadow:0 0 0 3px rgba(6,182,212,0.15) !important; }
+body.theme-zen    .form-control:focus, body.theme-zen    .form-select:focus  { border-color:#059669 !important; box-shadow:0 0 0 3px rgba(5,150,105,0.15) !important; }
+body.theme-punk   .form-control:focus, body.theme-punk   .form-select:focus  { border-color:#f000b8 !important; box-shadow:0 0 0 3px rgba(240,0,184,0.15) !important; }
+
+/* Muted text for light themes */
+body.theme-bright .text-muted { color: #6b7280 !important; }
+body.theme-zen    .text-muted { color: #718096 !important; }
+
+/* ── text-white fix for light themes ────────────────────────────────────────
+   Bootstrap .text-white forces color:#fff !important.
+   On light backgrounds this makes text invisible.
+   Override globally, then RESTORE white inside known dark-bg containers.
+   ──────────────────────────────────────────────────────────────────────── */
+body.theme-bright .text-white { color: #111827 !important; }
+body.theme-zen    .text-white { color: #1a202c !important; }
+
+/* Restore inside dark-background containers that stay dark even in light themes */
+body.theme-bright .pricing-sticky-card .text-white,
+body.theme-bright .footer-dark         .text-white,
+body.theme-bright .badge               .text-white,
+body.theme-bright .btn                 .text-white,
+body.theme-zen    .pricing-sticky-card .text-white,
+body.theme-zen    .footer-dark         .text-white,
+body.theme-zen    .badge               .text-white,
+body.theme-zen    .btn                 .text-white { color: #ffffff !important; }
+
+/* ── Override Bootstrap navbar-dark CSS variables for light themes ──
+   Bootstrap .navbar-dark sets --bs-navbar-color etc. on the element.
+   We override them directly on #mainNav so all Bootstrap components pick up dark colors.
+   ──────────────────────────────────────────────────────────────────────────────── */
+body.theme-bright #mainNav,
+body.theme-zen    #mainNav {
+  --bs-navbar-color:               #374151;
+  --bs-navbar-hover-color:         #111827;
+  --bs-navbar-disabled-color:      #9ca3af;
+  --bs-navbar-active-color:        #111827;
+  --bs-navbar-brand-color:         #111827;
+  --bs-navbar-brand-hover-color:   #000000;
+  --bs-navbar-toggler-border-color: rgba(0,0,0,0.15);
+  --bs-navbar-toggler-icon-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%280%2C0%2C0%2C0.55%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+body.theme-zen #mainNav {
+  --bs-navbar-color:               #4a5568;
+  --bs-navbar-hover-color:         #2d3748;
+  --bs-navbar-active-color:        #2d3748;
+  --bs-navbar-brand-color:         #2d3748;
+  --bs-navbar-brand-hover-color:   #1a202c;
+}
+
+/* btn-outline-light is invisible on light navbar backgrounds — restyle as dark outline */
+body.theme-bright #mainNav .btn-outline-light,
+body.theme-zen    #mainNav .btn-outline-light {
+  --bs-btn-color:              #374151;
+  --bs-btn-border-color:       #6b7280;
+  --bs-btn-hover-color:        #ffffff;
+  --bs-btn-hover-bg:           #374151;
+  --bs-btn-hover-border-color: #374151;
+  --bs-btn-active-color:       #ffffff;
+  --bs-btn-active-bg:          #374151;
+  --bs-btn-active-border-color:#374151;
+}
+body.theme-zen #mainNav .btn-outline-light {
+  --bs-btn-color:              #4a5568;
+  --bs-btn-border-color:       #718096;
+  --bs-btn-hover-bg:           #4a5568;
+  --bs-btn-hover-border-color: #4a5568;
+}
+
+/* Navbar brand stays readable */
+body.theme-bright .navbar-brand,
+body.theme-zen    .navbar-brand { color: #111 !important; }
+
+/* Page header (breadcrumbs + section headings) */
+body.theme-bright .page-header,
+body.theme-zen    .page-header {
+  background: linear-gradient(180deg, rgba(99,102,241,0.05) 0%, transparent 100%),
+              var(--theme-bg) !important;
+  border-bottom-color: var(--theme-border) !important;
+}
+body.theme-bright .breadcrumb-item,
+body.theme-bright .breadcrumb-item a,
+body.theme-zen    .breadcrumb-item,
+body.theme-zen    .breadcrumb-item a { color: #6b7280 !important; }
+body.theme-bright .breadcrumb-item.active,
+body.theme-zen    .breadcrumb-item.active { color: #374151 !important; }
+
+/* Glass card overrides */
+body.theme-bright .glass-card { background:rgba(255,255,255,0.85) !important; box-shadow:0 4px 24px rgba(0,0,0,0.08) !important; }
+body.theme-zen    .glass-card { background:rgba(255,255,255,0.75) !important; box-shadow:0 4px 24px rgba(5,150,105,0.08) !important; border-radius:16px !important; }
+body.theme-punk   .glass-card { background:rgba(26,0,20,0.85) !important; border-color:rgba(240,0,184,0.25) !important; box-shadow:0 0 20px rgba(240,0,184,0.08) !important; }
+
+/* Primary colors */
+body.theme-modern .text-primary { color:#06b6d4 !important; }
+body.theme-zen    .text-primary { color:#059669 !important; }
+body.theme-punk   .text-primary { color:#f000b8 !important; }
+
+body.theme-modern .btn-primary, body.theme-zen .btn-primary, body.theme-punk .btn-primary { background:linear-gradient(135deg,var(--theme-primary),var(--theme-primary-dark)) !important; border-color:transparent !important; }
+body.theme-modern .btn-outline-primary { border-color:#06b6d4 !important; color:#06b6d4 !important; }
+body.theme-zen    .btn-outline-primary { border-color:#059669 !important; color:#059669 !important; }
+body.theme-punk   .btn-outline-primary { border-color:#f000b8 !important; color:#f000b8 !important; }
+body.theme-modern .btn-outline-primary:hover { background:#06b6d4 !important; color:#fff !important; }
+body.theme-zen    .btn-outline-primary:hover  { background:#059669 !important; color:#fff !important; }
+body.theme-punk   .btn-outline-primary:hover  { background:#f000b8 !important; color:#fff !important; }
+body.theme-punk   .btn-primary { font-weight:700 !important; text-transform:uppercase !important; letter-spacing:0.05em !important; }
+
+/* Text gradient */
+body.theme-modern .text-gradient { background:linear-gradient(135deg,#06b6d4,#3b82f6,#a78bfa) !important; -webkit-background-clip:text !important; -webkit-text-fill-color:transparent !important; background-clip:text !important; }
+body.theme-zen    .text-gradient { background:linear-gradient(135deg,#059669,#10b981,#34d399) !important; -webkit-background-clip:text !important; -webkit-text-fill-color:transparent !important; background-clip:text !important; }
+body.theme-punk   .text-gradient { background:linear-gradient(135deg,#f000b8,#ff6ef7,#00ff9f) !important; -webkit-background-clip:text !important; -webkit-text-fill-color:transparent !important; background-clip:text !important; }
+
+/* Step circles */
+body.theme-modern .step-circle { background:linear-gradient(135deg,#06b6d4,#3b82f6) !important; }
+body.theme-zen    .step-circle { background:linear-gradient(135deg,#059669,#10b981) !important; }
+body.theme-punk   .step-circle { background:linear-gradient(135deg,#f000b8,#00ff9f) !important; }
+
+/* Filter links */
+body.theme-modern .filter-link.active { color:#06b6d4 !important; background:rgba(6,182,212,0.12) !important; }
+body.theme-zen    .filter-link.active { color:#059669 !important; background:rgba(5,150,105,0.12) !important; }
+body.theme-punk   .filter-link.active { color:#f000b8 !important; background:rgba(240,0,184,0.12) !important; }
+
+/* Pagination */
+body.theme-punk .pagination .page-item.active .page-link { background:#f000b8 !important; border-color:#f000b8 !important; }
+
+/* Featured pricing card */
+body.theme-modern .pricing-card-featured { background:linear-gradient(135deg,rgba(6,182,212,0.12),rgba(59,130,246,0.06)) !important; border-color:rgba(6,182,212,0.4) !important; }
+body.theme-zen    .pricing-card-featured { background:linear-gradient(135deg,rgba(5,150,105,0.12),rgba(16,185,129,0.06)) !important; border-color:rgba(5,150,105,0.4) !important; }
+body.theme-punk   .pricing-card-featured { background:linear-gradient(135deg,rgba(240,0,184,0.15),rgba(0,255,159,0.06)) !important; border-color:rgba(240,0,184,0.5) !important; }
+
+/* Category & product hover */
+body.theme-modern .category-card:hover { border-color:#06b6d4 !important; background:rgba(6,182,212,0.06) !important; }
+body.theme-punk   .category-card:hover { border-color:#f000b8 !important; background:rgba(240,0,184,0.08) !important; }
+body.theme-punk   .product-card:hover  { border-color:#f000b8 !important; box-shadow:0 8px 32px rgba(240,0,184,0.20) !important; }
+body.theme-zen    .product-card, body.theme-zen .category-card, body.theme-zen .pricing-card { border-radius:16px !important; }

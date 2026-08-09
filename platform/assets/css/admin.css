@@ -1,0 +1,151 @@
+/* ============================================================
+   AI101 Platform — Admin Panel Styles
+   ============================================================ */
+
+/* Override Bootstrap 5 CSS variables for admin dark theme */
+:root {
+  --bs-body-color:      #e5e7eb;
+  --bs-body-bg:         #080810;
+  --bs-heading-color:   #ffffff;
+  --bs-border-color:    rgba(255,255,255,0.07);
+  --bs-secondary-color: #9ca3af;
+  --bs-secondary-bg:    #111120;
+  --bs-tertiary-bg:     #16161e;
+  --bs-emphasis-color:  #ffffff;
+  --bs-link-color:      #818cf8;
+}
+
+h1, h2, h3, h4, h5, h6 { color: #ffffff; }
+
+.modal-content  { background-color: #111120; color: #e5e7eb; border-color: rgba(255,255,255,0.1); }
+.modal-header, .modal-footer { border-color: rgba(255,255,255,0.1); }
+.dropdown-menu  { background-color: #16161e; border-color: rgba(255,255,255,0.08); }
+.dropdown-item  { color: #e5e7eb; }
+.dropdown-item:hover { background-color: rgba(255,255,255,0.06); color: #fff; }
+.list-group-item { background-color: #111120; color: #e5e7eb; border-color: rgba(255,255,255,0.07); }
+.alert-success { --bs-alert-color: #d1fae5; --bs-alert-bg: rgba(5,150,105,0.15); --bs-alert-border-color: rgba(5,150,105,0.3); }
+.alert-danger  { --bs-alert-color: #fecaca; --bs-alert-bg: rgba(239,68,68,0.15);  --bs-alert-border-color: rgba(239,68,68,0.3); }
+.alert-warning { --bs-alert-color: #fef3c7; --bs-alert-bg: rgba(245,158,11,0.15); --bs-alert-border-color: rgba(245,158,11,0.3); }
+.btn-close { filter: invert(1); }
+
+.admin-body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: #080810;
+  display: flex;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Sidebar ── */
+.admin-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: #0d0d18;
+  border-right: 1px solid rgba(255,255,255,0.07);
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 200;
+  overflow-y: auto;
+  transition: transform 0.3s;
+}
+.admin-sidebar.open { transform: translateX(0) !important; }
+
+.admin-logo {
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+
+.admin-nav { overflow-y: auto; }
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 4px 8px;
+  margin-top: 4px;
+}
+.admin-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #6b7280;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 2px;
+  transition: all 0.15s;
+}
+.admin-nav-link:hover { color: #e5e7eb; background: rgba(255,255,255,0.05); }
+.admin-nav-link.active { color: #6366f1; background: rgba(99,102,241,0.12); }
+.admin-nav-link i { font-size: 16px; flex-shrink: 0; }
+
+/* ── Main Content ── */
+.admin-main {
+  margin-left: 240px;
+  flex: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Top Bar ── */
+.admin-topbar {
+  background: #0d0d18;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  height: 48px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* ── Admin Cards ── */
+.admin-card {
+  background: #111120;
+  border: 1px solid rgba(255,255,255,0.07);
+}
+.admin-stat-card {
+  background: #111120;
+  border: 1px solid rgba(255,255,255,0.07);
+  transition: all 0.2s;
+}
+.admin-stat-card:hover { border-color: rgba(99,102,241,0.3); }
+
+/* ── Tables ── */
+.table-dark { --bs-table-bg: transparent; }
+.table-dark td, .table-dark th { border-color: rgba(255,255,255,0.07) !important; vertical-align: middle; }
+.table-hover .table-dark tbody tr:hover { background: rgba(255,255,255,0.03) !important; }
+
+/* ── Rank Badge ── */
+.rank-badge {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: rgba(99,102,241,0.15);
+  color: #6366f1;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Admin Content Area ── */
+.admin-content {
+  flex: 1;
+  padding: 24px;
+  color: #e5e7eb;
+}
+
+/* ── Mobile ── */
+@media (max-width: 991px) {
+  .admin-sidebar {
+    transform: translateX(-100%);
+  }
+  .admin-main {
+    margin-left: 0;
+  }
+}
